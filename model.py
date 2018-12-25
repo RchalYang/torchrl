@@ -26,7 +26,7 @@ class Policy(nn.Module):
 
         init_ = lambda m: init(m,
             nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0),
+            lambda x: nn.init.constant_(x, 0.1),
             np.sqrt(2))
 
         self.model = nn.Sequential(
