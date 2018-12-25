@@ -36,7 +36,7 @@ class Policy(nn.Module):
         super().__init__()
 
         init_ = lambda m: init(m,
-            nn.init.kaiming_uniform_,
+            nn.init.xavier_uniform_,
             lambda x: nn.init.constant_(x, 0.1),
             1 )
 
@@ -107,7 +107,7 @@ class QNet(nn.Module):
         super().__init__()
 
         init_ = lambda m: init(m,
-            nn.init.kaiming_uniform_,
+            nn.init.xavier_uniform_,
             lambda x: nn.init.constant_(x, 0.1),
             1 )
 
@@ -129,7 +129,7 @@ class VNet(nn.Module):
         super().__init__()
 
         init_ = lambda m: init(m,
-            nn.init.kaiming_uniform_,
+            nn.init.xavier_uniform_,
             lambda x: nn.init.constant_(x, 0.1),
             1 )
 

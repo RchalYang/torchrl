@@ -22,7 +22,6 @@ class SimpleReplayBuffer():
         # but it makes the code *much* easier since you no longer have to
         # worry about termination conditions.
         self._next_obs = np.zeros((max_replay_buffer_size, observation_dim))
-        # self._deltas = np.zeros((max_replay_buffer_size, observation_dim))
         self._actions = np.zeros((max_replay_buffer_size, action_dim))
         # Make everything a 2D np array to make it easier for other code to
         # reason about the shape of the data
@@ -39,7 +38,6 @@ class SimpleReplayBuffer():
         self._rewards[self._top] = reward
         self._terminals[self._top] = terminal
         self._next_obs[self._top] = next_observation
-        # self._deltas[self._top] = delta
         self._advance()
 
     def terminate_episode(self):
@@ -58,7 +56,6 @@ class SimpleReplayBuffer():
             rewards=self._rewards[indices],
             terminals=self._terminals[indices],
             next_observations=self._next_obs[indices],
-            # deltas=self._deltas[indices],
         )
 
     def num_steps_can_sample(self):

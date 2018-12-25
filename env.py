@@ -39,25 +39,24 @@ class VecNormalize(Wrapper):
     and returns from an environment.
     """
 
-    def __init__(self, venv, ob=True, ret=True, clipob=10., cliprew=10., gamma=0.99, epsilon=1e-8):
+    def __init__(self, venv, ob=True, ret=True, gamma=0.99, epsilon=1e-8):
         Wrapper.__init__(self, venv)
         self.venv = venv
         self.ob_rms = RunningMeanStd(shape=self.observation_space.shape) if ob else None
-        self.clipob = clipob
-        self.cliprew = cliprew
         self.gamma = gamma
         self.epsilon = epsilon
 
-    def step_wait(self):
-        obs, rews, news, infos = self.venv.step_wait()
+    def step(self, action):
+        obs, rews, news, infos = self.venv.step(action)
         obs = self._obfilt(obs)
         return obs, rews, news, infos
 
     def _obfilt(self, obs):
+        #print("filted:")
         if self.ob_rms:
             if self.training:
                 self.ob_rms.update(obs)
-            obs = np.clip((obs - self.ob_rms.mean) / np.sqrt(self.ob_rms.var + self.epsilon), -self.clipob, self.clipob)
+            obs = (obs - self.ob_rms.mean) / np.sqrt(self.ob_rms.var + self.epsilon)
             return obs
         else:
             return obs

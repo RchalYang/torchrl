@@ -30,6 +30,7 @@ class SAC():
             policy_std_reg_weight=1e-3,
             policy_mean_reg_weight=1e-3,
             max_grad_norm = 0.5,
+            norm=True
     ):
 
         self.pf = pf

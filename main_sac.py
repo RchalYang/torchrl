@@ -52,9 +52,6 @@ def main():
                 plr = args.plr,
                 vlr = args.vlr,
                 qlr = args.qlr,
-                clip_param = args.clip_param, 
-                ent_coeff = args.entropy_coef,
-
                 # max_grad_norm=args.max_grad_norm,
                 target_hard_update_period=args.hard_update_interval,
                 tau=args.tau,
@@ -65,7 +62,6 @@ def main():
                 device = device,
                 max_grad_norm = args.max_grad_norm,
                 norm = args.norm,
-                entropy_coef = args.entropy_coef
             )
 
     replay_buffer = SimpleReplayBuffer( args.buffer_size, training_env.observation_space.shape[0], training_env.action_space.shape[0] )
