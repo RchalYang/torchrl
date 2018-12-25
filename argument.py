@@ -70,7 +70,7 @@ def get_args():
     parser.add_argument("--hard_update_interval",   help = " interval for hard update ", type = int, default = 1000 )
 
     parser.add_argument('--batch_size', type=int, default=128,
-                        help='batch size for ppo (default: 64)')
+                        help='batch size for update (default: 128)')
 
     parser.add_argument('--eval_episodes', type=int, default=1,
                         help='batch size for ppo (default: 1)')
@@ -91,7 +91,7 @@ def get_args():
 
     parser.add_argument("--opt_times",   help = " opt times ", type = int, default = 1 )
 
-    parser.add_argument("--device",                help="gpu secification", type=int, default=0 )
+    parser.add_argument("--device",      help="gpu secification", type=int, default=0 )
 	#tensorboard
     parser.add_argument("--id",            help="id for tensorboard",           type=str,   default="origin" )
 

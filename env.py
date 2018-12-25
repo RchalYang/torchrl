@@ -80,7 +80,8 @@ class NormalizedActions(gym.ActionWrapper):
         
         action = low_bound + (action + 1.0) * 0.5 * (upper_bound - low_bound)
         action = np.clip(action, low_bound, upper_bound)
-        
+        #print("action called")        
+
         return action
 
     def reverse_action(self, action):
@@ -89,7 +90,8 @@ class NormalizedActions(gym.ActionWrapper):
         
         action = 2 * (action - low_bound) / (upper_bound - low_bound) - 1
         action = np.clip(action, low_bound, upper_bound)
-        
+        #print("reverse_action called")        
+
         return action
 
 # class VecNormalize(VecNormalize_):

@@ -19,9 +19,6 @@ class SAC():
             pf, vf, qf,
             plr,vlr,qlr,
 
-            clip_param = 0.2,
-            ent_coeff = 0,
-
             target_hard_update_period=1000,
             tau=1e-2,
             
@@ -33,8 +30,6 @@ class SAC():
             policy_std_reg_weight=1e-3,
             policy_mean_reg_weight=1e-3,
             max_grad_norm = 0.5,
-            norm = True,
-            entropy_coef = 0,
     ):
 
         self.pf = pf
@@ -53,8 +48,6 @@ class SAC():
         self.vlr = vlr
         self.qlr = qlr
 
-        self.clip_param = clip_param
-        
         self.target_hard_update_period = target_hard_update_period
         self.tau = tau
         self.use_soft_update = use_soft_update
@@ -66,10 +59,6 @@ class SAC():
         self.policy_std_reg_weight = policy_std_reg_weight
         self.policy_mean_reg_weight = policy_mean_reg_weight
 
-
-        self.entropy_coef = entropy_coef
-        # self.qf_criterion = qf_criterion
-        # self.vf_criterion = vf_criterion
         
         self.qf_optimizer = optimizer_class(
             self.qf.parameters(),
