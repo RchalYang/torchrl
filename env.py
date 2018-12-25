@@ -74,7 +74,7 @@ class VecNormalize(Wrapper):
 
 class NormalizedActions(gym.ActionWrapper):
 
-    def _action(self, action):
+    def action(self, action):
         low_bound   = self.action_space.low
         upper_bound = self.action_space.high
         
@@ -83,7 +83,7 @@ class NormalizedActions(gym.ActionWrapper):
         
         return action
 
-    def _reverse_action(self, action):
+    def reverse_action(self, action):
         low_bound   = self.action_space.low
         upper_bound = self.action_space.high
         

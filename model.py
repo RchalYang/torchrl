@@ -19,25 +19,36 @@ def init(module, weight_init, bias_init, gain=1):
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
 
+def fanin_init(tensor):
+    size = tensor.size()
+    if len(size) == 2:
+        fan_in = size[0]
+    elif len(size) > 2:
+        fan_in = np.prod(size[1:])
+    else:
+        raise Exception("Shape must be have dimension at least 2.")
+    bound = 1. / np.sqrt(fan_in)
+    return tensor.data.uniform_(-bound, bound)
+
 class Policy(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shape ):
         
         super().__init__()
 
         init_ = lambda m: init(m,
-            nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0),
-            np.sqrt(2))
+            nn.init.kaiming_uniform_,
+            lambda x: nn.init.constant_(x, 0.1),
+            1 )
 
         self.model = nn.Sequential(
             init_(nn.Linear( obs_shape, hidden_shape )),
-            nn.Tanh(),
+            nn.ReLU(),
             init_(nn.Linear( hidden_shape, hidden_shape )),
-            nn.Tanh(),
+            nn.ReLU(),
         )
 
         self.action = nn.Linear( hidden_shape, action_space )
-        self.action.weight.data.uniform_(-1e-3, 1e-3)
+        self.action.weight.data.uniform_(-3e-3, 3e-3)
         self.action.bias.data.uniform_(-1e-3, 1e-3)
         
         last_hidden_size = hidden_shape
@@ -94,10 +105,11 @@ class QNet(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shape ):
         
         super().__init__()
+
         init_ = lambda m: init(m,
-            nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0),
-            np.sqrt(2))
+            nn.init.kaiming_uniform_,
+            lambda x: nn.init.constant_(x, 0.1),
+            1 )
 
         self.fc1 = init_(nn.Linear( obs_shape  + action_space, hidden_shape ))
         self.fc2 = init_(nn.Linear( hidden_shape, hidden_shape ) )
@@ -117,9 +129,9 @@ class VNet(nn.Module):
         super().__init__()
 
         init_ = lambda m: init(m,
-            nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0),
-            np.sqrt(2))
+            nn.init.kaiming_uniform_,
+            lambda x: nn.init.constant_(x, 0.1),
+            1 )
 
         self.model = nn.Sequential(
             init_(nn.Linear( obs_shape, hidden_shape )),
