@@ -33,25 +33,20 @@ def update_mean_var_count_from_moments(mean, var, count, batch_mean, batch_var, 
 
     return new_mean, new_var, new_count
 
-class VecNormalize(Wrapper):
+class NormalizeObs(gym.ObservationWrapper):
     """
     A vectorized wrapper that normalizes the observations
     and returns from an environment.
     """
 
     def __init__(self, venv, ob=True, ret=True, gamma=0.99, epsilon=1e-8):
-        Wrapper.__init__(self, venv)
+        super(NormalizeObs, self).__init__(self, venv)
         self.venv = venv
         self.ob_rms = RunningMeanStd(shape=self.observation_space.shape) if ob else None
         self.gamma = gamma
         self.epsilon = epsilon
 
-    def step(self, action):
-        obs, rews, news, infos = self.venv.step(action)
-        obs = self._obfilt(obs)
-        return obs, rews, news, infos
-
-    def _obfilt(self, obs):
+    def observation(self, obs):
         #print("filted:")
         if self.ob_rms:
             if self.training:
@@ -67,9 +62,6 @@ class VecNormalize(Wrapper):
     def eval(self):
         self.training = False
 
-    def _reset(self):
-        obs = self.venv.reset()
-        return self._obfilt(obs)
 
 class NormalizedActions(gym.ActionWrapper):
 
@@ -92,24 +84,3 @@ class NormalizedActions(gym.ActionWrapper):
         #print("reverse_action called")        
 
         return action
-
-# class VecNormalize(VecNormalize_):
-
-#     def __init__(self, *args, **kwargs):
-#         super(VecNormalize, self).__init__(*args, **kwargs)
-#         self.training = True
-
-#     def _obfilt(self, obs):
-#         if self.ob_rms:
-#             if self.training:
-#                 self.ob_rms.update(obs)
-#             obs = np.clip((obs - self.ob_rms.mean) / np.sqrt(self.ob_rms.var + self.epsilon), -self.clipob, self.clipob)
-#             return obs
-#         else:
-#             return obs
-
-#     def train(self):
-#         self.training = True
-
-#     def eval(self):
-#         self.training = False

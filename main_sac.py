@@ -14,7 +14,7 @@ from collections import deque
 import numpy as np
 
 from sac import SAC
-from env import VecNormalize
+from env import NormalizeObs
 from env import NormalizedActions
 from argument import get_args
 from model import Policy
@@ -30,7 +30,7 @@ def main():
 
     device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
 
-    training_env = VecNormalize(NormalizedActions( (gym.make(args.env_name)) ))
+    training_env = NormalizeObs(NormalizedActions( (gym.make(args.env_name)) ))
     eval_env = copy.deepcopy(training_env)
     training_env.train()
     eval_env.eval()
