@@ -16,8 +16,8 @@ def get_args():
     parser.add_argument('--discount', type=float, default=0.99,
                         help='discount factor for rewards (default: 0.99)')
                         
-    parser.add_argument('--tau', type=float, default=0.95,
-                        help='gae parameter (default: 0.95)')
+    parser.add_argument('--tau', type=float, default=0.001,
+                        help='for soft update')
 
     parser.add_argument('--entropy-coef', type=float, default=0.01,
                         help='entropy term coefficient (default: 0.01)')
@@ -69,25 +69,25 @@ def get_args():
 
     parser.add_argument("--hard_update_interval",   help = " interval for hard update ", type = int, default = 1000 )
 
-    parser.add_argument('--batch_size', type=int, default=64,
+    parser.add_argument('--batch_size', type=int, default=128,
                         help='batch size for ppo (default: 64)')
 
     parser.add_argument('--eval_episodes', type=int, default=1,
                         help='batch size for ppo (default: 1)')
 
     parser.add_argument('--plr', type=float, default=3e-4,
-                        help='learning rate (default: 7e-4)')
-    parser.add_argument('--vlr', type=float, default=1e-4,
-                        help='learning rate (default: 7e-4)')
-    parser.add_argument('--qlr', type=float, default=1e-4,
-                        help='learning rate (default: 7e-4)')
+                        help='learning rate (default: 3e-4)')
+    parser.add_argument('--vlr', type=float, default=3e-4,
+                        help='learning rate (default: 3e-4)')
+    parser.add_argument('--qlr', type=float, default=3e-4,
+                        help='learning rate (default: 3e-4)')
 
     parser.add_argument('--no_norm', action='store_true', default=False,
                         help='disables normalization of advantages')
 
 
     parser.add_argument("--buffer_size", help = " replay buffer size ", type = int, default = 1000000 )
-    parser.add_argument("--opt_times",   help = " opt times ", type = int, default = 5 )
+    parser.add_argument("--opt_times",   help = " opt times ", type = int, default = 1 )
 
     parser.add_argument("--device",                help="gpu secification", type=int, default=0 )
 	#tensorboard
