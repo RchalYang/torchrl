@@ -113,8 +113,10 @@ class QNet(nn.Module):
 
         self.fc1 = init_(nn.Linear( obs_shape  + action_space, hidden_shape ))
         self.fc2 = init_(nn.Linear( hidden_shape, hidden_shape ) )
-        self.q_fun = init_( nn.Linear( hidden_shape, 1 ) )
-    
+        self.q_fun = nn.Linear( hidden_shape, 1 )     
+        self.q_fun.weight.data.uniform_(-3e-3, 3e-3)
+        self.q_fun.bias.data.uniform_(-1e-3, 1e-3)
+
     def forward(self, state, action):
         out = torch.cat( [state, action], 1 )
         out = F.relu(self.fc1(out))
@@ -138,11 +140,15 @@ class VNet(nn.Module):
             nn.ReLU(),
             init_(nn.Linear( hidden_shape, hidden_shape )),
             nn.ReLU(),
-            init_(nn.Linear( hidden_shape, 1 )),
         )
+
+        self.v_fun = nn.Linear( hidden_shape, 1 )     
+        self.v_fun.weight.data.uniform_(-3e-3, 3e-3)
+        self.v_fun.bias.data.uniform_(-1e-3, 1e-3)
         
     def forward(self, x):
         value = self.model(x)
+        value = self.v_fun(value)
         return value
 
 

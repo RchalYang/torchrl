@@ -30,10 +30,10 @@ def main():
 
     device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
 
-    training_env = NormalizeObs(NormalizedActions( (gym.make(args.env_name)) ))
+    training_env = NormalizedActions( gym.make(args.env_name) )
     eval_env = copy.deepcopy(training_env)
-    training_env.train()
-    eval_env.eval()
+    #training_env.train()
+    #eval_env.eval()
 
     pf = Policy( training_env.observation_space.shape[0], training_env.action_space.shape[0], args.net )
 
@@ -106,7 +106,7 @@ def main():
             
         total_num_steps = (j + 1) * args.epoch_frames
 
-        eval_env.ob_rms = copy.deepcopy(training_env.ob_rms)
+        #eval_env.ob_rms = copy.deepcopy(training_env.ob_rms)
         for _ in range(args.eval_episodes):
 
             eval_ob = eval_env.reset()

@@ -34,7 +34,6 @@ class SAC():
     ):
 
         self.pf = pf
-        self.target_pf = copy.deepcopy(pf).to(device)
 
         self.qf = qf
         self.target_qf = copy.deepcopy(qf).to(device)
@@ -163,13 +162,9 @@ class SAC():
 
     def _update_target_networks(self):
         if self.use_soft_update:
-            ptu.soft_update_from_to(self.pf, self.target_pf, self.tau)
-            ptu.soft_update_from_to(self.qf, self.target_qf, self.tau)
             ptu.soft_update_from_to(self.vf, self.target_vf, self.tau)
         else:
             if self.training_update_num % self.target_hard_update_period == 0:
-                ptu.copy_model_params_from_to(self.pf, self.target_pf)
-                ptu.copy_model_params_from_to(self.qf, self.target_qf)
                 ptu.copy_model_params_from_to(self.vf, self.target_vf)
                 print("hard update")
 
@@ -186,8 +181,6 @@ class SAC():
             self.pf,
             self.qf,
             self.vf,
-            self.target_pf,
-            self.target_qf,
             self.target_vf
         ]
 
