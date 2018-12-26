@@ -36,7 +36,6 @@ class SAC():
         self.pf = pf
 
         self.qf = qf
-        self.target_qf = copy.deepcopy(qf).to(device)
 
         self.vf = vf
         self.target_vf = copy.deepcopy(vf).to(device)
