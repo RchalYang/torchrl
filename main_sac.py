@@ -29,8 +29,22 @@ args = get_args()
 def main():
 
     device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
+    
+    pretrain_step = 10000
+    pretrain_ob = []
 
-    training_env = NormalizeObs( NormalizedActions( gym.make(args.env_name) ) )
+    env = gym.make(args.env_name)
+    ob = env.reset()
+    for _ in range(pretrain_step):
+        pretrain_ob.append( ob )
+        ob, r, done, _ = env.step( env.action_space.sample() )
+        if done:
+            ob = env.reset()
+
+    ob_mean = np.mean( pretrain_ob, axis=0 )
+    ob_var = np.var( pretrain_ob, axis=0 )
+
+    training_env = NormalizeObs( NormalizedActions( gym.make(args.env_name) ), ob_mean, ob_var )
     eval_env = copy.deepcopy(training_env)
     #training_env.train()
     #eval_env.eval()

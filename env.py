@@ -63,30 +63,51 @@ import numpy as np
 #         self.training = False
 
 class NormalizeObs(gym.ObservationWrapper):
-    def __init__(
-            self,
-            env,
-            obs_alpha=0.001,
-    ):
-        super(NormalizeObs, self).__init__(env)
-        self.venv = env
-        self._obs_alpha = obs_alpha
-        self._obs_mean = np.zeros(env.observation_space.shape[0])
-        self._obs_var = np.ones(env.observation_space.shape[0])
-    
-    def _update_obs_estimate(self, obs):
-        # flat_obs = self.venv.observation_space.flatten(obs)
-        batch_mean = np.mean(obs, axis=0)
-        # batch_var = np.var(obs, axis=0)
-        self._obs_mean = (1 - self._obs_alpha) * self._obs_mean + self._obs_alpha * batch_mean
-        self._obs_var = (1 - self._obs_alpha) * self._obs_var + self._obs_alpha * np.mean( np.square(obs - self._obs_mean), axis= 0 )
+    """
+    A vectorized wrapper that normalizes the observations
+    and returns from an environment.
+    """
 
-    def _apply_normalize_obs(self, obs):
-        self._update_obs_estimate(obs)
-        return (obs - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
+    def __init__(self, venv, mean, var , epsilon=1e-8):
+        super(NormalizeObs, self).__init__(self, venv)
+        self.venv = venv
+        self.ob_mean = mean
+        self.ob_var = var
+        self.epsilon = epsilon
 
     def observation(self, obs):
-        return self._apply_normalize_obs(obs)
+        #print("filted:")
+        if self.ob_mean and self.ob_var:
+            obs = (obs - self.ob_mean) / np.sqrt(self.ob_var + self.epsilon)
+            return obs
+        else:
+            return obs
+
+# class NormalizeObs(gym.ObservationWrapper):
+#     def __init__(
+#             self,
+#             env,
+#             obs_alpha=0.001,
+#     ):
+#         super(NormalizeObs, self).__init__(env)
+#         self.venv = env
+#         self._obs_alpha = obs_alpha
+#         self._obs_mean = np.zeros(env.observation_space.shape[0])
+#         self._obs_var = np.ones(env.observation_space.shape[0])
+    
+#     def _update_obs_estimate(self, obs):
+#         # flat_obs = self.venv.observation_space.flatten(obs)
+#         batch_mean = np.mean(obs, axis=0)
+#         # batch_var = np.var(obs, axis=0)
+#         self._obs_mean = (1 - self._obs_alpha) * self._obs_mean + self._obs_alpha * batch_mean
+#         self._obs_var = (1 - self._obs_alpha) * self._obs_var + self._obs_alpha * np.mean( np.square(obs - self._obs_mean), axis= 0 )
+
+#     def _apply_normalize_obs(self, obs):
+#         self._update_obs_estimate(obs)
+#         return (obs - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
+
+#     def observation(self, obs):
+#         return self._apply_normalize_obs(obs)
 
 
 class NormalizedActions(gym.ActionWrapper):
