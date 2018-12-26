@@ -76,8 +76,10 @@ class NormalizeObs(gym.ObservationWrapper):
     
     def _update_obs_estimate(self, obs):
         # flat_obs = self.venv.observation_space.flatten(obs)
-        self._obs_mean = (1 - self._obs_alpha) * self._obs_mean + self._obs_alpha * obs
-        self._obs_var = (1 - self._obs_alpha) * self._obs_var + self._obs_alpha * np.square(obs - self._obs_mean)
+        batch_mean = np.mean(obs, axis=0)
+        # batch_var = np.var(obs, axis=0)
+        self._obs_mean = (1 - self._obs_alpha) * self._obs_mean + self._obs_alpha * batch_mean
+        self._obs_var = (1 - self._obs_alpha) * self._obs_var + self._obs_alpha * np.mean( np.square(obs - self._obs_mean), axis= 0 )
 
     def _apply_normalize_obs(self, obs):
         self._update_obs_estimate(obs)
