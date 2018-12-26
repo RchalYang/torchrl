@@ -68,7 +68,7 @@ class NormalizeObs(gym.ObservationWrapper):
             env,
             obs_alpha=0.001,
     ):
-        super(NormalizeObs, self).__init__(self, env)
+        super(NormalizeObs, self).__init__(env)
         self.venv = env
         self._obs_alpha = obs_alpha
         self._obs_mean = np.zeros(env.observation_space.flat_dim)
