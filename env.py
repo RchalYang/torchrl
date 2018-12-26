@@ -71,13 +71,13 @@ class NormalizeObs(gym.ObservationWrapper):
         super(NormalizeObs, self).__init__(env)
         self.venv = env
         self._obs_alpha = obs_alpha
-        self._obs_mean = np.zeros(env.observation_space.flat_dim)
-        self._obs_var = np.ones(env.observation_space.flat_dim)
+        self._obs_mean = np.zeros(env.observation_space.shape[0])
+        self._obs_var = np.ones(env.observation_space.shape[0])
     
     def _update_obs_estimate(self, obs):
-        flat_obs = self.venv.observation_space.flatten(obs)
-        self._obs_mean = (1 - self._obs_alpha) * self._obs_mean + self._obs_alpha * flat_obs
-        self._obs_var = (1 - self._obs_alpha) * self._obs_var + self._obs_alpha * np.square(flat_obs - self._obs_mean)
+        # flat_obs = self.venv.observation_space.flatten(obs)
+        self._obs_mean = (1 - self._obs_alpha) * self._obs_mean + self._obs_alpha * obs
+        self._obs_var = (1 - self._obs_alpha) * self._obs_var + self._obs_alpha * np.square(obs - self._obs_mean)
 
     def _apply_normalize_obs(self, obs):
         self._update_obs_estimate(obs)
