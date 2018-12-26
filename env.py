@@ -66,9 +66,10 @@ class RewardScale(gym.Wrapper):
     def __init__(self, env, reward_scale = 1):
         super(RewardScale, self).__init__(env)
         self.reward_scale = reward_scale
+        self.venv = env
 
     def step(self, action):
-        next_ob, r, done, info = self.step(action)
+        next_ob, r, done, info = self.venv.step(action)
         return next_ob, self.reward_scale * r, done, info
 
 class NormalizeObs(gym.ObservationWrapper):
