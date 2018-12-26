@@ -14,6 +14,7 @@ from collections import deque
 import numpy as np
 
 from sac import SAC
+from env import RewardScale
 from env import NormalizeObs
 from env import NormalizedActions
 from argument import get_args
@@ -44,8 +45,10 @@ def main():
     ob_mean = np.mean( pretrain_ob, axis=0 )
     ob_var = np.var( pretrain_ob, axis=0 )
 
-    training_env = NormalizeObs( NormalizedActions( gym.make(args.env_name) ), ob_mean, ob_var )
-    eval_env = copy.deepcopy(training_env)
+    #For half Cheetah
+    reward_scale = 5 
+    training_env = RewardScale( NormalizeObs( NormalizedActions( gym.make(args.env_name) ), ob_mean, ob_var ) ,reward_scale = reward_scale )
+    eval_env = RewardScale( NormalizeObs( NormalizedActions( gym.make(args.env_name) ), ob_mean, ob_var ) ,reward_scale = 1 )
     #training_env.train()
     #eval_env.eval()
 
