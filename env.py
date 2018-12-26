@@ -68,7 +68,7 @@ class NormalizeObs(gym.ObservationWrapper):
     and returns from an environment.
     """
 
-    def __init__(self, venv, mean, var , epsilon=1e-8):
+    def __init__(self, venv, mean = None, var = None, epsilon=1e-8):
         super(NormalizeObs, self).__init__(venv)
         self.venv = venv
         self.ob_mean = mean
@@ -77,7 +77,7 @@ class NormalizeObs(gym.ObservationWrapper):
 
     def observation(self, obs):
         #print("filted:")
-        if self.ob_mean and self.ob_var:
+        if self.ob_mean is not None and self.ob_var is not None:
             obs = (obs - self.ob_mean) / np.sqrt(self.ob_var + self.epsilon)
             return obs
         else:
