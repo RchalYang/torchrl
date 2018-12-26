@@ -30,7 +30,7 @@ def main():
 
     device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
 
-    training_env = NormalizedActions( gym.make(args.env_name) )
+    training_env = NormalizeObs( NormalizedActions( gym.make(args.env_name) ) )
     eval_env = copy.deepcopy(training_env)
     #training_env.train()
     #eval_env.eval()
