@@ -40,7 +40,7 @@ import numpy as np
 #     """
 
 #     def __init__(self, venv, ob=True, ret=True, gamma=0.99, epsilon=1e-8):
-#         super(NormalizeObs, self).__init__(self, venv)
+#         super(NormalizeObs, self).__init__( venv)
 #         self.venv = venv
 #         self.ob_rms = RunningMeanStd(shape=self.observation_space.shape) if ob else None
 #         self.gamma = gamma
@@ -69,7 +69,7 @@ class NormalizeObs(gym.ObservationWrapper):
     """
 
     def __init__(self, venv, mean, var , epsilon=1e-8):
-        super(NormalizeObs, self).__init__(self, venv)
+        super(NormalizeObs, self).__init__(venv)
         self.venv = venv
         self.ob_mean = mean
         self.ob_var = var
