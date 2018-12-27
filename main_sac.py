@@ -43,23 +43,23 @@ def main():
     if args.cuda:
         torch.backends.cudnn.deterministic=True
     
-    # ob = env.reset()
-    # for _ in range(pretrain_step):
-    #     pretrain_ob.append( ob )
-    #     ob, r, done, _ = env.step( env.action_space.sample() )
-    #     if done:
-    #         ob = env.reset()
+    ob = env.reset()
+    for _ in range(pretrain_step):
+        pretrain_ob.append( ob )
+        ob, r, done, _ = env.step( env.action_space.sample() )
+        if done:
+            ob = env.reset()
 
-    # ob_mean = np.mean( pretrain_ob, axis=0 )
-    # ob_var = np.var( pretrain_ob, axis=0 )
+    ob_mean = np.mean( pretrain_ob, axis=0 )
+    ob_var = np.var( pretrain_ob, axis=0 )
 
     #For half Cheetah
     reward_scale = args.reward_scale
-    # training_env = RewardScale( NormalizeObs( NormalizedActions( env ) , ob_mean, ob_var ) ,reward_scale = reward_scale )
-    # eval_env = RewardScale( NormalizeObs( NormalizedActions( env ), ob_mean, ob_var ) ,reward_scale = 1 )
+    training_env = RewardScale( NormalizeObs( NormalizedActions( env ) , ob_mean, ob_var ) ,reward_scale = reward_scale )
+    eval_env = RewardScale( NormalizeObs( NormalizedActions( env ), ob_mean, ob_var ) ,reward_scale = 1 )
     
-    training_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = reward_scale )
-    eval_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = 1 )
+    # training_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = reward_scale )
+    # eval_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = 1 )
     #training_env.train()
     #eval_env.eval()
 
