@@ -132,8 +132,8 @@ class NormalizedActions(gym.ActionWrapper):
         self.action_space = Box(-1 * ub, ub)
 
     def action(self, action):
-        low_bound   = self.action_space.low
-        upper_bound = self.action_space.high
+        low_bound   = self.venv.action_space.low
+        upper_bound = self.venv.action_space.high
         
         action = low_bound + (action + 1.0) * 0.5 * (upper_bound - low_bound)
         action = np.clip(action, low_bound, upper_bound)
@@ -142,8 +142,8 @@ class NormalizedActions(gym.ActionWrapper):
         return action
 
     def reverse_action(self, action):
-        low_bound   = self.action_space.low
-        upper_bound = self.action_space.high
+        low_bound   = self.venv.action_space.low
+        upper_bound = self.venv.action_space.high
         
         action = 2 * (action - low_bound) / (upper_bound - low_bound) - 1
         action = np.clip(action, low_bound, upper_bound)
