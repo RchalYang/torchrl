@@ -43,20 +43,23 @@ def main():
     if args.cuda:
         torch.backends.cudnn.deterministic=True
     
-    ob = env.reset()
-    for _ in range(pretrain_step):
-        pretrain_ob.append( ob )
-        ob, r, done, _ = env.step( env.action_space.sample() )
-        if done:
-            ob = env.reset()
+    # ob = env.reset()
+    # for _ in range(pretrain_step):
+    #     pretrain_ob.append( ob )
+    #     ob, r, done, _ = env.step( env.action_space.sample() )
+    #     if done:
+    #         ob = env.reset()
 
-    ob_mean = np.mean( pretrain_ob, axis=0 )
-    ob_var = np.var( pretrain_ob, axis=0 )
+    # ob_mean = np.mean( pretrain_ob, axis=0 )
+    # ob_var = np.var( pretrain_ob, axis=0 )
 
     #For half Cheetah
     reward_scale = args.reward_scale
-    training_env = RewardScale( NormalizeObs( NormalizedActions( env ) , ob_mean, ob_var ) ,reward_scale = reward_scale )
-    eval_env = RewardScale( NormalizeObs( NormalizedActions( env ), ob_mean, ob_var ) ,reward_scale = 1 )
+    # training_env = RewardScale( NormalizeObs( NormalizedActions( env ) , ob_mean, ob_var ) ,reward_scale = reward_scale )
+    # eval_env = RewardScale( NormalizeObs( NormalizedActions( env ), ob_mean, ob_var ) ,reward_scale = 1 )
+    
+    training_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = reward_scale )
+    eval_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = 1 )
     #training_env.train()
     #eval_env.eval()
 
@@ -105,10 +108,13 @@ def main():
     for j in range( args.num_epochs ):
         for step in range(args.epoch_frames):
             # Sample actions
-            with torch.no_grad():
-                _, _, action, _ = pf.explore( torch.Tensor( ob ).to(device).unsqueeze(0) )
+            if args.num_epochs * args.epoch_frames + step < pretrain_step:
+                action = env.action_space.sample()
+            else:
+                with torch.no_grad():
+                    _, _, action, _ = pf.explore( torch.Tensor( ob ).to(device).unsqueeze(0) )
 
-            action = action.detach().cpu().numpy()
+                action = action.detach().cpu().numpy()
 
             if np.isnan(action).any():
                 print("NaN detected. BOOM")
@@ -118,7 +124,7 @@ def main():
 
             replay_buffer.add_sample(ob, action, reward, done, next_ob )
 
-            if replay_buffer.num_steps_can_sample() > 10 * args.batch_size:
+            if replay_buffer.num_steps_can_sample() > args.min_pool:
                 for _ in range( args.opt_times ):
                     batch = replay_buffer.random_batch(args.batch_size)
                     infos = agent.update( batch )
