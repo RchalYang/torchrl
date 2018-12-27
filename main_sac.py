@@ -38,7 +38,11 @@ def main():
     
     env.seed(args.seed)
     torch.manual_seed(args.seed)
-
+    # random.seed(args.seed)
+    np.random.seed(args.seed)
+    if args.cuda:
+        torch.backends.cudnn.deterministic=True
+    
     ob = env.reset()
     for _ in range(pretrain_step):
         pretrain_ob.append( ob )
