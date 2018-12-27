@@ -55,11 +55,14 @@ def main():
 
     #For half Cheetah
     reward_scale = args.reward_scale
-    training_env = RewardScale( NormalizeObs( NormalizedActions( env ) , ob_mean, ob_var ) ,reward_scale = reward_scale )
-    eval_env = RewardScale( NormalizeObs( NormalizedActions( env ), ob_mean, ob_var ) ,reward_scale = 1 )
+    #training_env = RewardScale( NormalizeObs( NormalizedActions( env ) , ob_mean, ob_var ) ,reward_scale = reward_scale )
+    #eval_env = RewardScale( NormalizeObs( NormalizedActions( env ), ob_mean, ob_var ) ,reward_scale = 1 )
     
     # training_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = reward_scale )
     # eval_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = 1 )
+
+    training_env = RewardScale( NormalizedActions( env )  ,reward_scale = reward_scale )
+    eval_env = RewardScale( NormalizedActions( env )  ,reward_scale = 1 )
     #training_env.train()
     #eval_env.eval()
 
