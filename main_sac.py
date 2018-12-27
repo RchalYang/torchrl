@@ -17,6 +17,7 @@ from sac import SAC
 from env import RewardScale
 from env import NormalizeObs
 from env import NormalizedActions
+from env import NormalizedBoxEnv
 from argument import get_args
 from model import Policy
 from model import QNet
@@ -31,27 +32,31 @@ def main():
 
     device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
     
-    pretrain_step = 10000
-    pretrain_ob = []
+    # pretrain_step = 10000
+    # pretrain_ob = []
 
-    env = gym.make(args.env_name)
+    # env = gym.make(args.env_name)
+    training_env = NormalizedBoxEnv(gym.make(args.env_name), reward_scale= args.reward_scale)
+    training_env.seed(args.seed)
     
-    env.seed(args.seed)
+    eval_env = NormalizedBoxEnv(gym.make(args.env_name))
+    eval_env.seed(args.seed)
+
     torch.manual_seed(args.seed)
     # random.seed(args.seed)
     np.random.seed(args.seed)
     if args.cuda:
         torch.backends.cudnn.deterministic=True
     
-    ob = env.reset()
-    for _ in range(pretrain_step):
-        pretrain_ob.append( ob )
-        ob, r, done, _ = env.step( env.action_space.sample() )
-        if done:
-            ob = env.reset()
+    # ob = env.reset()
+    # for _ in range(pretrain_step):
+    #     pretrain_ob.append( ob )
+    #     ob, r, done, _ = env.step( env.action_space.sample() )
+    #     if done:
+    #         ob = env.reset()
 
-    ob_mean = np.mean( pretrain_ob, axis=0 )
-    ob_var = np.var( pretrain_ob, axis=0 )
+    # ob_mean = np.mean( pretrain_ob, axis=0 )
+    # ob_var = np.var( pretrain_ob, axis=0 )
 
     #For half Cheetah
     reward_scale = args.reward_scale
@@ -61,8 +66,9 @@ def main():
     # training_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = reward_scale )
     # eval_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = 1 )
 
-    training_env = RewardScale( NormalizedActions( env )  ,reward_scale = reward_scale )
-    eval_env = RewardScale( NormalizedActions( env )  ,reward_scale = 1 )
+    # training_env = RewardScale( NormalizedActions( env )  ,reward_scale = reward_scale )
+    # eval_env = RewardScale( NormalizedActions( env )  ,reward_scale = 1 )
+
     #training_env.train()
     #eval_env.eval()
 
