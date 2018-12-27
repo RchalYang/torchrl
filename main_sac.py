@@ -109,7 +109,7 @@ def main():
         for step in range(args.epoch_frames):
             # Sample actions
             if args.num_epochs * args.epoch_frames + step < pretrain_step:
-                action = env.action_space.sample()
+                action = training_env.action_space.sample()
             else:
                 with torch.no_grad():
                     _, _, action, _ = pf.explore( torch.Tensor( ob ).to(device).unsqueeze(0) )
