@@ -63,10 +63,10 @@ def main():
     #training_env.train()
     #eval_env.eval()
 
-    pf = Policy( training_env.observation_space.shape[0], training_env.action_space.shape[0], args.net )
+    pf = Policy( training_env.observation_space.shape[0], training_env.action_space.shape[0], [args.net, args.net] )
 
-    vf = VNet( training_env.observation_space.shape[0], args.net )
-    qf = QNet( training_env.observation_space.shape[0], training_env.action_space.shape[0], args.net )
+    vf = VNet( training_env.observation_space.shape[0], [args.net, args.net] )
+    qf = QNet( training_env.observation_space.shape[0], training_env.action_space.shape[0], [args.net, args.net] )
 
     pf.to(device)
     vf.to(device)

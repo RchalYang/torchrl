@@ -4,6 +4,9 @@ from gym.spaces import Box
 import gym
 import numpy as np
 
+# def make_env( env, norm_ob = False, norm_action = True, reward_scale = 1 ):
+
+
 # class RunningMeanStd(object):
 #     # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
 #     def __init__(self, epsilon=1e-4, shape=()):

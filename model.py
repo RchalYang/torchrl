@@ -31,40 +31,55 @@ def fanin_init(tensor):
     return tensor.data.uniform_(-bound, bound)
 
 class Policy(nn.Module):
-    def __init__(self, obs_shape, action_space, hidden_shape ):
+    def __init__(self, obs_shape, action_space, hidden_shapes ):
         
         super().__init__()
 
-        init_ = lambda m: init(m,
-            nn.init.xavier_uniform_,
-            lambda x: nn.init.constant_(x, 0.1),
-            1 )
+        # init_ = lambda m: init(m,
+        #     nn.init.xavier_uniform_,
+        #     lambda x: nn.init.constant_(x, 0.1),
+        #     1 )
 
-        self.model = nn.Sequential(
-            init_(nn.Linear( obs_shape, hidden_shape )),
-            nn.ReLU(),
-            init_(nn.Linear( hidden_shape, hidden_shape )),
-            nn.ReLU(),
-        )
+        # self.model = nn.Sequential(
+        #     init_(nn.Linear( obs_shape, hidden_shape )),
+        #     nn.ReLU(),
+        #     init_(nn.Linear( hidden_shape, hidden_shape )),
+        #     nn.ReLU(),
+        # )
+        self.fcs = []
+        in_size = obs_shape
 
-        self.action = nn.Linear( hidden_shape, action_space )
+        for i, next_size in enumerate(hidden_shapes):
+            fc = nn.Linear(in_size, next_size)
+            in_size = next_size
+            fanin_init(fc.weight)
+            fc.bias.data.fill_(0.1)
+            self.__setattr__("fc{}".format(i), fc)
+            self.fcs.append(fc)
+
+
+        self.action = nn.Linear( hidden_shapes[-1], action_space )
         self.action.weight.data.uniform_(-3e-3, 3e-3)
         self.action.bias.data.uniform_(-1e-3, 1e-3)
         
-        last_hidden_size = hidden_shape
+        # last_hidden_size = hidden_shape
         # if len(hidden_sizes) > 0:
         #     last_hidden_size = hidden_sizes[-1]
-        self.last_fc_log_std = nn.Linear(last_hidden_size, action_space)
+        self.last_fc_log_std = nn.Linear( hidden_shapes[-1], action_space)
         self.last_fc_log_std.weight.data.uniform_(-1e-3, 1e-3)
         self.last_fc_log_std.bias.data.uniform_(-1e-3, 1e-3)
         
     def forward(self, x):
         
-        hidden = self.model(x)
+        h = x
+        for i, fc in enumerate(self.fcs):
+            h = fc(h)
+            h = F.relu(h)
+
+        mean = self.action( h )
         
-        mean = self.action( hidden )
-        
-        log_std = self.last_fc_log_std(hidden)
+        log_std = self.last_fc_log_std( h )
+
         log_std = torch.clamp(log_std, LOG_SIG_MIN, LOG_SIG_MAX)
         std = torch.exp(log_std)
         
@@ -102,53 +117,76 @@ class Policy(nn.Module):
     
 
 class QNet(nn.Module):
-    def __init__(self, obs_shape, action_space, hidden_shape ):
+    def __init__(self, obs_shape, action_space, hidden_shapes ):
         
         super().__init__()
 
-        init_ = lambda m: init(m,
-            nn.init.xavier_uniform_,
-            lambda x: nn.init.constant_(x, 0.1),
-            1 )
+        # init_ = lambda m: init(m,
+        #     nn.init.xavier_uniform_,
+        #     lambda x: nn.init.constant_(x, 0.1),
+        #     1 )
+        self.fcs = []
+        in_size = obs_shape + action_space
 
-        self.fc1 = init_(nn.Linear( obs_shape  + action_space, hidden_shape ))
-        self.fc2 = init_(nn.Linear( hidden_shape, hidden_shape ) )
-        self.q_fun = nn.Linear( hidden_shape, 1 )     
+        for i, next_size in enumerate(hidden_shapes):
+            fc = nn.Linear(in_size, next_size)
+            in_size = next_size
+            fanin_init(fc.weight)
+            fc.bias.data.fill_(0.1)
+            self.__setattr__("fc{}".format(i), fc)
+            self.fcs.append(fc)
+
+        # self.fc1 = init_(nn.Linear( obs_shape  + action_space, hidden_shape ))
+        # self.fc2 = init_(nn.Linear( hidden_shape, hidden_shape ) )
+        self.q_fun = nn.Linear( hidden_shapes[-1], 1 )     
         self.q_fun.weight.data.uniform_(-3e-3, 3e-3)
         self.q_fun.bias.data.uniform_(-1e-3, 1e-3)
 
     def forward(self, state, action):
-        out = torch.cat( [state, action], 1 )
-        out = F.relu(self.fc1(out))
-        out = F.relu(self.fc2(out))
-        out = self.q_fun(out)
+        h = torch.cat( [state, action], 1 )
+        for i, fc in enumerate(self.fcs):
+            h = fc(h)
+            h = F.relu(h)
+        out = self.q_fun(h)
 
         return out
 
 class VNet(nn.Module):
-    def __init__(self, obs_shape, hidden_shape ):
+    def __init__(self, obs_shape, hidden_shapes ):
         
         super().__init__()
 
-        init_ = lambda m: init(m,
-            nn.init.xavier_uniform_,
-            lambda x: nn.init.constant_(x, 0.1),
-            1 )
+        # init_ = lambda m: init(m,
+        #     nn.init.xavier_uniform_,
+        #     lambda x: nn.init.constant_(x, 0.1),
+        #     1 )
 
-        self.model = nn.Sequential(
-            init_(nn.Linear( obs_shape, hidden_shape )),
-            nn.ReLU(),
-            init_(nn.Linear( hidden_shape, hidden_shape )),
-            nn.ReLU(),
-        )
+        # self.model = nn.Sequential(
+        #     init_(nn.Linear( obs_shape, hidden_shape )),
+        #     nn.ReLU(),
+        #     init_(nn.Linear( hidden_shape, hidden_shape )),
+        #     nn.ReLU(),
+        # )
+        self.fcs = []
+        in_size = obs_shape
+        for i, next_size in enumerate(hidden_shapes):
+            fc = nn.Linear(in_size, next_size)
+            in_size = next_size
+            fanin_init(fc.weight)
+            fc.bias.data.fill_(0.1)
+            self.__setattr__("fc{}".format(i), fc)
+            self.fcs.append(fc)
 
-        self.v_fun = nn.Linear( hidden_shape, 1 )     
+        self.v_fun = nn.Linear( hidden_shapes[-1], 1 )     
         self.v_fun.weight.data.uniform_(-3e-3, 3e-3)
         self.v_fun.bias.data.uniform_(-1e-3, 1e-3)
         
     def forward(self, x):
-        value = self.model(x)
-        value = self.v_fun(value)
+        h = x
+        for i, fc in enumerate(self.fcs):
+            h = fc(h)
+            h = F.relu(h)
+        value = self.v_fun(h)
         return value
 
 
