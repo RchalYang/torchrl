@@ -87,6 +87,8 @@ def get_args():
 
     parser.add_argument("--net", help = " hidden units ", type = int, default = 300 )
 
+    parser.add_argument("--reward_scale", help = " reward scale ", type = float, default = 1.0 )
+
     parser.add_argument("--buffer_size", help = " replay buffer size ", type = int, default = 1000000 )
 
     parser.add_argument("--opt_times",   help = " opt times ", type = int, default = 1 )

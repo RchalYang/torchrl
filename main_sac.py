@@ -35,6 +35,10 @@ def main():
     pretrain_ob = []
 
     env = gym.make(args.env_name)
+    
+    env.seed(args.seed)
+    torch.manual_seed(args.seed)
+
     ob = env.reset()
     for _ in range(pretrain_step):
         pretrain_ob.append( ob )
@@ -46,9 +50,9 @@ def main():
     ob_var = np.var( pretrain_ob, axis=0 )
 
     #For half Cheetah
-    reward_scale = 5 
-    training_env = RewardScale( NormalizeObs( NormalizedActions( gym.make(args.env_name) ), ob_mean, ob_var ) ,reward_scale = reward_scale )
-    eval_env = RewardScale( NormalizeObs( NormalizedActions( gym.make(args.env_name) ), ob_mean, ob_var ) ,reward_scale = 1 )
+    reward_scale = args.reward_scale
+    training_env = RewardScale( NormalizeObs( NormalizedActions( env ) ), ob_mean, ob_var ) ,reward_scale = reward_scale )
+    eval_env = RewardScale( NormalizeObs( NormalizedActions( env ), ob_mean, ob_var ) ,reward_scale = 1 )
     #training_env.train()
     #eval_env.eval()
 
