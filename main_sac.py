@@ -107,6 +107,7 @@ def main():
         shutil.rmtree(work_dir)
     writer = SummaryWriter( work_dir )
 
+    pretrain_step = 0
     # start = time.time()
     for j in range( args.num_epochs ):
         for step in range(args.epoch_frames):

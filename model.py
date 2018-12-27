@@ -87,8 +87,7 @@ class Policy(nn.Module):
     
     def eval( self, x ):
         with torch.no_grad():
-            hidden = self.model(x)
-            mean = self.action(hidden)
+            mean, std = self.forward(x)
         return torch.tanh(mean)
     
     def explore( self, x, return_pretanh_value = False ):
