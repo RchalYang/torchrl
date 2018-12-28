@@ -97,7 +97,7 @@ class SAC():
         """
         #print(terminals.shape)
 
-        mean, std, new_actions, log_probs, ent = self.pf.explore(obs, return_log_probs=True )
+        mean, log_std, new_actions, log_probs, ent = self.pf.explore(obs, return_log_probs=True )
         # log_probs = self.pf.get_log_probs( mean, std, new_actions, z )
         #print( log_probs.shape )
         #print( z.shape ) 
@@ -129,7 +129,7 @@ class SAC():
         else:
             policy_loss = (log_probs - q_new_actions).mean()
 
-        std_reg_loss = self.policy_std_reg_weight * (std**2).mean()
+        std_reg_loss = self.policy_std_reg_weight * (log_std**2).mean()
         mean_reg_loss = self.policy_mean_reg_weight * (mean**2).mean()
 
         policy_loss += std_reg_loss + mean_reg_loss

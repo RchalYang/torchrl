@@ -83,16 +83,16 @@ class Policy(nn.Module):
         log_std = torch.clamp(log_std, LOG_SIG_MIN, LOG_SIG_MAX)
         std = torch.exp(log_std)
         
-        return mean, std
+        return mean, std, log_std
     
     def eval( self, x ):
         with torch.no_grad():
-            mean, std = self.forward(x)
+            mean, std, log_std = self.forward(x)
         return torch.tanh(mean)
     
     def explore( self, x, return_log_probs = False ):
         
-        mean, std = self.forward(x)
+        mean, std, log_std = self.forward(x)
 
         dis = TanhNormal(mean, std)
 
@@ -105,11 +105,11 @@ class Policy(nn.Module):
                 pre_tanh_value=z
             )
             log_prob = log_prob.sum(dim=1, keepdim=True)
-            return mean, std, action, log_prob, ent
+            return mean, log_std, action, log_prob, ent
 
         else:
             action = dis.rsample( return_pretanh_value = False )
-            return mean, std, action, ent
+            return mean, log_std, action, ent
     
     def get_log_probs(self, mean, std, action, pre_tanh_value = None):
         
