@@ -87,7 +87,7 @@ def get_args():
 
     parser.add_argument("--net", help = " hidden units ", type = int, default = 300 )
 
-    parser.add_argument("--min_pool", help = " min_pool for update ", type = int, default = 1000 )
+    parser.add_argument("--min_pool", help = " min_pool for update ", type = int, default = 10000 )
 
     parser.add_argument("--reward_scale", help = " reward scale ", type = float, default = 1.0 )
 
@@ -99,10 +99,13 @@ def get_args():
 	#tensorboard
     parser.add_argument("--id",            help="id for tensorboard",           type=str,   default="origin" )
 
+    parser.add_argument('--no-reparameterization', action='store_true', default=False,
+                        help='no reparameterization trick')
 
     args = parser.parse_args()
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()
-    args.norm = not args.no_norm 
+    args.norm = not args.no_norm
+    args.reparameterization = not args.no_reparameterization
 
     return args

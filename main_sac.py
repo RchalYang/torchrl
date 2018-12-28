@@ -35,13 +35,13 @@ def main():
     # pretrain_step = 10000
     # pretrain_ob = []
 
-    # env = gym.make(args.env_name)
-    training_env = NormalizedBoxEnv(gym.make(args.env_name), reward_scale= args.reward_scale)
-    training_env.seed(args.seed)
+    env = gym.make(args.env_name)
+    # training_env = NormalizedBoxEnv(gym.make(args.env_name), reward_scale= args.reward_scale)
+    # training_env.seed(args.seed)
     
-    eval_env = NormalizedBoxEnv(gym.make(args.env_name))
-    eval_env.seed(args.seed)
-
+    # eval_env = NormalizedBoxEnv(gym.make(args.env_name))
+    # eval_env.seed(args.seed)
+    env.seed(args.seed)
     torch.manual_seed(args.seed)
     # random.seed(args.seed)
     np.random.seed(args.seed)
@@ -63,8 +63,8 @@ def main():
     #training_env = RewardScale( NormalizeObs( NormalizedActions( env ) , ob_mean, ob_var ) ,reward_scale = reward_scale )
     #eval_env = RewardScale( NormalizeObs( NormalizedActions( env ), ob_mean, ob_var ) ,reward_scale = 1 )
     
-    # training_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = reward_scale )
-    # eval_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = 1 )
+    training_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = reward_scale )
+    eval_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = 1 )
 
     # training_env = RewardScale( NormalizedActions( env )  ,reward_scale = reward_scale )
     # eval_env = RewardScale( NormalizedActions( env )  ,reward_scale = 1 )
@@ -113,13 +113,14 @@ def main():
         shutil.rmtree(work_dir)
     writer = SummaryWriter( work_dir )
 
-    pretrain_step = 0
+    pretrain_step = args.min_pool
     # start = time.time()
     for j in range( args.num_epochs ):
         for step in range(args.epoch_frames):
             # Sample actions
             if args.num_epochs * args.epoch_frames + step < pretrain_step:
-                action = training_env.action_space.sample()
+                # action = training_env.action_space.sample()
+                action = np.random.uniform(-1., 1., training_env.action_space.shape)
             else:
                 with torch.no_grad():
                     _, _, action, _ = pf.explore( torch.Tensor( ob ).to(device).unsqueeze(0) )

@@ -30,7 +30,8 @@ class SAC():
             policy_std_reg_weight=1e-3,
             policy_mean_reg_weight=1e-3,
             max_grad_norm = 0.5,
-            norm=True
+            norm=True,
+            reparameterization = True
     ):
 
         self.pf = pf
@@ -75,6 +76,7 @@ class SAC():
 
         self.max_grad_norm = max_grad_norm
         self.norm = norm
+        self.reparameterization = reparameterization
 
     def update(self, batch):
         # batch = self.get_batch()
@@ -119,12 +121,13 @@ class SAC():
         """
         Policy Loss
         """
-        # log_policy_target = q_new_actions - v_pred
-        # policy_loss = (
-        #     log_probs * ( log_probs - log_policy_target).detach()
-        # ).mean()
-
-        policy_loss = (log_probs - q_new_actions).mean()
+        if not self.reparameterization:
+            log_policy_target = q_new_actions - v_pred
+            policy_loss = (
+                log_probs * ( log_probs - log_policy_target).detach()
+            ).mean()
+        else:
+            policy_loss = (log_probs - q_new_actions).mean()
 
         std_reg_loss = self.policy_std_reg_weight * (std**2).mean()
         mean_reg_loss = self.policy_mean_reg_weight * (mean**2).mean()
