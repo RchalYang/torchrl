@@ -35,12 +35,12 @@ def main():
     # pretrain_step = 10000
     # pretrain_ob = []
 
-    env = gym.make(args.env_name)
-    # training_env = NormalizedBoxEnv(gym.make(args.env_name), reward_scale= args.reward_scale)
-    # training_env.seed(args.seed)
+    # env = gym.make(args.env_name)
+    training_env = NormalizedBoxEnv(gym.make(args.env_name), reward_scale= args.reward_scale)
+    training_env.seed(args.seed)
     
-    # eval_env = NormalizedBoxEnv(gym.make(args.env_name))
-    # eval_env.seed(args.seed)
+    eval_env = NormalizedBoxEnv(gym.make(args.env_name))
+    eval_env.seed(args.seed)
     env.seed(args.seed)
     torch.manual_seed(args.seed)
     # random.seed(args.seed)
@@ -63,8 +63,8 @@ def main():
     #training_env = RewardScale( NormalizeObs( NormalizedActions( env ) , ob_mean, ob_var ) ,reward_scale = reward_scale )
     #eval_env = RewardScale( NormalizeObs( NormalizedActions( env ), ob_mean, ob_var ) ,reward_scale = 1 )
     
-    training_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = reward_scale )
-    eval_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = 1 )
+    # training_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = reward_scale )
+    # eval_env = RewardScale( NormalizeObs( NormalizedActions( env ) ) ,reward_scale = 1 )
 
     # training_env = RewardScale( NormalizedActions( env )  ,reward_scale = reward_scale )
     # eval_env = RewardScale( NormalizedActions( env )  ,reward_scale = 1 )
@@ -99,7 +99,9 @@ def main():
                 device = device,
                 max_grad_norm = args.max_grad_norm,
                 norm = args.norm,
+                reparameterization=args.reparameterization
             )
+    print(args.reparameterization)
 
     replay_buffer = SimpleReplayBuffer( args.buffer_size, training_env.observation_space.shape[0], training_env.action_space.shape[0] )
 
