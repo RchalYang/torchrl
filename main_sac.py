@@ -41,7 +41,7 @@ def main():
     
     eval_env = NormalizedBoxEnv(gym.make(args.env_name))
     eval_env.seed(args.seed)
-    env.seed(args.seed)
+    # env.seed(args.seed)
     torch.manual_seed(args.seed)
     # random.seed(args.seed)
     np.random.seed(args.seed)
