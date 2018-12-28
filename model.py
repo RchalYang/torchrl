@@ -90,7 +90,7 @@ class Policy(nn.Module):
             mean, std = self.forward(x)
         return torch.tanh(mean)
     
-    def explore( self, x, return_pretanh_value = False ):
+    def explore( self, x, return_log_probs_value = False ):
         
         mean, std = self.forward(x)
 
@@ -98,9 +98,14 @@ class Policy(nn.Module):
 
         ent = dis.entropy().sum(1, keepdim=True) 
         
-        if return_pretanh_value:
+        if return_log_probs_value:
             action, z = dis.rsample( return_pretanh_value = True )
-            return mean, std, action, z, ent
+            log_prob = dis.log_prob(
+                action,
+                pre_tanh_value=z
+            )
+            log_prob = log_prob.sum(dim=1, keepdim=True)
+            return mean, std, action, log_prob, ent
 
         else:
             action = dis.rsample( return_pretanh_value = False )

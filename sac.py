@@ -95,8 +95,8 @@ class SAC():
         """
         #print(terminals.shape)
 
-        mean, std, new_actions, z, ent = self.pf.explore(obs, return_pretanh_value=True )
-        log_probs = self.pf.get_log_probs( mean, std, new_actions, z )
+        mean, std, new_actions, log_probs, ent = self.pf.explore(obs, return_log_probs=True )
+        # log_probs = self.pf.get_log_probs( mean, std, new_actions, z )
         #print( log_probs.shape )
         #print( z.shape ) 
         q_pred = self.qf(obs, actions)
