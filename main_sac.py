@@ -111,11 +111,13 @@ def main():
 
     work_dir = osp.join("log", args.env_name, str(args.seed),  args.id )
     if osp.exists( work_dir ):
-        os.chmod(work_dir, stat.S_IWUSR)
+        # os.chmod(work_dir, stat.S_IWUSR)
         shutil.rmtree(work_dir)
     writer = SummaryWriter( work_dir )
 
     pretrain_step = args.min_pool
+
+    current_step = 0
     # start = time.time()
     for j in range( args.num_epochs ):
         for step in range(args.epoch_frames):
@@ -128,6 +130,7 @@ def main():
                     _, _, action, _ = pf.explore( torch.Tensor( ob ).to(device).unsqueeze(0) )
 
                 action = action.detach().cpu().numpy()
+                action = action[0]
 
             if np.isnan(action).any():
                 print("NaN detected. BOOM")
@@ -145,7 +148,8 @@ def main():
                         writer.add_scalar("Training/{}".format(info), infos[info] , j * args.epoch_frames + step )
             
             ob = next_ob 
-            if done:
+            if done or current_step > args.max_episode_frames:
+                current_step = 0
                 ob = training_env.reset()
             
         total_num_steps = (j + 1) * args.epoch_frames
