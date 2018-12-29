@@ -157,6 +157,21 @@ class SAC():
         info['policy_loss'] = policy_loss.item()
         info['vf_loss'] = vf_loss.item()
         info['qf_loss'] = qf_loss.item()
+
+        info['log_std/mean'] = log_std.mean().item()
+        info['log_std/std'] = log_std.std().item()
+        info['log_std/max'] = log_std.max().item()
+        info['log_std/min'] = log_std.min().item()
+
+        info['log_probs/mean'] = log_std.mean().item()
+        info['log_probs/std'] = log_std.std().item()
+        info['log_probs/max'] = log_std.max().item()
+        info['log_probs/min'] = log_std.min().item()
+
+        info['mean/mean'] = mean.mean().item()
+        info['mean/std'] = mean.std().item()
+        info['mean/max'] = mean.max().item()
+        info['mean/min'] = mean.min().item()
         """
         Save some statistics for eval using just one batch.
         """
