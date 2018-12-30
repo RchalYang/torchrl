@@ -147,10 +147,14 @@ def main():
                     for info in infos:
                         writer.add_scalar("Training/{}".format(info), infos[info] , j * args.epoch_frames + step )
             
-            ob = next_ob 
-            if done or current_step > args.max_episode_frames:
-                current_step = 0
+            ob = next_ob
+            current_step += 1
+            if done or current_step >= args.max_episode_frames:
                 ob = training_env.reset()
+                print(current_step)
+                current_step = 0
+            if done:
+                exit()
             
         total_num_steps = (j + 1) * args.epoch_frames
 
