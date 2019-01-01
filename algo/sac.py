@@ -8,8 +8,12 @@ import pytorch_util as ptu
 import torch
 from torch import nn as nn
 
+from rl_algo import RLAlgo
 
-class SAC():
+import count
+
+
+class SAC(RLAlgo):
     """
     SAC
     """
@@ -35,18 +39,32 @@ class SAC():
     ):
 
         self.pf = pf
-
         self.qf = qf
-
         self.vf = vf
         self.target_vf = copy.deepcopy(vf).to(device)
-
-        self.qf_criterion = nn.MSELoss()
-        self.vf_criterion = nn.MSELoss()
 
         self.plr = plr
         self.vlr = vlr
         self.qlr = qlr
+
+        self.qf_optimizer = optimizer_class(
+            self.qf.parameters(),
+            lr=self.qlr,
+        )
+
+        self.vf_optimizer = optimizer_class(
+            self.vf.parameters(),
+            lr=self.vlr,
+        )
+
+        self.pf_optimizer = optimizer_class(
+            self.pf.parameters(),
+            lr=self.plr,
+        )
+
+        self.qf_criterion = nn.MSELoss()
+        self.vf_criterion = nn.MSELoss()
+
 
         self.target_hard_update_period = target_hard_update_period
         self.tau = tau
@@ -59,24 +77,44 @@ class SAC():
         self.policy_std_reg_weight = policy_std_reg_weight
         self.policy_mean_reg_weight = policy_mean_reg_weight
 
-        
-        self.qf_optimizer = optimizer_class(
-            self.qf.parameters(),
-            lr=self.qlr,
-        )
-        self.vf_optimizer = optimizer_class(
-            self.vf.parameters(),
-            lr=self.vlr,
-        )
-        self.pf_optimizer = optimizer_class(
-            self.pf.parameters(),
-            lr=self.plr,
-        )
-        self.training_update_num = 0
-
         self.max_grad_norm = max_grad_norm
         self.norm = norm
         self.reparameterization = reparameterization
+
+        self.min_pool = min_pool
+
+    def pretrain(self):
+        
+        self.env.reset()
+        self.env.train()
+
+        self.current_step = 0
+        ob = self.env.reset()
+
+        pretrain_epochs = self.pretrain_step / self.epoch_frames + 1
+
+        for pretrain_epoch in range( pretrain_epochs ):
+            for step in range( self.epoch_frames):
+            
+                action = np.random.uniform(-1., 1., self.action_space.shape)
+                next_ob, reward, done, _ = self.env.step(action)
+                self.replay_buffer.add_sample( ob, action, reward, done, next_ob )
+
+                if step > self.min_pool:
+                    for _ in range( self.opt_times ):
+                        batch = self.replay_buffer.random_batch( self.batch_size)
+                        infos = self.update( batch )
+                        self.flush_tf_board(infos)
+
+                ob = next_ob
+                self.current_step += 1
+                if done or self.current_step >= self.max_episode_frames:
+                    ob = self.env.reset()
+                    self.current_step = 0
+            
+            self.eval()
+
+    
 
     def update(self, batch):
         # batch = self.get_batch()
@@ -134,7 +172,6 @@ class SAC():
 
         policy_loss += std_reg_loss + mean_reg_loss
         
-
         """
         Update Networks
         """
@@ -154,9 +191,9 @@ class SAC():
         self._update_target_networks()
 
         info = {}
-        info['policy_loss'] = policy_loss.item()
-        info['vf_loss'] = vf_loss.item()
-        info['qf_loss'] = qf_loss.item()
+        info['Traning/policy_loss'] = policy_loss.item()
+        info['Traning/vf_loss'] = vf_loss.item()
+        info['Traning/qf_loss'] = qf_loss.item()
 
         info['log_std/mean'] = log_std.mean().item()
         info['log_std/std'] = log_std.std().item()

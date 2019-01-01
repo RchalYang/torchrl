@@ -118,7 +118,7 @@ def main():
     pretrain_step = args.min_pool
 
     current_step = 0
-    # start = time.time()
+    start = time.time()
     for j in range( args.num_epochs ):
         for step in range(args.epoch_frames):
             # Sample actions
@@ -151,10 +151,7 @@ def main():
             current_step += 1
             if done or current_step >= args.max_episode_frames:
                 ob = training_env.reset()
-                print(current_step)
                 current_step = 0
-            if done:
-                exit()
             
         total_num_steps = (j + 1) * args.epoch_frames
 
@@ -163,12 +160,12 @@ def main():
 
             eval_ob = eval_env.reset()
             rew = 0
-            done = False
             while not done:
                 act = pf.eval( torch.Tensor( eval_ob ).to(device).unsqueeze(0) )
                 eval_ob, r, done, _ = eval_env.step( act.detach().cpu().numpy() )
                 rew += r
             episode_rewards.append(rew)
+            done = False
             print(rew)
          
         writer.add_scalar("Eval/Reward", np.mean(episode_rewards) , total_num_steps)
