@@ -2,6 +2,7 @@ import tensorboardX
 import logging
 import shutil
 import os
+import numpy as np
 
 class Logger():
     def __init__(self, experiment_id, env_name, seed):
@@ -34,10 +35,20 @@ class Logger():
         self.update_count += 1
     
     def add_epoch_info(self, epoch_num, total_frames, total_time, infos):
+        max_len = 0
         for info in infos:
             self.tf_writer.add_scalar( info, infos[info], total_frames )
+            if len(info) > max_len:
+                max_len = len(info)
+
         
         logging.info("EPOCH:{}".format(epoch_num))
         logging.info("Time Consumed:{}s".format(total_time))
-        for 
-        
+        print("------")
+        template = "{:max_len} | {}"
+        for info in self.stored_infos:
+            print(template.format( info + " Mean", np.mean(self.stored_infos[info]) ))
+            print(template.format( info + " Std", np.std(self.stored_infos[info]) ))
+            print(template.format( info + " Max", np.max(self.stored_infos[info]) ))
+            print(template.format( info + " Min", np.min(self.stored_infos[info]) ))
+        print("------")

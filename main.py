@@ -13,7 +13,7 @@ import stat
 from collections import deque
 import numpy as np
 
-from sac import SAC
+from algo.sac import SAC
 from env import RewardScale
 from env import NormalizeObs
 from env import NormalizedActions
@@ -24,13 +24,58 @@ from model import QNet
 from model import VNet
 
 from replay_buffer import SimpleReplayBuffer
-
+from logger import Logger
 
 args = get_args()
 
+def experiment(args):
+    device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
+    env = NormalizedBoxEnv(gym.make(args.env_name), reward_scale= args.reward_scale)
+    env.seed(args.seed)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    if args.cuda:
+        torch.backends.cudnn.deterministic=True
+    
+    pf = Policy( env.observation_space.shape[0], env.action_space.shape[0], [args.net, args.net] )
+    vf = VNet( env.observation_space.shape[0], [args.net, args.net] )
+    qf = QNet( env.observation_space.shape[0], env.action_space.shape[0], [args.net, args.net] )
+
+    
+    replay_buffer = SimpleReplayBuffer( args.buffer_size, env.observation_space.shape[0], env.action_space.shape[0] )
+    logger = Logger( args.id, args.env_name, args.seed )
+
+    agent = SAC(
+                pf,
+                vf,
+                qf,
+
+                plr = args.plr,
+                vlr = args.vlr,
+                qlr = args.qlr,
+                
+                reparameterization=args.reparameterization
+
+                env = env,
+                replay_buffer = replay_buffer,
+                logger = logger
+
+                target_hard_update_period=args.hard_update_interval,
+                tau=args.tau,
+                use_soft_update=args.soft_update,
+                optimizer_class=optim.Adam,
+
+                discount = args.discount,
+                device = device,
+
+                num_epochs = args.num_epochs,
+                
+            )
+    agent.train()
+
 def main():
 
-    device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
+    
     
     # pretrain_step = 10000
     # pretrain_ob = []
@@ -98,7 +143,6 @@ def main():
             )
     print(args.reparameterization)
 
-    replay_buffer = SimpleReplayBuffer( args.buffer_size, training_env.observation_space.shape[0], training_env.action_space.shape[0] )
 
     ob = training_env.reset()
 
@@ -110,4 +154,5 @@ def main():
     writer = SummaryWriter( work_dir )
 
 if __name__ == "__main__":
-    main()
+    # main()
+    experiment(args)
