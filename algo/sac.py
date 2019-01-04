@@ -7,7 +7,7 @@ import pytorch_util as ptu
 import torch
 from torch import nn as nn
 
-from rl_algo import RLAlgo
+from algo.rl_algo import RLAlgo
 
 class SAC(RLAlgo):
     """

@@ -19,7 +19,7 @@ from env import NormalizeObs
 from env import NormalizedActions
 from env import NormalizedBoxEnv
 from argument import get_args
-from model import Policy
+from model import MLPPolicy
 from model import QNet
 from model import VNet
 
@@ -37,7 +37,7 @@ def experiment(args):
     if args.cuda:
         torch.backends.cudnn.deterministic=True
     
-    pf = Policy( env.observation_space.shape[0], env.action_space.shape[0], [args.net, args.net] )
+    pf = MLPPolicy( env.observation_space.shape[0], env.action_space.shape[0], [args.net, args.net] )
     vf = VNet( env.observation_space.shape[0], [args.net, args.net] )
     qf = QNet( env.observation_space.shape[0], env.action_space.shape[0], [args.net, args.net] )
 
@@ -54,11 +54,11 @@ def experiment(args):
                 vlr = args.vlr,
                 qlr = args.qlr,
                 
-                reparameterization=args.reparameterization
+                reparameterization=args.reparameterization,
 
                 env = env,
                 replay_buffer = replay_buffer,
-                logger = logger
+                logger = logger,
 
                 target_hard_update_period=args.hard_update_interval,
                 tau=args.tau,
