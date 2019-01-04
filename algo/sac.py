@@ -1,5 +1,4 @@
-from collections import OrderedDict
-
+import time
 import numpy as np
 import copy
 
@@ -10,9 +9,6 @@ from torch import nn as nn
 
 from rl_algo import RLAlgo
 
-import count
-
-
 class SAC(RLAlgo):
     """
     SAC
@@ -21,27 +17,23 @@ class SAC(RLAlgo):
     def __init__(
             self,
             pf, vf, qf,
+            pretrain_pf,
             plr,vlr,qlr,
-
-            target_hard_update_period=1000,
-            tau=1e-2,
-            
-            use_soft_update=False,
             optimizer_class=optim.Adam,
-
-            discount = 0.99,
-            device = 'cpu',
+            
             policy_std_reg_weight=1e-3,
             policy_mean_reg_weight=1e-3,
-            max_grad_norm = 0.5,
-            norm=True,
-            reparameterization = True
-    ):
 
+            reparameterization = True,
+            **kwargs
+    ):
+        super(SAC, self).__init__(**kwargs)
         self.pf = pf
+        self.pretrain_pf = pretrain_pf
         self.qf = qf
         self.vf = vf
-        self.target_vf = copy.deepcopy(vf).to(device)
+        self.target_vf = copy.deepcopy(vf)
+        self.to(self.device)
 
         self.plr = plr
         self.vlr = vlr
@@ -65,23 +57,10 @@ class SAC(RLAlgo):
         self.qf_criterion = nn.MSELoss()
         self.vf_criterion = nn.MSELoss()
 
-
-        self.target_hard_update_period = target_hard_update_period
-        self.tau = tau
-        self.use_soft_update = use_soft_update
-        
-        self.discount = discount
-
-        self.device = device
-
         self.policy_std_reg_weight = policy_std_reg_weight
         self.policy_mean_reg_weight = policy_mean_reg_weight
 
-        self.max_grad_norm = max_grad_norm
-        self.norm = norm
         self.reparameterization = reparameterization
-
-        self.min_pool = min_pool
 
     def pretrain(self):
         
@@ -91,12 +70,14 @@ class SAC(RLAlgo):
         self.current_step = 0
         ob = self.env.reset()
 
-        pretrain_epochs = self.pretrain_step / self.epoch_frames + 1
+        pretrain_epochs = self.pretrain_frames // self.epoch_frames + 1
 
         for pretrain_epoch in range( pretrain_epochs ):
+            
+            start = time.time()
             for step in range( self.epoch_frames):
             
-                action = np.random.uniform(-1., 1., self.action_space.shape)
+                action = self.pretrain_pf( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
                 next_ob, reward, done, _ = self.env.step(action)
                 self.replay_buffer.add_sample( ob, action, reward, done, next_ob )
 
@@ -104,7 +85,7 @@ class SAC(RLAlgo):
                     for _ in range( self.opt_times ):
                         batch = self.replay_buffer.random_batch( self.batch_size)
                         infos = self.update( batch )
-                        self.flush_tf_board(infos)
+                        self.logger.add_update_info( infos )
 
                 ob = next_ob
                 self.current_step += 1
@@ -114,10 +95,15 @@ class SAC(RLAlgo):
             
             self.eval()
 
-    
+            total_frames = (pretrain_epoch + 1) * self.epoch_frames
+            
+            infos = {}
+            infos["Running Average Rewards"] = np.mean(self.episode_rewards)
+            
+            self.logger.add_epoch_info(pretrain_epoch, total_frames, time.time() - start, infos )
+            # self.logger.flush()
 
     def update(self, batch):
-        # batch = self.get_batch()
         self.training_update_num += 1
         rewards = batch['rewards']
         terminals = batch['terminals']
@@ -130,15 +116,12 @@ class SAC(RLAlgo):
         obs = torch.Tensor(obs).to( self.device )
         actions = torch.Tensor(actions).to( self.device )
         next_obs = torch.Tensor(next_obs).to( self.device )
+
         """
         Policy operations.
         """
-        #print(terminals.shape)
 
         mean, log_std, new_actions, log_probs, ent = self.pf.explore(obs, return_log_probs=True )
-        # log_probs = self.pf.get_log_probs( mean, std, new_actions, z )
-        #print( log_probs.shape )
-        #print( z.shape ) 
         q_pred = self.qf(obs, actions)
         v_pred = self.vf(obs)
 
@@ -190,6 +173,7 @@ class SAC(RLAlgo):
 
         self._update_target_networks()
 
+        # Information For Logger
         info = {}
         info['Traning/policy_loss'] = policy_loss.item()
         info['Traning/vf_loss'] = vf_loss.item()
@@ -209,25 +193,8 @@ class SAC(RLAlgo):
         info['mean/std'] = mean.std().item()
         info['mean/max'] = mean.max().item()
         info['mean/min'] = mean.min().item()
-        """
-        Save some statistics for eval using just one batch.
-        """
+
         return info
-
-    def _update_target_networks(self):
-        if self.use_soft_update:
-            ptu.soft_update_from_to(self.vf, self.target_vf, self.tau)
-        else:
-            if self.training_update_num % self.target_hard_update_period == 0:
-                ptu.copy_model_params_from_to(self.vf, self.target_vf)
-                print("hard update")
-
-
-    def to(self, device=None):
-        if device == None:
-            device = ptu.device
-        for net in self.networks:
-            net.to(device)
 
     @property
     def networks(self):
@@ -237,7 +204,12 @@ class SAC(RLAlgo):
             self.vf,
             self.target_vf
         ]
-
+    
+    @property
+    def target_networks(self):
+        return [
+            ( self.vf, self.target_vf )
+        ]
     # def pretrain(self):
     #     if (
     #         self.num_paths_for_normalization == 0

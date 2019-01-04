@@ -6,16 +6,6 @@ from distribution import TanhNormal
 # from distributions import Categorical, DiagGaussian
 # from utils import init, init_normc_
 
-
-class Flatten(nn.Module):
-    def forward(self, x):
-        return x.view(x.size(0), -1)
-
-def init(module, weight_init, bias_init, gain=1):
-    weight_init(module.weight.data, gain=gain)
-    bias_init(module.bias.data)
-    return module
-
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
 
@@ -30,22 +20,40 @@ def fanin_init(tensor):
     bound = 1. / np.sqrt(fan_in)
     return tensor.data.uniform_(-bound, bound)
 
-class Policy(nn.Module):
+def constant_bias_init(tensor, constant = 0.1):
+    tensor.data.fill_( constant )
+
+def basic_init(layer, weight_init = fanin_init, bias_init = constant_bias_init ):
+    fanin_init(layer.weight)
+    bias_init(layer.bias)
+
+class MLPBase(nn.Module):
+    def __init__(self, input_shape, hidden_shapes, activation_func=F.relu, init_func = basic_init ):
+        super().__init__()
+        
+        self.activation_func = activation_func
+        self.fcs = []
+        for next_shape in hidden_shapes:
+            fc = nn.Linear(input_shape, next_shape)
+            init_func(fc)
+            self.fcs.append(fc)
+
+            input_shape = next_shape
+    
+    def forward(self, x):
+
+        out = x
+        for fc in self.fcs:
+            out = fc(out)
+            self.activation_func(out)
+
+        return out
+
+class MLPPolicy(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shapes ):
         
         super().__init__()
 
-        # init_ = lambda m: init(m,
-        #     nn.init.xavier_uniform_,
-        #     lambda x: nn.init.constant_(x, 0.1),
-        #     1 )
-
-        # self.model = nn.Sequential(
-        #     init_(nn.Linear( obs_shape, hidden_shape )),
-        #     nn.ReLU(),
-        #     init_(nn.Linear( hidden_shape, hidden_shape )),
-        #     nn.ReLU(),
-        # )
         self.fcs = []
         in_size = obs_shape
 
@@ -125,10 +133,6 @@ class QNet(nn.Module):
         
         super().__init__()
 
-        # init_ = lambda m: init(m,
-        #     nn.init.xavier_uniform_,
-        #     lambda x: nn.init.constant_(x, 0.1),
-        #     1 )
         self.fcs = []
         in_size = obs_shape + action_space
 
@@ -160,17 +164,6 @@ class VNet(nn.Module):
         
         super().__init__()
 
-        # init_ = lambda m: init(m,
-        #     nn.init.xavier_uniform_,
-        #     lambda x: nn.init.constant_(x, 0.1),
-        #     1 )
-
-        # self.model = nn.Sequential(
-        #     init_(nn.Linear( obs_shape, hidden_shape )),
-        #     nn.ReLU(),
-        #     init_(nn.Linear( hidden_shape, hidden_shape )),
-        #     nn.ReLU(),
-        # )
         self.fcs = []
         in_size = obs_shape
         for i, next_size in enumerate(hidden_shapes):
@@ -192,7 +185,6 @@ class VNet(nn.Module):
             h = F.relu(h)
         value = self.v_fun(h)
         return value
-
 
 
 # class Policy(nn.Module):
