@@ -10,7 +10,6 @@ class Logger():
 
         format = "%(asctime)s %(threadName)s %(levelname)s: %(message)s"
         logging.basicConfig(level=logging.INFO, format=format)
-        np.set_printoptions(precision=4)
 
         work_dir = os.path.join("log", env_name, str(seed),  experiment_id )
         if os.path.exists( work_dir ):
@@ -47,10 +46,10 @@ class Logger():
         for info in self.stored_infos:
             temp_list = [info]
 
-            temp_list.append( "{}".format(np.mean(self.stored_infos[info])) )
-            temp_list.append( np.std(self.stored_infos[info]) )
-            temp_list.append( np.max(self.stored_infos[info]) )
-            temp_list.append( np.min(self.stored_infos[info]) )
+            temp_list.append( "{:.5f}".format(np.mean(self.stored_infos[info])) )
+            temp_list.append( "{:.5f}".format(np.std(self.stored_infos[info])) )
+            temp_list.append( "{:.5f}".format(np.max(self.stored_infos[info])) )
+            temp_list.append( "{:.5f}".format(np.min(self.stored_infos[info])) )
             
             tabulate_list.append( temp_list )
         print( tabulate(tabulate_list) )
