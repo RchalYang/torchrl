@@ -8,6 +8,7 @@ import torch
 from torch import nn as nn
 
 from algo.rl_algo import RLAlgo
+import math
 
 class SAC(RLAlgo):
     """
@@ -69,8 +70,9 @@ class SAC(RLAlgo):
 
         self.current_step = 0
         ob = self.env.reset()
-
-        pretrain_epochs = self.pretrain_frames // self.epoch_frames + 1
+        print(self.pretrain_frames)
+        print(self.epoch_frames)
+        pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames)
 
         for pretrain_epoch in range( pretrain_epochs ):
             
@@ -78,6 +80,7 @@ class SAC(RLAlgo):
             for step in range( self.epoch_frames):
             
                 action = self.pretrain_pf( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+                action = action.detach().cpu().numpy()
                 next_ob, reward, done, _ = self.env.step(action)
                 self.replay_buffer.add_sample( ob, action, reward, done, next_ob )
 
