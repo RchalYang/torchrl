@@ -76,7 +76,7 @@ class RLAlgo():
         eval_env = copy.deepcopy(self.env)
         eval_env.eval()
         eval_env.reward_scale = 1
-        
+
         done = False
 
         for _ in range(self.eval_episodes):
@@ -136,17 +136,10 @@ class RLAlgo():
             total_frames = (epoch + 1) * self.epoch_frames + self.pretrain_frames
             
             infos = {}
-            infos["Running Average Rewards"] = np.mean(self.episode_rewards)
+            infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
             
             self.logger.add_epoch_info(epoch, total_frames, time.time() - start, infos )
-            # self.logger.flush()
-                
-            # writer.add_scalar("Eval/Reward", np.mean(episode_rewards) , total_num_steps)
-
-            # print("Epoch {}, Evaluation using {} episodes: mean reward {:.5f}\n".
-                # format(j, len(episode_rewards),
-                        # np.mean(episode_rewards)))
-    
+            
     def _update_target_networks(self):
         if self.use_soft_update:
             for net, target_net in self.target_networks:
