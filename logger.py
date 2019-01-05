@@ -42,7 +42,7 @@ class Logger():
             tabulate_list.append([ info, infos[info] ])
 
         tabulate_list.append([])
-        tabulate_list.append(["Name", "Mean", "Std", "Min", "Max" ])
+        tabulate_list.append(["Name", "Mean", "Std", "Max", "Min" ])
         
         for info in self.stored_infos:
             temp_list = [info]
@@ -53,4 +53,7 @@ class Logger():
             temp_list.append( "{:.5f}".format(np.min(self.stored_infos[info])) )
             
             tabulate_list.append( temp_list )
+        #clear
+        self.stored_infos = {}
+
         print( tabulate(tabulate_list) )
