@@ -84,7 +84,7 @@ class SAC(RLAlgo):
                 next_ob, reward, done, _ = self.env.step(action)
                 self.replay_buffer.add_sample( ob, action, reward, done, next_ob )
 
-                if step > self.min_pool:
+                if step > max( self.min_pool, self.batch_size ):
                     for _ in range( self.opt_times ):
                         batch = self.replay_buffer.random_batch( self.batch_size)
                         infos = self.update( batch )

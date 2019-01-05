@@ -88,7 +88,9 @@ def get_args():
 
     parser.add_argument("--net", help = " hidden units ", type = int, default = 300 )
 
-    parser.add_argument("--min_pool", help = " min_pool for update ", type = int, default = 10000 )
+    parser.add_argument("--min_pool", help = " min_pool for update ", type = int, default = 0 )
+    
+    parser.add_argument("--pretrain_frames", help = " pretrain frames ", type = int, default = 0 )
 
     parser.add_argument("--reward_scale", help = " reward scale ", type = float, default = 1.0 )
 
