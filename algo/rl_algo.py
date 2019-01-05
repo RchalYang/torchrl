@@ -45,8 +45,8 @@ class RLAlgo():
         # environment relevant information
         self.discount = discount
         self.pretrain_frames = pretrain_frames
-        self.num_epochs = num_epochs,
-        self.epoch_frames = epoch_frames,
+        self.num_epochs = num_epochs
+        self.epoch_frames = epoch_frames
         self.max_episode_frames = max_episode_frames
 
         # target_network update information
