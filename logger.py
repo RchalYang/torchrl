@@ -41,6 +41,7 @@ class Logger():
             self.tf_writer.add_scalar( info, infos[info], total_frames )
             tabulate_list.append([ info, infos[info] ])
 
+        tabulate_list.append([])
         tabulate_list.append(["Name", "Mean", "Std", "Min", "Max" ])
         
         for info in self.stored_infos:
