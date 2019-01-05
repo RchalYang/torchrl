@@ -136,7 +136,7 @@ class RLAlgo():
             total_frames = (epoch + 1) * self.epoch_frames + self.pretrain_frames
             
             infos = {}
-            infos["Running_Average_Rewards"] = "{:.5f}".format( np.mean(self.episode_rewards) )
+            infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
             
             self.logger.add_epoch_info(epoch, total_frames, time.time() - start, infos )
             
