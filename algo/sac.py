@@ -113,7 +113,10 @@ class SAC(RLAlgo):
         obs = batch['observations']
         actions = batch['actions']
         next_obs = batch['next_observations']
-
+        
+        if ( (terminals==1).any() ):
+            exit()
+         
         rewards = torch.Tensor(rewards).to( self.device )
         terminals = torch.Tensor(terminals).to( self.device )
         obs = torch.Tensor(obs).to( self.device )
@@ -178,6 +181,7 @@ class SAC(RLAlgo):
 
         # Information For Logger
         info = {}
+        info['Reward_Mean'] = rewards.mean().item()
         info['Traning/policy_loss'] = policy_loss.item()
         info['Traning/vf_loss'] = vf_loss.item()
         info['Traning/qf_loss'] = qf_loss.item()

@@ -72,7 +72,8 @@ def experiment(args):
                 device = device,
 
                 num_epochs = args.num_epochs,
-                pretrain_frames = args.pretrain_frames
+                pretrain_frames = args.pretrain_frames,
+                batch_size = args.batch_size
                 
             )
     agent.train()

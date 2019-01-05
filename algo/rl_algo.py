@@ -66,7 +66,7 @@ class RLAlgo():
         self.training_update_num = 0
         self.episode_rewards = deque(maxlen=10)
         self.eval_episodes = eval_episodes
-
+        print(batch_size)
 
     def pretrain(self):
         pass
