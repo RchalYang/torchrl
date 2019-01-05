@@ -35,6 +35,7 @@ class Logger():
     def add_epoch_info(self, epoch_num, total_frames, total_time, infos):
         logging.info("EPOCH:{}".format(epoch_num))
         logging.info("Time Consumed:{}s".format(total_time))
+        logging.info("Total Frames:{}s".format(total_frames))
 
         tabulate_list = [["Name", "Value"]]
         for info in infos:
