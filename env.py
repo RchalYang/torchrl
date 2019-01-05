@@ -111,9 +111,6 @@ class NormalizedBoxEnv(ProxyEnv):
         else:
             return None
 
-    def __getattr__(self, attrname):
-        return getattr(self._wrapped_env, attrname)
-
     def train(self):
         pass
     

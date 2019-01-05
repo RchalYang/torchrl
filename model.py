@@ -53,7 +53,7 @@ class UniformPolicy():
     def __init__(self, action_shape):
         self.action_shape = action_shape
 
-    def __call__(self):
+    def __call__(self,x ):
         return torch.Tensor(np.random.uniform(-1., 1., self.action_shape))
 
 
