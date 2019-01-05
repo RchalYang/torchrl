@@ -20,6 +20,7 @@ from env import NormalizedActions
 from env import NormalizedBoxEnv
 from argument import get_args
 from model import MLPPolicy
+from model import UniformPolicy
 from model import QNet
 from model import VNet
 
@@ -41,6 +42,7 @@ def experiment(args):
     vf = VNet( env.observation_space.shape[0], [args.net, args.net] )
     qf = QNet( env.observation_space.shape[0], env.action_space.shape[0], [args.net, args.net] )
 
+    pretrain_policy = UniformPolicy(env.action_space.shape[0])
     
     replay_buffer = SimpleReplayBuffer( args.buffer_size, env.observation_space.shape[0], env.action_space.shape[0] )
     logger = Logger( args.id, args.env_name, args.seed )
@@ -49,6 +51,7 @@ def experiment(args):
                 pf,
                 vf,
                 qf,
+                pretrain_pf = pretrain_policy,
 
                 plr = args.plr,
                 vlr = args.vlr,

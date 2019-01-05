@@ -49,6 +49,14 @@ class MLPBase(nn.Module):
 
         return out
 
+class UniformPolicy():
+    def __init__(self, action_shape):
+        self.action_shape = action_shape
+
+    def __call__(self):
+        return torch.Tensor(np.random.uniform(-1., 1., self.action_shape))
+
+
 class MLPPolicy(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shapes ):
         
