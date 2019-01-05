@@ -75,7 +75,7 @@ class RLAlgo():
 
         eval_env = copy.deepcopy(self.env)
         eval_env.eval()
-        eval_env.reward_scale = 1
+        eval_env._reward_scale = 1
 
         done = False
 
