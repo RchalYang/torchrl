@@ -34,6 +34,7 @@ class Logger():
 
             if info not in self.stored_infos :
                 self.stored_infos[info] = []
+
             self.stored_infos[info].append( infos[info] )
             
         self.update_count += 1
@@ -41,18 +42,21 @@ class Logger():
     def add_epoch_info(self, epoch_num, total_frames, total_time, infos):
         logging.info("EPOCH:{}".format(epoch_num))
         logging.info("Time Consumed:{}s".format(total_time))
-        max_len = 0
+
+        tabulate_list = []
         for info in infos:
             self.tf_writer.add_scalar( info, infos[info], total_frames )
-            if len(info) > max_len:
-                max_len = len(info)
+            tabulate_list.append([ info, infos[info] ])
 
+        tabulate_list.append(["Name", "Mean", "Min", "Max" ])
         
-        print("------")
-        template = "{} | {}"
         for info in self.stored_infos:
-            print(template.format( info + " Mean", np.mean(self.stored_infos[info]) ))
-            print(template.format( info + " Std", np.std(self.stored_infos[info]) ))
-            print(template.format( info + " Max", np.max(self.stored_infos[info]) ))
-            print(template.format( info + " Min", np.min(self.stored_infos[info]) ))
-        print("------")
+            temp_list = [info]
+
+            temp_list.append( np.mean(self.stored_infos[info]) )
+            temp_list.append( np.std(self.stored_infos[info]) )
+            temp_list.append( np.max(self.stored_infos[info]) )
+            temp_list.append( np.min(self.stored_infos[info]) )
+            
+            tabulate_list.append( temp_list )
+        print( tabulate(tabulate_list) )
