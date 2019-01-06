@@ -8,8 +8,9 @@ from networks import MLPBase
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
 
-class UniformPolicy():
+class UniformPolicy(nn.Module):
     def __init__(self, action_shape):
+        super().__init__()
         self.action_shape = action_shape
 
     def __call__(self,x ):
@@ -34,7 +35,7 @@ class MLPPolicy(nn.Module):
     def forward(self, x):
         
         h = self.base(x)
-        
+
         mean = self.action( h )
         
         log_std = self.last_fc_log_std( h )
