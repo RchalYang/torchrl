@@ -30,6 +30,9 @@ def get_args():
     parser.add_argument('--soft_update', action='store_true', default=False,
                         help='soft update target net')
 
+    parser.add_argument("--target_hard_update_period",  type = int, default = 1000,
+                        help = " hard update interval " )
+
     parser.add_argument("--num_epochs",  type = int, default = 5000,
                         help = " num of epochs " )
 
