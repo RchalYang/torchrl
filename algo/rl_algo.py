@@ -67,6 +67,7 @@ class RLAlgo():
         self.episode_rewards = deque(maxlen=10)
         self.eval_episodes = eval_episodes
         print(batch_size)
+        print(self.device)
 
     def pretrain(self):
         pass
@@ -78,7 +79,6 @@ class RLAlgo():
         eval_env._reward_scale = 1
 
         done = False
-
         for _ in range(self.eval_episodes):
 
             eval_ob = eval_env.reset()
@@ -161,5 +161,6 @@ class RLAlgo():
     def to(self, device=None):
         if device == None:
             device = ptu.device
+        print(device)
         for net in self.networks:
             net.to(device)

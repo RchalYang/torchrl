@@ -27,10 +27,12 @@ class MLPBase(nn.Module):
         
         self.activation_func = activation_func
         self.fcs = []
-        for next_shape in hidden_shapes:
+        for i, next_shape in enumerate( hidden_shapes ):
             fc = nn.Linear(input_shape, next_shape)
             init_func(fc)
             self.fcs.append(fc)
+            # set attr for pytorch to track parameters( device )
+            self.__setattr__("fc{}".format(i), fc)
 
             input_shape = next_shape
     
@@ -56,7 +58,7 @@ class QNet(nn.Module):
 
     def forward(self, state, action):
         out = torch.cat( [state, action], 1 )
-        out = self.Base(out)
+        out = self.base(out)
         out = self.q_fun(out)
 
         return out
@@ -73,7 +75,7 @@ class VNet(nn.Module):
         self.v_fun.bias.data.uniform_(-1e-3, 1e-3)
         
     def forward(self, x):
-        out = self.Base(x)
+        out = self.base(x)
         value = self.v_fun(out)
         return value
 
