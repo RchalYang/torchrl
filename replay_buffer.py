@@ -1,14 +1,5 @@
 import torch
-from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
-
-
-def _flatten_helper(T, N, _tensor):
-    return _tensor.view(T * N, *_tensor.size()[2:])
-
 import numpy as np
-
-# from rlkit.data_management.replay_buffer import ReplayBuffer
-
 
 class SimpleReplayBuffer():
     def __init__(

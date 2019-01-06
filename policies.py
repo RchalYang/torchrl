@@ -78,4 +78,3 @@ class MLPPolicy(nn.Module):
         log_probs = dis.log_prob( action, pre_tanh_value ).sum(1,keepdim=True)
 
         return log_probs 
-    
