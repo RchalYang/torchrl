@@ -3,8 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from distribution import TanhNormal
-# from distributions import Categorical, DiagGaussian
-# from utils import init, init_normc_
+from networks import MLPBase
 
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
@@ -18,40 +17,24 @@ class UniformPolicy():
 
 
 class MLPPolicy(nn.Module):
-    def __init__(self, obs_shape, action_space, hidden_shapes ):
+    def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
         
         super().__init__()
 
-        self.fcs = []
-        in_size = obs_shape
-
-        for i, next_size in enumerate(hidden_shapes):
-            fc = nn.Linear(in_size, next_size)
-            in_size = next_size
-            fanin_init(fc.weight)
-            fc.bias.data.fill_(0.1)
-            self.__setattr__("fc{}".format(i), fc)
-            self.fcs.append(fc)
-
+        self.base = MLPBase( obs_shape, hidden_shapes, **kwargs )
 
         self.action = nn.Linear( hidden_shapes[-1], action_space )
         self.action.weight.data.uniform_(-3e-3, 3e-3)
         self.action.bias.data.uniform_(-1e-3, 1e-3)
         
-        # last_hidden_size = hidden_shape
-        # if len(hidden_sizes) > 0:
-        #     last_hidden_size = hidden_sizes[-1]
         self.last_fc_log_std = nn.Linear( hidden_shapes[-1], action_space)
         self.last_fc_log_std.weight.data.uniform_(-1e-3, 1e-3)
         self.last_fc_log_std.bias.data.uniform_(-1e-3, 1e-3)
         
     def forward(self, x):
         
-        h = x
-        for i, fc in enumerate(self.fcs):
-            h = fc(h)
-            h = F.relu(h)
-
+        h = self.base(x)
+        
         mean = self.action( h )
         
         log_std = self.last_fc_log_std( h )

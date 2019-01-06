@@ -19,10 +19,10 @@ from env import NormalizeObs
 from env import NormalizedActions
 from env import NormalizedBoxEnv
 from argument import get_args
-from model import MLPPolicy
-from model import UniformPolicy
-from model import QNet
-from model import VNet
+from policies import MLPPolicy
+from policies import UniformPolicy
+from networks import QNet
+from networks import VNet
 
 from replay_buffer import SimpleReplayBuffer
 from logger import Logger
