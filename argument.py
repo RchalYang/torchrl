@@ -5,70 +5,42 @@ import torch
 
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
-    parser.add_argument('--algo', default='a2c',
-                        help='algorithm to use: a2c | ppo | acktr')
     
-    parser.add_argument('--eps', type=float, default=1e-5,
-                        help='RMSprop optimizer epsilon (default: 1e-5)')
-    parser.add_argument('--alpha', type=float, default=0.99,
-                        help='RMSprop optimizer apha (default: 0.99)')
-
     parser.add_argument('--discount', type=float, default=0.99,
                         help='discount factor for rewards (default: 0.99)')
                         
     parser.add_argument('--tau', type=float, default=0.001,
                         help='for soft update')
 
-    parser.add_argument('--entropy-coef', type=float, default=0.01,
-                        help='entropy term coefficient (default: 0.01)')
-
-    parser.add_argument('--value-loss-coef', type=float, default=0.5,
-                        help='value loss coefficient (default: 0.5)')
-
-    parser.add_argument('--max-grad-norm', type=float, default=0.5,
-                        help='max norm of gradients (default: 0.5)')
-
     parser.add_argument('--seed', type=int, default=1,
                         help='random seed (default: 1)')
 
-    parser.add_argument('--num-steps', type=int, default=5,
-                        help='number of forward steps in A2C (default: 5)')
+    parser.add_argument('--env_name', type=str, default='HalfCheetah-v2',
+                        help='environment to train on (default: HalfCheetah-v2)')
 
-    parser.add_argument('--clip-param', type=float, default=0.2,
-                        help='ppo clip parameter (default: 0.2)')
+    parser.add_argument('--save_dir', type=str, default='./snapshots',
+                        help='directory for snapshots (default: ./snapshots)')
+                        
+    parser.add_argument('--log_dir', type=str, default='./log',
+                        help='directory for tensorboard logs (default: ./log)')
 
-    parser.add_argument('--log-interval', type=int, default=10,
-                        help='log interval, one log per n updates (default: 10)')
-    parser.add_argument('--save-interval', type=int, default=100,
-                        help='save interval, one save per n updates (default: 100)')
-    parser.add_argument('--eval-interval', type=int, default=None,
-                        help='eval interval, one eval per n updates (default: None)')
-    parser.add_argument('--vis-interval', type=int, default=100,
-                        help='vis interval, one log per n updates (default: 100)')
-
-    parser.add_argument('--num-frames', type=int, default=10e6,
-                        help='number of frames to train (default: 10e6)')
-
-    parser.add_argument('--env-name', default='PongNoFrameskip-v4',
-                        help='environment to train on (default: PongNoFrameskip-v4)')
-
-    parser.add_argument('--save-dir', default='./trained_models/',
-                        help='directory to save agent logs (default: ./trained_models/)')
-
-    parser.add_argument('--no-cuda', action='store_true', default=False,
+    parser.add_argument('--no_cuda', action='store_true', default=False,
                         help='disables CUDA training')
 
     parser.add_argument('--soft_update', action='store_true', default=False,
                         help='soft update target net')
 
-    # parser.add_argument("--max_time_steps",   help = " max time steps ", type = int, default = 1000000 )
-    parser.add_argument("--num_epochs",   help = " num of epochs ", type = int, default = 5000 )
+    parser.add_argument("--num_epochs",  type = int, default = 5000,
+                        help = " num of epochs " )
 
-    parser.add_argument("--epoch_frames",   help = " frames of an epoch ", type = int, default = 1000 )
+    parser.add_argument("--epoch_frames", type = int, default = 1000,
+                        help = " frames of an epoch " )
 
-    parser.add_argument("--max_episode_frames",   help = " max frames of an episodes ", type = int, default = 999 )
+    parser.add_argument("--max_episode_frames", type = int, default = 999,
+                        help = " max frames of an episodes " )
 
-    parser.add_argument("--hard_update_interval",   help = " interval for hard update ", type = int, default = 1000 )
+    parser.add_argument("--hard_update_interval", type = int, default = 1000,
+                        help = " interval for hard update " )
 
     parser.add_argument('--batch_size', type=int, default=128,
                         help='batch size for update (default: 128)')

@@ -31,6 +31,7 @@ args = get_args()
 
 def experiment(args):
     device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
+
     env = NormalizedBoxEnv(gym.make(args.env_name), reward_scale= args.reward_scale)
     env.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -47,6 +48,30 @@ def experiment(args):
     replay_buffer = SimpleReplayBuffer( args.buffer_size, env.observation_space.shape[0], env.action_space.shape[0] )
     logger = Logger( args.id, args.env_name, args.seed )
 
+    basic_arguments = {
+        'env' : env,
+        'replay_buffer' : replay_buffer,
+        'logger' : logger,
+
+        'discount' : args.discount,
+        'pretrain_frames' : args.pretrain_frames,
+        'num_epochs' : args.num_epochs,
+        'epoch_frames' : args.epoch_frames,
+        'max_episode_frames' : args.max_episode_frames,
+
+        'batch_size' : args.batch_size,
+        'min_pool' : args.min_pool,
+
+        'target_hard_update_period' : args.target_hard_update_period,
+        'use_soft_update' : args.use_soft_update,
+        'tau' : args.tau,
+        'opt_times' : args.opt_times,
+
+        'device' : device,
+
+        'eval_episodes' : args.eval_episodes,
+    }
+
     agent = SAC(
                 pf,
                 vf,
@@ -58,23 +83,7 @@ def experiment(args):
                 qlr = args.qlr,
                 
                 reparameterization=args.reparameterization,
-
-                env = env,
-                replay_buffer = replay_buffer,
-                logger = logger,
-
-                target_hard_update_period=args.hard_update_interval,
-                tau=args.tau,
-                use_soft_update=args.soft_update,
-                optimizer_class=optim.Adam,
-
-                discount = args.discount,
-                device = device,
-
-                num_epochs = args.num_epochs,
-                pretrain_frames = args.pretrain_frames,
-                batch_size = args.batch_size
-                
+                **basic_arguments                
             )
     agent.train()
 
