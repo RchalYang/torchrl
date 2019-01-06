@@ -209,7 +209,8 @@ class SAC(RLAlgo):
             self.pf,
             self.qf,
             self.vf,
-            self.target_vf
+            self.target_vf,
+            self.pretrain_pf
         ]
     
     @property
