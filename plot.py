@@ -31,7 +31,7 @@ def get_args():
 
 
 args = get_args()
-env_name = args.id
+env_name = args.env_name
 env_id = args.id
 
 def get_name(path):
