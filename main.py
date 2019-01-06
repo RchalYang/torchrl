@@ -63,7 +63,7 @@ def experiment(args):
         'min_pool' : args.min_pool,
 
         'target_hard_update_period' : args.target_hard_update_period,
-        'use_soft_update' : args.use_soft_update,
+        'use_soft_update' : args.soft_update,
         'tau' : args.tau,
         'opt_times' : args.opt_times,
 
