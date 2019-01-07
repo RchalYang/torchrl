@@ -76,6 +76,9 @@ class RLAlgo():
         eval_env.eval()
         eval_env._reward_scale = 1
 
+        eval_infos = {}
+        eval_rews = []
+
         done = False
         for _ in range(self.eval_episodes):
 
@@ -85,8 +88,14 @@ class RLAlgo():
                 act = self.pf.eval( torch.Tensor( eval_ob ).to(self.device).unsqueeze(0) )
                 eval_ob, r, done, _ = eval_env.step( act.detach().cpu().numpy() )
                 rew += r
+
+            eval_rews.append(rew)
             self.episode_rewards.append(rew)
+
             done = False
+
+        eval_infos["Eval_Rewards_Average"] = np.mean( eval_rews )
+        return eval_infos
 
     def update(self, batch):
         raise NotImplementedError
@@ -129,12 +138,13 @@ class RLAlgo():
                     ob = self.env.reset()
                     self.current_step = 0
             
-            self.eval()
+            eval_infos = self.eval()
 
             total_frames = (epoch + 1) * self.epoch_frames + self.pretrain_frames
             
             infos = {}
             infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
+            infos.update(eval_infos)
             
             self.logger.add_epoch_info(epoch, total_frames, time.time() - start, infos )
             
