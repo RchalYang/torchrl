@@ -63,46 +63,6 @@ class SAC(RLAlgo):
 
         self.reparameterization = reparameterization
 
-    def pretrain(self):
-        
-        self.env.reset()
-        self.env.train()
-
-        self.current_step = 0
-        ob = self.env.reset()
-        pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames)
-
-        for pretrain_epoch in range( pretrain_epochs ):
-            
-            start = time.time()
-            for step in range( self.epoch_frames):
-            
-                action = self.pretrain_pf( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
-                action = action.detach().cpu().numpy()
-                next_ob, reward, done, _ = self.env.step(action)
-                self.replay_buffer.add_sample( ob, action, reward, done, next_ob )
-
-                if self.replay_buffer.num_steps_can_sample() > max( self.min_pool, self.batch_size ):
-                    for _ in range( self.opt_times ):
-                        batch = self.replay_buffer.random_batch( self.batch_size)
-                        infos = self.update( batch )
-                        self.logger.add_update_info( infos )
-
-                ob = next_ob
-                self.current_step += 1
-                if done or self.current_step >= self.max_episode_frames:
-                    ob = self.env.reset()
-                    self.current_step = 0
-            
-            self.eval()
-
-            total_frames = (pretrain_epoch + 1) * self.epoch_frames
-            
-            infos = {}
-            infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
-            
-            self.logger.add_epoch_info(pretrain_epoch, total_frames, time.time() - start, infos )
-            # self.logger.flush()
 
     def update(self, batch):
         self.training_update_num += 1
