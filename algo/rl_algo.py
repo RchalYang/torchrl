@@ -66,8 +66,6 @@ class RLAlgo():
         self.training_update_num = 0
         self.episode_rewards = deque(maxlen=10)
         self.eval_episodes = eval_episodes
-        print(batch_size)
-        print(self.device)
 
     def pretrain(self):
         pass
@@ -161,6 +159,5 @@ class RLAlgo():
     def to(self, device=None):
         if device == None:
             device = ptu.device
-        print(device)
         for net in self.networks:
             net.to(device)
