@@ -39,7 +39,7 @@ class MLPPolicy(nn.Module):
             return self.forward(x)
     
     def explore( self, x ):
-        return self.forward(x)
+        return None, None, self.forward(x), None
         
 class MLPGuassianPolicy(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
