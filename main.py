@@ -14,10 +14,7 @@ from collections import deque
 import numpy as np
 
 from algo.sac import SAC
-from env import RewardScale
-from env import NormalizeObs
-from env import NormalizedActions
-from env import NormalizedBoxEnv
+from env import NormalizedContinuousEnv
 from argument import get_args
 from policies import MLPPolicy
 from policies import UniformPolicy
@@ -32,10 +29,11 @@ args = get_args()
 def experiment(args):
     device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
 
-    env = NormalizedBoxEnv(gym.make(args.env_name), reward_scale= args.reward_scale)
+    env = NormalizedContinuousEnv(gym.make(args.env_name), reward_scale= args.reward_scale)
     env.seed(args.seed)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
+    
     if args.cuda:
         torch.backends.cudnn.deterministic=True
     
