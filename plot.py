@@ -25,6 +25,9 @@ def get_args():
     parser.add_argument( "--id", type=str, nargs='+', default=('origin',),
                         help="id for tensorboard")
 
+    parser.add_argument('--output_dir', type=str, default='./fig',
+                        help='directory for plot output (default: ./fig)')
+
     args = parser.parse_args()
 
     return args
@@ -105,6 +108,8 @@ plt.xlabel('Million Frames', fontsize=20)
 plt.ylabel('Average full episode reward for 10 episodes',fontsize=20)
 plt.legend(loc='lower right', prop={'size': 12})
 plt.title(env_name, fontsize=20)
-plt.savefig('{}.png'.format(env_name))
+if not os.path.exists( args.output_dir ):
+    os.mkdir( args.output_dir )
+plt.savefig( os.path.join( args.output_dir , '{}.png'.format(env_name) ) )
 # plt.show()
 plt.close()

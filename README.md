@@ -6,7 +6,7 @@ Environments with continuous action space are supported.
 
 ## Currently contains:
 * SAC
-
+![HalfCheetah-v2 SAC](./fig/HalfCheetah-v2.png "HalfCheetah-v2")
 ## TODO:
 1. Add More Algorithm
 * DDPG
