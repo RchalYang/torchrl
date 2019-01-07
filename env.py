@@ -28,6 +28,7 @@ class NormalizedContinuousEnv(Env):
 
         ub = np.ones(self._wrapped_env.action_space.shape)
         self.action_space = Box(-1 * ub, ub)
+        self.observation_space = self._wrapped_env.observation_space
 
         self.training = False
     
