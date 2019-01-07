@@ -70,8 +70,6 @@ class SAC(RLAlgo):
 
         self.current_step = 0
         ob = self.env.reset()
-        print(self.pretrain_frames)
-        print(self.epoch_frames)
         pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames)
 
         for pretrain_epoch in range( pretrain_epochs ):
@@ -113,10 +111,7 @@ class SAC(RLAlgo):
         obs = batch['observations']
         actions = batch['actions']
         next_obs = batch['next_observations']
-        
-        if ( (terminals==1).any() ):
-            exit()
-         
+
         rewards = torch.Tensor(rewards).to( self.device )
         terminals = torch.Tensor(terminals).to( self.device )
         obs = torch.Tensor(obs).to( self.device )
