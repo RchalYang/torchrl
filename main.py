@@ -46,7 +46,7 @@ def experiment(args):
     pretrain_policy = UniformPolicy(env.action_space.shape[0])
     
     replay_buffer = SimpleReplayBuffer( args.buffer_size, env.observation_space.shape[0], env.action_space.shape[0] )
-    logger = Logger( args.id, args.env_name, args.seed )
+    logger = Logger( args.id, args.env_name, args.seed, args.log_dir )
 
     basic_arguments = {
         'env' : env,
