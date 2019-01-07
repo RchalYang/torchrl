@@ -15,7 +15,7 @@ class Logger():
         if os.path.exists( work_dir ):
             shutil.rmtree(work_dir)
         self.tf_writer = tensorboardX.SummaryWriter(work_dir)
-        
+
         self.update_count = 0
         self.stored_infos = {}
 
@@ -52,7 +52,7 @@ class Logger():
 
             temp_list = [info]
             for name, method in zip( name_list, method_list ):
-                processed_info = method(infos[info])
+                processed_info = method(self.stored_infos[info])
                 self.tf_writer.add_scalar( "{}_{}".format( info, name ),
                     processed_info, total_frames )
                 temp_list.append( "{:.5f}".format( processed_info ) )
