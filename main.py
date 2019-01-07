@@ -16,7 +16,7 @@ import numpy as np
 from algo.sac import SAC
 from env import NormalizedContinuousEnv
 from argument import get_args
-from policies import MLPPolicy
+from policies import MLPGuassianPolicy
 from policies import UniformPolicy
 from networks import QNet
 from networks import VNet
@@ -33,11 +33,11 @@ def experiment(args):
     env.seed(args.seed)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
-    
+
     if args.cuda:
         torch.backends.cudnn.deterministic=True
     
-    pf = MLPPolicy( env.observation_space.shape[0], env.action_space.shape[0], [args.net, args.net] )
+    pf = MLPGuassianPolicy( env.observation_space.shape[0], env.action_space.shape[0], [args.net, args.net] )
     vf = VNet( env.observation_space.shape[0], [args.net, args.net] )
     qf = QNet( env.observation_space.shape[0], env.action_space.shape[0], [args.net, args.net] )
 

@@ -16,8 +16,32 @@ class UniformPolicy(nn.Module):
     def __call__(self,x ):
         return torch.Tensor(np.random.uniform(-1., 1., self.action_shape))
 
-
 class MLPPolicy(nn.Module):
+    def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
+        
+        super().__init__()
+
+        self.base = MLPBase( obs_shape, hidden_shapes, **kwargs )
+
+        self.action = nn.Linear( hidden_shapes[-1], action_space )
+        self.action.weight.data.uniform_(-3e-3, 3e-3)
+        self.action.bias.data.uniform_(-1e-3, 1e-3)
+        
+    def forward(self, x):
+        
+        h = self.base(x)
+        mean = self.action( h )
+        mean = F.tanh(mean)
+        return mean
+    
+    def eval( self, x ):
+        with torch.no_grad():
+            return self.forward(x)
+    
+    def explore( self, x ):
+        return self.forward(x)
+        
+class MLPGuassianPolicy(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
         
         super().__init__()
