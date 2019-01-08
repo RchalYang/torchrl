@@ -16,7 +16,7 @@ class Logger():
         sh.setFormatter(formatter)
         sh.setLevel(logging.INFO)
         self.logger.addHandler( sh )
-
+        self.logger.setLevel(logging.INFO)
 
         work_dir = os.path.join( log_dir, experiment_id, env_name, str(seed) )
         if os.path.exists( work_dir ):
