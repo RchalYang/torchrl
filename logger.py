@@ -4,12 +4,19 @@ import shutil
 import os
 import numpy as np
 from tabulate import tabulate
+import sys
 
 class Logger():
     def __init__(self, experiment_id, env_name, seed, log_dir = "./log"):
 
+        self.logger = logging.getLogger("{}_{}_{}".format( experiment_id,env_name,str(seed)) )
+        sh = logging.StreamHandler( sys.stdout )
         format = "%(asctime)s %(threadName)s %(levelname)s: %(message)s"
-        logging.basicConfig(level=logging.INFO, format=format)
+        formatter = logging.Formatter(format)
+        sh.setFormatter(formatter)
+        sh.setLevel(logging.INFO)
+        self.logger.addHandler( sh )
+
 
         work_dir = os.path.join( log_dir, experiment_id, env_name, str(seed) )
         if os.path.exists( work_dir ):
@@ -20,7 +27,7 @@ class Logger():
         self.stored_infos = {}
 
     def log(self, info):
-        logging.info(info)
+        self.logger.info(info)
 
     def add_update_info(self, infos):
 
@@ -32,9 +39,9 @@ class Logger():
         self.update_count += 1
     
     def add_epoch_info(self, epoch_num, total_frames, total_time, infos):
-        logging.info("EPOCH:{}".format(epoch_num))
-        logging.info("Time Consumed:{}s".format(total_time))
-        logging.info("Total Frames:{}s".format(total_frames))
+        self.logger.info("EPOCH:{}".format(epoch_num))
+        self.logger.info("Time Consumed:{}s".format(total_time))
+        self.logger.info("Total Frames:{}s".format(total_frames))
 
         tabulate_list = [["Name", "Value"]]
         for info in infos:
