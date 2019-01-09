@@ -77,13 +77,17 @@ def get_args():
 	#tensorboard
     parser.add_argument("--id",            help="id for tensorboard",           type=str,   default="origin" )
 
-    parser.add_argument('--no-reparameterization', action='store_true', default=False,
+    parser.add_argument('--no_reparameterization', action='store_true', default=False,
                         help='no reparameterization trick')
+                        
+    parser.add_argument('--no_automatic_entropy_tuning', action='store_true', default=False,
+                        help='no automatic entropy tuning trick')
 
     args = parser.parse_args()
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     args.norm = not args.no_norm
     args.reparameterization = not args.no_reparameterization
+    args.automatic_entropy_tuning = not args.no_automatic_entropy_tuning
 
     return args

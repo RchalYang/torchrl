@@ -103,13 +103,14 @@ class RLAlgo():
                 if total_frames > self.pretrain_frames:
                     break
             
-            self.eval()
+            eval_infos = self.eval()
 
             total_frames = (pretrain_epoch + 1) * self.epoch_frames
             
             infos = {}
             infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
-            
+            infos.update(eval_infos)
+
             self.logger.add_epoch_info(pretrain_epoch, total_frames, time.time() - start, infos )
             
     def eval(self):

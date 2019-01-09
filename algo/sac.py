@@ -26,6 +26,8 @@ class SAC(RLAlgo):
             policy_mean_reg_weight=1e-3,
 
             reparameterization = True,
+            automatic_entropy_tuning = True,
+            target_entropy = None,
             **kwargs
     ):
         super(SAC, self).__init__(**kwargs)
@@ -54,6 +56,18 @@ class SAC(RLAlgo):
             self.pf.parameters(),
             lr=self.plr,
         )
+        
+        self.automatic_entropy_tuning = automatic_entropy_tuning
+        if self.automatic_entropy_tuning:
+            if target_entropy:
+                self.target_entropy = target_entropy
+            else:
+                self.target_entropy = -np.prod(self.env.action_space.shape).item()  # heuristic value from Tuomas
+            self.log_alpha = ptu.zeros(1, requires_grad=True)
+            self.alpha_optimizer = optimizer_class(
+                self.log_alpha,
+                lr=self.plr,
+            )
 
         self.qf_criterion = nn.MSELoss()
         self.vf_criterion = nn.MSELoss()
@@ -86,6 +100,19 @@ class SAC(RLAlgo):
         q_pred = self.qf(obs, actions)
         v_pred = self.vf(obs)
 
+        if self.automatic_entropy_tuning:
+            """
+            Alpha Loss
+            """
+            alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach()).mean()
+            self.alpha_optimizer.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optimizer.step()
+            alpha = self.log_alpha.exp()
+        else:
+            alpha = 1
+            alpha_loss = 0
+
         """
         QF Loss
         """
@@ -97,7 +124,7 @@ class SAC(RLAlgo):
         VF Loss
         """
         q_new_actions = self.qf(obs, new_actions)
-        v_target = q_new_actions - log_probs
+        v_target = q_new_actions - alpha * log_probs
         vf_loss = self.vf_criterion( v_pred, v_target.detach())
 
         """
@@ -106,10 +133,10 @@ class SAC(RLAlgo):
         if not self.reparameterization:
             log_policy_target = q_new_actions - v_pred
             policy_loss = (
-                log_probs * ( log_probs - log_policy_target).detach()
+                log_probs * ( alpha * log_probs - log_policy_target).detach()
             ).mean()
         else:
-            policy_loss = (log_probs - q_new_actions).mean()
+            policy_loss = ( alpha * log_probs - q_new_actions).mean()
 
         std_reg_loss = self.policy_std_reg_weight * (log_std**2).mean()
         mean_reg_loss = self.policy_mean_reg_weight * (mean**2).mean()
