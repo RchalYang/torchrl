@@ -81,7 +81,7 @@ def experiment(args):
                 qlr = args.qlr,
                 
                 reparameterization=args.reparameterization,
-                automatic_entropy_tuning=args.automatic_entropy_tuning
+                automatic_entropy_tuning=args.automatic_entropy_tuning,
                 **basic_arguments                
             )
     agent.train()
