@@ -63,9 +63,10 @@ class SAC(RLAlgo):
                 self.target_entropy = target_entropy
             else:
                 self.target_entropy = -np.prod(self.env.action_space.shape).item()  # heuristic value from Tuomas
-            self.log_alpha = ptu.zeros(1, requires_grad=True)
+            self.log_alpha = ptu.zeros(1).to(self.device)
+            self.log_alpha.requires_grad_()
             self.alpha_optimizer = optimizer_class(
-                self.log_alpha,
+                [self.log_alpha],
                 lr=self.plr,
             )
 
@@ -164,6 +165,10 @@ class SAC(RLAlgo):
         # Information For Logger
         info = {}
         info['Reward_Mean'] = rewards.mean().item()
+
+        if self.automatic_entropy_tuning:
+            info["Alpha"] = alpha.item()
+            info["Alpha_loss"] = alpha_loss.item()
         info['Traning/policy_loss'] = policy_loss.item()
         info['Traning/vf_loss'] = vf_loss.item()
         info['Traning/qf_loss'] = qf_loss.item()
