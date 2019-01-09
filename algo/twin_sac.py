@@ -1,0 +1,222 @@
+import time
+import numpy as np
+import copy
+
+import torch.optim as optim
+import pytorch_util as ptu
+import torch
+from torch import nn as nn
+
+from algo.rl_algo import RLAlgo
+import math
+
+class TwinSAC(RLAlgo):
+    """
+    SAC
+    """
+
+    def __init__(
+            self,
+            pf, vf,
+            qf1, qf2,
+            pretrain_pf,
+            plr,vlr,qlr,
+            optimizer_class=optim.Adam,
+            
+            policy_std_reg_weight=1e-3,
+            policy_mean_reg_weight=1e-3,
+
+            reparameterization = True,
+            automatic_entropy_tuning = True,
+            target_entropy = None,
+            **kwargs
+    ):
+        super(SAC, self).__init__(**kwargs)
+        self.pf = pf
+        self.pretrain_pf = pretrain_pf
+        self.qf1 = qf1
+        self.qf2 = qf2
+        self.vf = vf
+        self.target_vf = copy.deepcopy(vf)
+        self.to(self.device)
+
+        self.plr = plr
+        self.vlr = vlr
+        self.qlr = qlr
+
+        self.qf1_optimizer = optimizer_class(
+            self.qf1.parameters(),
+            lr=self.qlr,
+        )
+
+        self.qf2_optimizer = optimizer_class(
+            self.qf2.parameters(),
+            lr=self.qlr,
+        )
+
+        self.vf_optimizer = optimizer_class(
+            self.vf.parameters(),
+            lr=self.vlr,
+        )
+
+        self.pf_optimizer = optimizer_class(
+            self.pf.parameters(),
+            lr=self.plr,
+        )
+        
+        self.automatic_entropy_tuning = automatic_entropy_tuning
+        if self.automatic_entropy_tuning:
+            if target_entropy:
+                self.target_entropy = target_entropy
+            else:
+                self.target_entropy = -np.prod(self.env.action_space.shape).item()  # from rlkit
+            self.log_alpha = ptu.zeros(1).to(self.device)
+            self.log_alpha.requires_grad_()
+            self.alpha_optimizer = optimizer_class(
+                [self.log_alpha],
+                lr=self.plr,
+            )
+
+        self.qf_criterion = nn.MSELoss()
+        self.vf_criterion = nn.MSELoss()
+
+        self.policy_std_reg_weight = policy_std_reg_weight
+        self.policy_mean_reg_weight = policy_mean_reg_weight
+
+        self.reparameterization = reparameterization
+
+
+    def update(self, batch):
+        self.training_update_num += 1
+        rewards = batch['rewards']
+        terminals = batch['terminals']
+        obs = batch['observations']
+        actions = batch['actions']
+        next_obs = batch['next_observations']
+
+        rewards = torch.Tensor(rewards).to( self.device )
+        terminals = torch.Tensor(terminals).to( self.device )
+        obs = torch.Tensor(obs).to( self.device )
+        actions = torch.Tensor(actions).to( self.device )
+        next_obs = torch.Tensor(next_obs).to( self.device )
+
+        """
+        Policy operations.
+        """
+
+        mean, log_std, new_actions, log_probs, ent = self.pf.explore(obs, return_log_probs=True )
+        q1_pred = self.qf1(obs, actions)
+        q2_pred = self.qf2(obs, actions)
+        v_pred = self.vf(obs)
+
+        if self.automatic_entropy_tuning:
+            """
+            Alpha Loss
+            """
+            alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach()).mean()
+            self.alpha_optimizer.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optimizer.step()
+            alpha = self.log_alpha.exp()
+        else:
+            alpha = 1
+            alpha_loss = 0
+
+        """
+        QF Loss
+        """
+        target_v_values = self.target_vf(next_obs)
+        q_target = rewards + (1. - terminals) * self.discount * target_v_values
+        qf1_loss = self.qf_criterion( q1_pred, q_target.detach())
+        qf2_loss = self.qf_criterion( q2_pred, q_target.detach())
+
+        """
+        VF Loss
+        """
+        q_new_actions = torch.min(self.qf1(obs, new_actions), self.qf2(obs, new_actions))
+        v_target = q_new_actions - alpha * log_probs
+        vf_loss = self.vf_criterion( v_pred, v_target.detach())
+
+        """
+        Policy Loss
+        """
+        if not self.reparameterization:
+            log_policy_target = q_new_actions - v_pred
+            policy_loss = (
+                log_probs * ( alpha * log_probs - log_policy_target).detach()
+            ).mean()
+        else:
+            policy_loss = ( alpha * log_probs - q_new_actions).mean()
+
+        std_reg_loss = self.policy_std_reg_weight * (log_std**2).mean()
+        mean_reg_loss = self.policy_mean_reg_weight * (mean**2).mean()
+
+        policy_loss += std_reg_loss + mean_reg_loss
+        
+        """
+        Update Networks
+        """
+
+        self.pf_optimizer.zero_grad()
+        policy_loss.backward()
+        self.pf_optimizer.step()
+
+        self.qf1_optimizer.zero_grad()
+        qf1_loss.backward()
+        self.qf1_optimizer.step()
+
+        self.qf2_optimizer.zero_grad()
+        qf2_loss.backward()
+        self.qf2_optimizer.step()
+
+        self.vf_optimizer.zero_grad()
+        vf_loss.backward()
+        self.vf_optimizer.step()
+
+        self._update_target_networks()
+
+        # Information For Logger
+        info = {}
+        info['Reward_Mean'] = rewards.mean().item()
+
+        if self.automatic_entropy_tuning:
+            info["Alpha"] = alpha.item()
+            info["Alpha_loss"] = alpha_loss.item()
+        info['Traning/policy_loss'] = policy_loss.item()
+        info['Traning/vf_loss'] = vf_loss.item()
+        info['Traning/qf1_loss'] = qf1_loss.item()
+        info['Traning/qf2_loss'] = qf2_loss.item()
+
+        info['log_std/mean'] = log_std.mean().item()
+        info['log_std/std'] = log_std.std().item()
+        info['log_std/max'] = log_std.max().item()
+        info['log_std/min'] = log_std.min().item()
+
+        info['log_probs/mean'] = log_std.mean().item()
+        info['log_probs/std'] = log_std.std().item()
+        info['log_probs/max'] = log_std.max().item()
+        info['log_probs/min'] = log_std.min().item()
+
+        info['mean/mean'] = mean.mean().item()
+        info['mean/std'] = mean.std().item()
+        info['mean/max'] = mean.max().item()
+        info['mean/min'] = mean.min().item()
+
+        return info
+
+    @property
+    def networks(self):
+        return [
+            self.pf,
+            self.qf1,
+            self.qf2,
+            self.vf,
+            self.target_vf,
+            self.pretrain_pf
+        ]
+    
+    @property
+    def target_networks(self):
+        return [
+            ( self.vf, self.target_vf )
+        ]
