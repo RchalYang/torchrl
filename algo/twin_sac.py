@@ -31,7 +31,7 @@ class TwinSAC(RLAlgo):
             target_entropy = None,
             **kwargs
     ):
-        super(SAC, self).__init__(**kwargs)
+        super(TwinSAC, self).__init__(**kwargs)
         self.pf = pf
         self.pretrain_pf = pretrain_pf
         self.qf1 = qf1
