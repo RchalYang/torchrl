@@ -4,7 +4,7 @@
         "env_name" : "HalfCheetah-v2",
         "reward_scale":1,
         "obs_norm":false,
-        "obs_alpa":0.001
+        "obs_alpha":0.001
     },
     "general_setting": {
         "discount" : 0.99,
