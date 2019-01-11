@@ -18,7 +18,7 @@
         "max_episode_frames" : 999,
 
         "batch_size" : 256,
-        "min_pool" : 1000,
+        "min_pool" : 10000,
 
         "target_hard_update_period" : 1000,
         "use_soft_update" : true,
