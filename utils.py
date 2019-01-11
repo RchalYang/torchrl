@@ -35,7 +35,6 @@ def get_args():
     args = parser.parse_args()
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()
-    args.norm = not args.no_norm
     args.reparameterization = not args.no_reparameterization
     args.automatic_entropy_tuning = not args.no_automatic_entropy_tuning
 
@@ -49,7 +48,7 @@ def get_params(file_name):
 def get_agent( params):
 
     env = params['general_setting']['env']
-    
+
     pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
 
     if params['agent'] == 'sac':
