@@ -1,0 +1,39 @@
+{
+    "agent":"twin_sac",
+    "env":{
+        "env_name" : "HalfCheetah-v2",
+        "reward_scale":5,
+        "obs_norm":false,
+        "obs_alpa":0.001
+    },
+    "replay_buffer":{
+        "size": 1e6
+    },
+    "net": [256,256],
+    "general_setting": {
+        "discount" : 0.99,
+        "pretrain_frames" : 10000,
+        "num_epochs" : 3000,
+        "epoch_frames" : 1000,
+        "max_episode_frames" : 999,
+
+        "batch_size" : 256,
+        "min_pool" : 1000,
+
+        "target_hard_update_period" : 1000,
+        "use_soft_update" : true,
+        "tau" : 0.005,
+        "opt_times" : 1,
+
+        "eval_episodes" : 1
+    },
+    "twin_sac":{
+        
+        "plr" : 3e-4,
+        "vlr" : 3e-4,
+        "qlr" : 3e-4,
+        
+        "reparameterization": true,
+        "automatic_entropy_tuning": false
+    }
+}

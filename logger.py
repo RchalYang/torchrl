@@ -5,9 +5,10 @@ import os
 import numpy as np
 from tabulate import tabulate
 import sys
+import json
 
 class Logger():
-    def __init__(self, experiment_id, env_name, seed, log_dir = "./log"):
+    def __init__(self, experiment_id, env_name, seed, params, log_dir = "./log"):
 
         self.logger = logging.getLogger("{}_{}_{}".format( experiment_id,env_name,str(seed)) )
         sh = logging.StreamHandler( sys.stdout )
@@ -25,6 +26,9 @@ class Logger():
 
         self.update_count = 0
         self.stored_infos = {}
+
+        with open( os.path.join(work_dir, 'params.json'), 'w' ) as output_param:
+            json.dump(params, output_param)
 
     def log(self, info):
         self.logger.info(info)
