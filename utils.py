@@ -35,8 +35,6 @@ def get_args():
     args = parser.parse_args()
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()
-    args.reparameterization = not args.no_reparameterization
-    args.automatic_entropy_tuning = not args.no_automatic_entropy_tuning
 
     return args
 
