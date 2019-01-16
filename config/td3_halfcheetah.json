@@ -1,5 +1,5 @@
 {
-    "agent":"ddpg",
+    "agent":"td3",
     "env":{
         "env_name" : "HalfCheetah-v2",
         "reward_scale":1,
@@ -9,26 +9,30 @@
     "replay_buffer":{
         "size": 1e6
     },
-    "net": [400,300],
+    "net": [400, 300],
     "general_setting": {
         "discount" : 0.99,
-        "pretrain_frames" : 0,
+        "pretrain_frames" : 10000,
         "num_epochs" : 3000,
         "epoch_frames" : 1000,
         "max_episode_frames" : 1000,
 
-        "batch_size" : 64,
-        "min_pool" : 1000,
+        "batch_size" : 100,
+        "min_pool" : 10000,
 
         "target_hard_update_period" : 1000,
         "use_soft_update" : true,
-        "tau" : 0.001,
+        "tau" : 0.005,
         "opt_times" : 1,
 
         "eval_episodes" : 1
     },
-    "ddpg":{
-        "plr" : 1e-4,
-        "qlr" : 1e-3
+    "td3":{
+        "plr" : 1e-3,
+        "qlr" : 1e-3,
+        "policy_update_delay" : 2,
+        "norm_std_explore": 0.1,
+        "norm_std_policy": 0.2,
+        "noise_clip": 0.5
     }
 }

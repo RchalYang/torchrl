@@ -67,7 +67,11 @@ class RLAlgo():
         self.episode_rewards = deque(maxlen=10)
         self.eval_episodes = eval_episodes
 
-    
+    def get_actions(self, policy, ob):
+        _, _, action, _ = policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+        action = action.detach().cpu().numpy()
+        return action
+
     def pretrain(self):
         
         self.env.reset()
@@ -82,8 +86,8 @@ class RLAlgo():
             start = time.time()
             for step in range( self.epoch_frames):
             
-                action = self.pretrain_pf( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
-                action = action.detach().cpu().numpy()
+                action = self.get_actions( self.pretrain_pf, ob )
+
                 next_ob, reward, done, _ = self.env.step(action)
                 self.replay_buffer.add_sample( ob, action, reward, done, next_ob )
 
@@ -156,9 +160,7 @@ class RLAlgo():
             for frame in range(self.epoch_frames):
                 # Sample actions
                 with torch.no_grad():
-                    _, _, action, _ = self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
-                action = action.detach().cpu().numpy()
-                action = action[0]
+                    action = self.get_actions( self.pf, ob )
 
                 # Nan detected, stop training
                 if np.isnan(action).any():

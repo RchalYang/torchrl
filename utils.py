@@ -87,6 +87,26 @@ def get_agent( params):
             **params['general_setting']
         )
 
+    if params['agent'] == 'td3':
+        pf = policies.MLPPolicy( env.observation_space.shape[0], 
+            env.action_space.shape[0],
+            params['net'])
+        vf = networks.VNet( env.observation_space.shape[0], params['net'] )
+        qf1 = networks.QNet( env.observation_space.shape[0], 
+            env.action_space.shape[0],
+            params['net'] )
+        qf2 = networks.QNet( env.observation_space.shape[0], 
+            env.action_space.shape[0],
+            params['net'] )
+        return algo.TD3(
+            pf = pf,
+            qf1 = qf1,
+            qf2 = qf2,
+            pretrain_pf = pretrain_pf,
+            **params['td3'],
+            **params['general_setting']
+        )
+
     if params['agent'] == 'ddpg':
         pf = policies.MLPPolicy( env.observation_space.shape[0], 
             env.action_space.shape[0],

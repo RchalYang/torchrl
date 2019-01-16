@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.distributions import Normal
+
 import numpy as np
 from distribution import TanhNormal
 from networks import MLPBase
@@ -15,6 +17,9 @@ class UniformPolicy(nn.Module):
 
     def __call__(self,x ):
         return torch.Tensor(np.random.uniform(-1., 1., self.action_shape))
+
+    def explore(self, x):
+        return None, None, torch.Tensor(np.random.uniform(-1., 1., self.action_shape)), None
 
 class MLPPolicy(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
@@ -40,7 +45,7 @@ class MLPPolicy(nn.Module):
     
     def explore( self, x ):
         return None, None, self.forward(x), None
-        
+
 class MLPGuassianPolicy(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
         
