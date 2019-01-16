@@ -49,7 +49,7 @@ def experiment(args):
     buffer_param = params['replay_buffer']    
     replay_buffer = SimpleReplayBuffer( int(buffer_param['size']), env.observation_space.shape[0], env.action_space.shape[0] )
     
-    experiment_name = os.path.split( os.path.splitext( args.config )[0] ) if args.id is None \
+    experiment_name = os.path.split( os.path.splitext( args.config )[0] )[-1] if args.id is None \
         else args.id
     logger = Logger( experiment_name , env_param['env_name'], args.seed, params, args.log_dir )
 

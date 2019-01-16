@@ -115,7 +115,7 @@ def get_agent( params):
         qf = networks.QNet( env.observation_space.shape[0], 
             env.action_space.shape[0],
              params['net'] )
-        return algo.SAC(
+        return algo.DDPG(
             pf = pf,
             qf = qf,
             pretrain_pf = pretrain_pf,

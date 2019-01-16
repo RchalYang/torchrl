@@ -28,7 +28,12 @@ class Logger():
         self.stored_infos = {}
 
         with open( os.path.join(work_dir, 'params.json'), 'w' ) as output_param:
-            json.dump(params, output_param)
+            json.dump( params, output_param, indent = 2 )
+
+        self.logger.info("Experiment Name:{}".format(experiment_id))
+        self.logger.info(
+            json.dumps(params, indent = 2 )
+        )
 
     def log(self, info):
         self.logger.info(info)
