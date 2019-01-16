@@ -6,6 +6,10 @@
         "obs_norm":false,
         "obs_alpha":0.001
     },
+    "replay_buffer":{
+        "size": 1e6
+    },
+    "net": [400, 300],
     "general_setting": {
         "discount" : 0.99,
         "pretrain_frames" : 0,
