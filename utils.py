@@ -88,9 +88,11 @@ def get_agent( params):
         )
 
     if params['agent'] == 'td3':
-        pf = policies.MLPGuassianPolicy( env.observation_space.shape[0], 
+        pf = policies.MLPPolicyWithNormal( env.observation_space.shape[0], 
             env.action_space.shape[0],
-            params['net'] )
+            params['net'],
+            params['norm_std'],
+            params['noise_clip'] )
         vf = networks.VNet( env.observation_space.shape[0], params['net'] )
         qf1 = networks.QNet( env.observation_space.shape[0], 
             env.action_space.shape[0],
@@ -98,9 +100,8 @@ def get_agent( params):
         qf2 = networks.QNet( env.observation_space.shape[0], 
             env.action_space.shape[0],
             params['net'] )
-        return algo.TwinSAC(
+        return algo.TD3(
             pf = pf,
-            vf = vf,
             qf1 = qf1,
             qf2 = qf2,
             pretrain_pf = pretrain_pf,

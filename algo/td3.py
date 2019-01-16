@@ -71,7 +71,7 @@ class TD3(RLAlgo):
         """
         QF Loss
         """
-        _, _, target_actions, _ = self.target_pf.explore(next_obs)
+        _, _, target_actions, _ = self.target_pf.explore(next_obs )
         target_q_values = torch.min( 
                 self.target_qf1(next_obs, target_actions) ,
                 self.target_qf2(next_obs, target_actions)
@@ -108,7 +108,7 @@ class TD3(RLAlgo):
             Policy Loss.
             """
             
-            _, _, new_actions, _ = self.pf.explore(obs)
+            new_actions = self.pf(obs)
             new_q_pred_1 = self.qf1(obs, new_actions)
             
             policy_loss = -new_q_pred_1.mean()
