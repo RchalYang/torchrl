@@ -1,4 +1,3 @@
-from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 from gym import Wrapper
 from gym.spaces import Box
 import gym

@@ -104,7 +104,7 @@ class TD3(RLAlgo):
             self.noise_clip
         )
         target_actions += noise
-        noise = torch.clamp(
+        target_actions = torch.clamp(
             target_actions,
             -1,
             1
