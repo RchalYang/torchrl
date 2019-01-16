@@ -88,7 +88,7 @@ def get_agent( params):
         )
 
     if params['agent'] == 'td3':
-        pf = policies.MLPPolicyWithNormal( env.observation_space.shape[0], 
+        pf = policies.MLPPolicy( env.observation_space.shape[0], 
             env.action_space.shape[0],
             params['net'],
             params['norm_std'],

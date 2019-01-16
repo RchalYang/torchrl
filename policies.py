@@ -18,6 +18,9 @@ class UniformPolicy(nn.Module):
     def __call__(self,x ):
         return torch.Tensor(np.random.uniform(-1., 1., self.action_shape))
 
+    def explore(self, x):
+        return None, None, torch.Tensor(np.random.uniform(-1., 1., self.action_shape)), None
+
 class MLPPolicy(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
         
@@ -42,25 +45,6 @@ class MLPPolicy(nn.Module):
     
     def explore( self, x ):
         return None, None, self.forward(x), None
-        
-class MLPPolicyWithNormal(MLPPolicy):
-    def __init__(self, obs_shape, action_space, hidden_shapes, norm_std,noise_clip, **kwargs ):
-        
-        super(MLPPolicyWithNormal, self).__init__(
-             obs_shape, action_space, hidden_shapes, **kwargs
-        )
-
-        self.normal = Normal(
-                 torch.zeros( action_space ),
-                 torch.ones( action_space ) * norm_std
-        )
-        self.noise_clip = noise_clip
-            
-    def explore( self, x ):
-        action =  self.forward(x) + \
-               torch.clamp( self.normal.sample().to(x.device), -self.noise_clip,self.noise_clip )
-        return None, None, action, None
-
 
 class MLPGuassianPolicy(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):

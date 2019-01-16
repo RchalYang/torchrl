@@ -1,13 +1,14 @@
 import numpy as np
 import copy
+import math
 
 import torch.optim as optim
-import pytorch_util as ptu
 import torch
 from torch import nn as nn
+from torch.distributions import  Normal
 
 from algo.rl_algo import RLAlgo
-import math
+import pytorch_util as ptu
 
 class TD3(RLAlgo):
     def __init__(self,
@@ -17,6 +18,9 @@ class TD3(RLAlgo):
         optimizer_class = optim.Adam,
 
         policy_update_delay = 2,
+        noise_std_explore = 0.1,
+        noise_std_policy = 0.2,
+        noise_clip = 0.5,
         **kwargs
     ):
         super(TD3, self).__init__(**kwargs)
@@ -53,6 +57,23 @@ class TD3(RLAlgo):
 
         self.policy_update_delay = policy_update_delay
 
+        self.norm_std_explore = noise_std_explore
+        self.norm_std_policy = noise_std_policy
+        self.noise_clip = noise_clip
+
+    def get_actions(self, policy, x):
+        _, _, action, _ = policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+        action = action.detach().cpu()
+        
+        action += Normal(
+                 torch.zeros( action.size()),
+                 self.norm_std_explore * torch.ones( action.size())
+        ).sample()
+
+        action = action.numpy()
+
+        return action
+
     def update(self, batch):
         self.training_update_num += 1
         rewards = batch['rewards']
@@ -72,6 +93,18 @@ class TD3(RLAlgo):
         QF Loss
         """
         _, _, target_actions, _ = self.target_pf.explore(next_obs )
+        
+        noise = Normal(
+                 torch.zeros( target_actions.size()),
+                 self.norm_std_policy * torch.ones( target_actions.size())
+        ).sample().to(target_actions.device)
+        noise = torch.clamp(
+            noise,
+            -self.noise_clip,
+            self.noise_clip
+        )
+        target_actions += noise
+
         target_q_values = torch.min( 
                 self.target_qf1(next_obs, target_actions) ,
                 self.target_qf2(next_obs, target_actions)
