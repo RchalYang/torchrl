@@ -90,9 +90,7 @@ def get_agent( params):
     if params['agent'] == 'td3':
         pf = policies.MLPPolicy( env.observation_space.shape[0], 
             env.action_space.shape[0],
-            params['net'],
-            params['norm_std'],
-            params['noise_clip'] )
+            params['net'])
         vf = networks.VNet( env.observation_space.shape[0], params['net'] )
         qf1 = networks.QNet( env.observation_space.shape[0], 
             env.action_space.shape[0],

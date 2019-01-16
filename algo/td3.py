@@ -18,8 +18,8 @@ class TD3(RLAlgo):
         optimizer_class = optim.Adam,
 
         policy_update_delay = 2,
-        noise_std_explore = 0.1,
-        noise_std_policy = 0.2,
+        norm_std_explore = 0.1,
+        norm_std_policy = 0.2,
         noise_clip = 0.5,
         **kwargs
     ):
@@ -57,11 +57,11 @@ class TD3(RLAlgo):
 
         self.policy_update_delay = policy_update_delay
 
-        self.norm_std_explore = noise_std_explore
-        self.norm_std_policy = noise_std_policy
+        self.norm_std_explore = norm_std_explore
+        self.norm_std_policy = norm_std_policy
         self.noise_clip = noise_clip
 
-    def get_actions(self, policy, x):
+    def get_actions(self, policy, ob):
         _, _, action, _ = policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
         action = action.detach().cpu()
         
@@ -104,6 +104,11 @@ class TD3(RLAlgo):
             self.noise_clip
         )
         target_actions += noise
+        noise = torch.clamp(
+            target_actions,
+            -1,
+            1
+        )
 
         target_q_values = torch.min( 
                 self.target_qf1(next_obs, target_actions) ,
@@ -135,12 +140,10 @@ class TD3(RLAlgo):
         info['Traning/qf1_loss'] = qf1_loss.item()
         info['Traning/qf2_loss'] = qf2_loss.item()
 
-
         if self.training_update_num % self.policy_update_delay:
             """
             Policy Loss.
             """
-            
             new_actions = self.pf(obs)
             new_q_pred_1 = self.qf1(obs, new_actions)
             

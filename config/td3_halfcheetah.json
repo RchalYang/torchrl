@@ -10,9 +10,6 @@
         "size": 1e6
     },
     "net": [400, 300],
-    "norm_std_explore": 0.1,
-    "norm_std_policy": 0.2,
-    "noise_clip": 0.5,
     "general_setting": {
         "discount" : 0.99,
         "pretrain_frames" : 10000,
@@ -33,6 +30,9 @@
     "td3":{
         "plr" : 1e-3,
         "qlr" : 1e-3,
-        "policy_update_delay" : 2
+        "policy_update_delay" : 2,
+        "norm_std_explore": 0.1,
+        "norm_std_policy": 0.2,
+        "noise_clip": 0.5
     }
 }
