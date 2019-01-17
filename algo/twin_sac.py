@@ -133,7 +133,10 @@ class TwinSAC(RLAlgo):
         """
         VF Loss
         """
-        q_new_actions = torch.min(self.qf1(obs, new_actions), self.qf2(obs, new_actions))
+        q1_new_actions = self.qf1(obs, new_actions)
+        q2_new_actions = self.qf2(obs, new_actions)
+
+        q_new_actions = torch.min( q1_new_actions, q2_new_actions )
         v_target = q_new_actions - alpha * log_probs
         vf_loss = self.vf_criterion( v_pred, v_target.detach())
 
@@ -141,12 +144,12 @@ class TwinSAC(RLAlgo):
         Policy Loss
         """
         if not self.reparameterization:
-            log_policy_target = q_new_actions - v_pred
+            log_policy_target = q1_new_actions - v_pred
             policy_loss = (
                 log_probs * ( alpha * log_probs - log_policy_target).detach()
             ).mean()
         else:
-            policy_loss = ( alpha * log_probs - q_new_actions).mean()
+            policy_loss = ( alpha * log_probs - q1_new_actions).mean()
 
         std_reg_loss = self.policy_std_reg_weight * (log_std**2).mean()
         mean_reg_loss = self.policy_mean_reg_weight * (mean**2).mean()
