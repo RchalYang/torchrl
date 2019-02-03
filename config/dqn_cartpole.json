@@ -1,6 +1,6 @@
 {
-    "agent":"ddpg",
-    "env_name" : "HalfCheetah-v2",
+    "agent":"dqn",
+    "env_name" : "CartPole-v1",
     "env":{
         "reward_scale":1,
         "obs_norm":false,
@@ -10,28 +10,32 @@
         "size": 1e6
     },
     "net":{ 
-        "hidden_shapes": [400,300],
+        "hidden_shapes": [ 64, 64 ],
         "append_hidden_shapes":[]        
+    },
+    "policy":{
+        "start_epsilon":1,
+        "end_epsilon":0.1,
+        "decay_frames":10000
     },
     "general_setting": {
         "discount" : 0.99,
-        "pretrain_frames" : 0,
+        "pretrain_frames" : 1000,
         "num_epochs" : 3000,
         "epoch_frames" : 1000,
         "max_episode_frames" : 1000,
 
-        "batch_size" : 64,
+        "batch_size" : 32,
         "min_pool" : 1000,
 
-        "target_hard_update_period" : 1000,
-        "use_soft_update" : true,
+        "target_hard_update_period" : 10000,
+        "use_soft_update" : false,
         "tau" : 0.001,
         "opt_times" : 1,
 
         "eval_episodes" : 1
     },
-    "ddpg":{
-        "plr" : 1e-4,
-        "qlr" : 1e-3
+    "dqn":{
+        "qlr" : 2.5e-4
     }
 }

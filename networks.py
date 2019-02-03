@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-def fanin_init(tensor):
+def _fanin_init(tensor):
     size = tensor.size()
     if len(size) == 2:
         fan_in = size[0]
@@ -14,12 +14,36 @@ def fanin_init(tensor):
     bound = 1. / np.sqrt(fan_in)
     return tensor.data.uniform_(-bound, bound)
 
-def constant_bias_init(tensor, constant = 0.1):
+def _uniform_init(tensor, param=3e-3):
+    return tensor.data.uniform_(-param, param)
+
+def _constant_bias_init(tensor, constant = 0.1):
     tensor.data.fill_( constant )
 
-def basic_init(layer, weight_init = fanin_init, bias_init = constant_bias_init ):
-    fanin_init(layer.weight)
+def layer_init(layer, weight_init = _fanin_init, bias_init = _constant_bias_init ):
+    weight_init(layer.weight)
     bias_init(layer.bias)
+
+def basic_init(layer):
+    layer_init(layer, weight_init = _fanin_init, bias_init = _constant_bias_init)
+
+def uniform_init(layer):
+    layer_init(layer, weight_init = _uniform_init, bias_init = _uniform_init )
+
+def identity(x):
+    return x
+
+def calc_next_shape(input_shape, conv_info):
+    """
+    take input shape per-layer conv-info as input
+    """
+    out_channels, kernel_size, stride, padding = conv_info
+    c, h, w = input_shape
+    # for padding, dilation, kernel_size, stride in conv_info:
+    h = int((h + 2*padding[0] - ( kernel_size[0] - 1 ) - 1 ) / stride[0] + 1)
+    w = int((w + 2*padding[1] - ( kernel_size[1] - 1 ) - 1 ) / stride[1] + 1)
+    return (out_channels, h, w )
+
 
 class MLPBase(nn.Module):
     def __init__(self, input_shape, hidden_shapes, activation_func=F.relu, init_func = basic_init ):
@@ -27,6 +51,7 @@ class MLPBase(nn.Module):
         
         self.activation_func = activation_func
         self.fcs = []
+        input_shape = np.prod(input_shape)
         for i, next_shape in enumerate( hidden_shapes ):
             fc = nn.Linear(input_shape, next_shape)
             init_func(fc)
@@ -35,6 +60,8 @@ class MLPBase(nn.Module):
             self.__setattr__("fc{}".format(i), fc)
 
             input_shape = next_shape
+        
+        self.output_shape = hidden_shapes[-1]
     
     def forward(self, x):
 
@@ -45,78 +72,78 @@ class MLPBase(nn.Module):
 
         return out
 
-class QNet(nn.Module):
-    def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
+# torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True
+class CNNBase(nn.Module):
+    def __init__(self, input_shape, hidden_shapes, activation_func=F.relu, init_func = basic_init ):
+        super().__init__()
+    
+        current_shape = input_shape
+        in_channels = input_shape[0]
+        self.activation_func = activation_func
+        self.convs = []
+        for i, conv_info in enumerate( hidden_shapes ):
+            print(current_shape)
+            out_channels, kernel_size, stride, padding = conv_info
+            conv = nn.Conv2d( in_channels, out_channels, kernel_size, stride, padding )
+            init_func(conv)
+            self.convs.append(conv)
+            # set attr for pytorch to track parameters( device )
+            self.__setattr__("conv{}".format(i), conv)
+
+            in_channels = out_channels
+            current_shape = calc_next_shape( current_shape, conv_info )
+        print(current_shape)
+        self.output_shape = current_shape[0] * current_shape[1] * current_shape[2]
+    
+    def forward(self, x):
+
+        out = x
+        for conv in self.convs:
+            out = conv(out)
+            out = self.activation_func(out)
+        
+        batch_size = out.size()[0]
+        return out.view(batch_size, -1)
+
+
+class Net(nn.Module):
+    def __init__(self, output_shape, 
+            base_type, 
+            append_hidden_shapes=[], append_hidden_init_func = basic_init,
+            last_init_func = uniform_init,
+            activation_func = F.relu,
+             **kwargs ):
         
         super().__init__()
-
-        self.base = MLPBase( obs_shape + action_space, hidden_shapes, **kwargs )
-
-        self.q_fun = nn.Linear( hidden_shapes[-1], 1 )     
-        self.q_fun.weight.data.uniform_(-3e-3, 3e-3)
-        self.q_fun.bias.data.uniform_(-1e-3, 1e-3)
-
-    def forward(self, state, action):
-        out = torch.cat( [state, action], 1 )
-        out = self.base(out)
-        out = self.q_fun(out)
-
-        return out
-
-class VNet(nn.Module):
-    def __init__(self, obs_shape, hidden_shapes, **kwargs ):
         
-        super().__init__()
-        
-        self.base = MLPBase( obs_shape, hidden_shapes, **kwargs )
+        self.base = base_type( activation_func = activation_func, **kwargs )
+        self.activation_func = activation_func
+        append_input_shape = self.base.output_shape
+        print(append_input_shape)
+        self.append_fcs = []
+        for i, next_shape in enumerate( append_hidden_shapes ):
+            fc = nn.Linear(append_input_shape, next_shape)
+            append_hidden_init_func(fc)
+            self.append_fcs.append(fc)
+            # set attr for pytorch to track parameters( device )
+            self.__setattr__("append_fc{}".format(i), fc)
 
-        self.v_fun = nn.Linear( hidden_shapes[-1], 1 )     
-        self.v_fun.weight.data.uniform_(-3e-3, 3e-3)
-        self.v_fun.bias.data.uniform_(-1e-3, 1e-3)
-        
+            append_input_shape = next_shape
+        print(output_shape)
+        self.last = nn.Linear( append_input_shape, output_shape )     
+        last_init_func( self.last )
+
     def forward(self, x):
         out = self.base(x)
-        value = self.v_fun(out)
-        return value
+        
+        for append_fc in self.append_fcs:
+            out = append_fc(out)
+            out = self.activation_func(out)
 
+        out = self.last(out)
+        return out
 
-
-
-# class CNNBase(NNBase):
-#     def __init__(self, num_inputs, recurrent=False, hidden_size=512):
-#         super(CNNBase, self).__init__(recurrent, hidden_size, hidden_size)
-
-#         init_ = lambda m: init(m,
-#             nn.init.orthogonal_,
-#             lambda x: nn.init.constant_(x, 0),
-#             nn.init.calculate_gain('relu'))
-
-#         self.main = nn.Sequential(
-#             init_(nn.Conv2d(num_inputs, 32, 8, stride=4)),
-#             nn.ReLU(),
-#             init_(nn.Conv2d(32, 64, 4, stride=2)),
-#             nn.ReLU(),
-#             init_(nn.Conv2d(64, 32, 3, stride=1)),
-#             nn.ReLU(),
-#             Flatten(),
-#             init_(nn.Linear(32 * 7 * 7, hidden_size)),
-#             nn.ReLU()
-#         )
-
-#         init_ = lambda m: init(m,
-#             nn.init.orthogonal_,
-#             lambda x: nn.init.constant_(x, 0))
-
-#         self.critic_linear = init_(nn.Linear(hidden_size, 1))
-
-#         self.train()
-
-#     def forward(self, inputs, rnn_hxs, masks):
-#         x = self.main(inputs / 255.0)
-
-#         if self.is_recurrent:
-#             x, rnn_hxs = self._forward_gru(x, rnn_hxs, masks)
-
-#         return self.critic_linear(x), x, rnn_hxs
-
-
+class FlattenNet(Net):
+    def forward(self, *input):
+        out = torch.cat( input, dim = 1 )
+        return super().forward(out)

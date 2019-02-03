@@ -1,11 +1,14 @@
 import argparse
 import json
+import gym
 
 import torch
+import torch.optim as optim
 
 import algo
 import policies
 import networks
+import env
 
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
@@ -43,20 +46,56 @@ def get_params(file_name):
         params = json.load(f)
     return params
 
+
+def wrap_deepmind(env, frame_stack=False, scale=False):
+    """Configure environment for DeepMind-style Atari.
+    """
+    # if episode_life:
+    #     env = EpisodicLifeEnv(env)
+    # if 'FIRE' in env.unwrapped.get_action_meanings():
+    #     env = FireResetEnv(env)
+    env = env.WarpFrame(env)
+    if scale:
+        env = env.ScaledFloatFrame(env)
+    # if clip_rewards:
+    #     env = ClipRewardEnv(env)
+    if frame_stack:
+        env = env.FrameStack(env, 4)
+    return env
+
+def get_env( env_id, env_param ):
+
+    env = gym.make(env_id)
+    ob_space = env.observation_space
+    if len(ob_space.shape) == 3:
+        return wrap_deepmind(env, **env_param)
+    else:
+        return env.NormalizedContinuousEnv(env, **env_param)
+
 def get_agent( params):
 
     env = params['general_setting']['env']
 
-    pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
+    if len(env.observation_space.shape) == 3:
+        params['net']['base_type']=networks.CNNBase
+    else:
+        params['net']['base_type']=networks.MLPBase
 
     if params['agent'] == 'sac':
-        pf = policies.MLPGuassianPolicy( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
-        vf = networks.VNet( env.observation_space.shape[0], params['net'] )
-        qf = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-             params['net'] )
+        pf = policies.GuassianContPolicy (
+            input_shape = env.observation_space.shape[0], 
+            output_shape = 2 * env.action_space.shape[0],
+            **params['net'] )
+        vf = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        qf = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
+
         return algo.SAC(
             pf = pf,
             vf = vf,
@@ -67,16 +106,24 @@ def get_agent( params):
         )
     
     if params['agent'] == 'twin_sac':
-        pf = policies.MLPGuassianPolicy( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
-        vf = networks.VNet( env.observation_space.shape[0], params['net'] )
-        qf1 = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
-        qf2 = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
+        pf = policies.GuassianContPolicy (
+            input_shape = env.observation_space.shape[0], 
+            output_shape = 2 * env.action_space.shape[0],
+            **params['net'] )
+        vf = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        qf1 = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        qf2 = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
+
         return algo.TwinSAC(
             pf = pf,
             vf = vf,
@@ -88,16 +135,20 @@ def get_agent( params):
         )
 
     if params['agent'] == 'td3':
-        pf = policies.MLPPolicy( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'])
-        vf = networks.VNet( env.observation_space.shape[0], params['net'] )
-        qf1 = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
-        qf2 = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
+        pf = policies.DetContPolicy (
+            input_shape = env.observation_space.shape[0], 
+            output_shape = env.action_space.shape[0],
+            **params['net'] )
+        qf1 = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        qf2 = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
+
         return algo.TD3(
             pf = pf,
             qf1 = qf1,
@@ -108,18 +159,46 @@ def get_agent( params):
         )
 
     if params['agent'] == 'ddpg':
-        pf = policies.MLPPolicy( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
-        qf = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-             params['net'] )
+        pf = policies.DetContPolicy (
+            input_shape = env.observation_space.shape[0], 
+            output_shape = env.action_space.shape[0],
+            **params['net'] )
+        qf = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
+            
         return algo.DDPG(
             pf = pf,
             qf = qf,
             pretrain_pf = pretrain_pf,
             **params['ddpg'],
             **params['general_setting']
+        )
+    
+    if params['agent'] == 'dqn':
+        
+        qf = networks.Net(
+            input_shape = env.observation_space.shape,
+            output_shape = env.action_space.n,
+            **params['net']
+        )
+        pf = policies.EpsilonGreedyDQNDiscretePolicy(
+            qf = qf,
+            action_shape = env.action_space.n,
+            **params['policy']
+        )
+        pretrain_pf = policies.UniformPolicyDiscrete(
+            action_num = env.action_space.n
+        )
+        params["general_setting"]["optimizer_class"] = optim.RMSprop
+        return algo.DQN(
+            pf = pf,
+            qf = qf,
+            pretrain_pf = pretrain_pf,
+            **params["dqn"],
+            **params["general_setting"]
         )
 
     raise Exception("specified algorithm is not implemented")

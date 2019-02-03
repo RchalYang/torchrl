@@ -103,8 +103,14 @@ class TwinSAC(RLAlgo):
         """
         Policy operations.
         """
+        sample_info = self.pf.explore(obs, return_log_probs=True )
 
-        mean, log_std, new_actions, log_probs, ent = self.pf.explore(obs, return_log_probs=True )
+        mean        = sample_info["mean"]
+        log_std     = sample_info["log_std"]
+        new_actions = sample_info["action"]
+        log_probs   = sample_info["log_probs"]
+        ent         = sample_info["ent"]
+
         q1_pred = self.qf1(obs, actions)
         q2_pred = self.qf2(obs, actions)
         v_pred = self.vf(obs)

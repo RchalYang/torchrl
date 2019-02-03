@@ -1,7 +1,7 @@
 {
     "agent":"twin_sac",
+    "env_name" : "HalfCheetah-v2",
     "env":{
-        "env_name" : "HalfCheetah-v2",
         "reward_scale":5,
         "obs_norm":false,
         "obs_alpha":0.001
@@ -9,7 +9,10 @@
     "replay_buffer":{
         "size": 1e6
     },
-    "net": [256,256],
+    "net":{ 
+        "hidden_shapes": [400,300],
+        "append_hidden_shapes":[]        
+    },
     "general_setting": {
         "discount" : 0.99,
         "pretrain_frames" : 10000,
