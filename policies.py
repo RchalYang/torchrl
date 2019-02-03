@@ -21,6 +21,18 @@ class UniformPolicy(nn.Module):
     def explore(self, x):
         return None, None, torch.Tensor(np.random.uniform(-1., 1., self.action_shape)), None
 
+class UniformPolicyDiscrete(nn.Module):
+    def __init__(self, action_num):
+        super().__init__()
+        self.action_num = action_num
+
+    def __call__(self,x ):
+        return np.random.randint(self.action_num)
+
+    def explore(self, x):
+        return None, None, np.random.randint(self.action_num), None
+
+
 class MLPPolicy(nn.Module):
     def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
         

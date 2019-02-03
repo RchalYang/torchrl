@@ -45,20 +45,47 @@ class MLPBase(nn.Module):
 
         return out
 
-class QNet(nn.Module):
-    def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
+class MLP(nn.Module):
+    def __init__(self, input_shape, output_shape, hidden_shapes, **kwargs ):
         
         super().__init__()
 
-        self.base = MLPBase( obs_shape + action_space, hidden_shapes, **kwargs )
+        self.base = MLPBase( input_shape, hidden_shapes, **kwargs )
 
-        self.q_fun = nn.Linear( hidden_shapes[-1], 1 )     
+        self.last = nn.Linear( hidden_shapes[-1], 1 )     
+        self.last.weight.data.uniform_(-3e-3, 3e-3)
+        self.last.bias.data.uniform_(-1e-3, 1e-3)
+
+    def forward(self, x):
+        out = self.base(x)
+        out = self.last(out)
+        return out
+
+class ContinuousQNet(MLP):
+    def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
+        super(ContinuousQNet, self).__init__(
+            obs_shape + action_space, 1,
+            hidden_shapes, **kwargs)
+
+    def forward(self, state, action):
+        x = torch.cat( [state, action], 1 )
+        return super().forward(x)
+
+class DiscreteQNet(MLP):
+    def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
+        
+        super(DiscreteQNet, self).__init__(
+            obs_shape + action_space, 1,
+            hidden_shapes, **kwargs)
+
+        self.base = MLPBase( obs_shape, hidden_shapes, **kwargs )
+
+        self.q_fun = nn.Linear( hidden_shapes[-1], action_space )     
         self.q_fun.weight.data.uniform_(-3e-3, 3e-3)
         self.q_fun.bias.data.uniform_(-1e-3, 1e-3)
 
     def forward(self, state, action):
-        out = torch.cat( [state, action], 1 )
-        out = self.base(out)
+        out = self.base(state)
         out = self.q_fun(out)
 
         return out
