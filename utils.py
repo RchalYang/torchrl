@@ -49,14 +49,24 @@ def get_agent( params):
 
     pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
 
+    base_type = networks.MLPBase
+
+    params['net']['base_type']=base_type
+
     if params['agent'] == 'sac':
-        pf = policies.MLPGuassianPolicy( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
-        vf = networks.VNet( env.observation_space.shape[0], params['net'] )
-        qf = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-             params['net'] )
+        pf = policies.MLPGuassianContPolicy (
+            input_shape = env.observation_space.shape[0], 
+            output_shape = 2 * env.action_space.shape[0],
+            **params['net'] )
+        vf = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        qf = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+
         return algo.SAC(
             pf = pf,
             vf = vf,
@@ -67,16 +77,23 @@ def get_agent( params):
         )
     
     if params['agent'] == 'twin_sac':
-        pf = policies.MLPGuassianPolicy( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
-        vf = networks.VNet( env.observation_space.shape[0], params['net'] )
-        qf1 = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
-        qf2 = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
+        pf = policies.MLPGuassianContPolicy (
+            input_shape = env.observation_space.shape[0], 
+            output_shape = 2 * env.action_space.shape[0],
+            **params['net'] )
+        vf = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        qf1 = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        qf2 = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+
         return algo.TwinSAC(
             pf = pf,
             vf = vf,
@@ -88,16 +105,19 @@ def get_agent( params):
         )
 
     if params['agent'] == 'td3':
-        pf = policies.MLPPolicy( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'])
-        vf = networks.VNet( env.observation_space.shape[0], params['net'] )
-        qf1 = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
-        qf2 = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
+        pf = policies.MLPDetContPolicy (
+            input_shape = env.observation_space.shape[0], 
+            output_shape = env.action_space.shape[0],
+            **params['net'] )
+        qf1 = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+        qf2 = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+
         return algo.TD3(
             pf = pf,
             qf1 = qf1,
@@ -108,12 +128,15 @@ def get_agent( params):
         )
 
     if params['agent'] == 'ddpg':
-        pf = policies.MLPPolicy( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-            params['net'] )
-        qf = networks.QNet( env.observation_space.shape[0], 
-            env.action_space.shape[0],
-             params['net'] )
+        pf = policies.MLPDetContPolicy (
+            input_shape = env.observation_space.shape[0], 
+            output_shape = env.action_space.shape[0],
+            **params['net'] )
+        qf = networks.FlattenNet( 
+            input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
+            output_shape = 1,
+            **params['net'] )
+            
         return algo.DDPG(
             pf = pf,
             qf = qf,

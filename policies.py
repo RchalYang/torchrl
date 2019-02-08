@@ -6,6 +6,7 @@ from torch.distributions import Normal
 import numpy as np
 from distribution import TanhNormal
 from networks import MLPBase
+import networks
 
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
@@ -33,53 +34,20 @@ class UniformPolicyDiscrete(nn.Module):
         return None, None, np.random.randint(self.action_num), None
 
 
-class MLPPolicy(nn.Module):
-    def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
-        
-        super().__init__()
-
-        self.base = MLPBase( obs_shape, hidden_shapes, **kwargs )
-
-        self.action = nn.Linear( hidden_shapes[-1], action_space )
-        self.action.weight.data.uniform_(-3e-3, 3e-3)
-        self.action.bias.data.uniform_(-1e-3, 1e-3)
-        
-    def forward(self, x):
-        
-        h = self.base(x)
-        mean = self.action( h )
-        mean = F.tanh(mean)
-        return mean
-    
+class MLPDetContPolicy(networks.Net):
     def eval( self, x ):
         with torch.no_grad():
-            return self.forward(x)
+            return torch.tanh(self.forward(x))
     
     def explore( self, x ):
-        return None, None, self.forward(x), None
+        return None, None, torch.tanh(self.forward(x)), None
 
-class MLPGuassianPolicy(nn.Module):
-    def __init__(self, obs_shape, action_space, hidden_shapes, **kwargs ):
-        
-        super().__init__()
+class MLPGuassianContPolicy(networks.Net):
 
-        self.base = MLPBase( obs_shape, hidden_shapes, **kwargs )
-
-        self.action = nn.Linear( hidden_shapes[-1], action_space )
-        self.action.weight.data.uniform_(-3e-3, 3e-3)
-        self.action.bias.data.uniform_(-1e-3, 1e-3)
-        
-        self.last_fc_log_std = nn.Linear( hidden_shapes[-1], action_space)
-        self.last_fc_log_std.weight.data.uniform_(-1e-3, 1e-3)
-        self.last_fc_log_std.bias.data.uniform_(-1e-3, 1e-3)
-        
     def forward(self, x):
+        x = super().forward(x)
         
-        h = self.base(x)
-
-        mean = self.action( h )
-        
-        log_std = self.last_fc_log_std( h )
+        mean, log_std = x.chunk(2, dim=-1)
 
         log_std = torch.clamp(log_std, LOG_SIG_MIN, LOG_SIG_MAX)
         std = torch.exp(log_std)

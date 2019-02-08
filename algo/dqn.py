@@ -63,7 +63,7 @@ class DQN(RLAlgo):
         
         self._update_target_networks()
 
-                # Information For Logger
+        # Information For Logger
         info = {}
         info['Reward_Mean'] = rewards.mean().item()
         info['Traning/qf_loss'] = qf_loss.item()

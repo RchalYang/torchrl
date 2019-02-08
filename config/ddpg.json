@@ -9,7 +9,10 @@
     "replay_buffer":{
         "size": 1e6
     },
-    "net": [400,300],
+    "net":{ 
+        "hidden_shapes": [400,300],
+        "append_hidden_shapes":[]        
+    },
     "general_setting": {
         "discount" : 0.99,
         "pretrain_frames" : 0,
