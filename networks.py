@@ -34,15 +34,15 @@ def identity(x):
     return x
 
 def calc_next_shape(input_shape, conv_info):
-	"""
-	take input shape per-layer conv-info as input
-	"""
+    """
+    take input shape per-layer conv-info as input
+    """
     out_channels, kernel_size, stride, padding = conv_info
     h , w, c = input_shape
     # for padding, dilation, kernel_size, stride in conv_info:
     h = int((h + 2*padding[0] - ( kernel_size[0] - 1 ) - 1 ) / stride[0] + 1)
     w = int((w + 2*padding[1] - ( kernel_size[1] - 1 ) - 1 ) / stride[1] + 1)
-	return (h,w, out_channels)
+    return (h,w, out_channels)
 
 
 class MLPBase(nn.Module):
@@ -114,7 +114,7 @@ class Net(nn.Module):
         
         super().__init__()
 
-        self.base = base_type( hidden_shapes, activation_func, **kwargs )
+        self.base = base_type( activation_func = activation_func, **kwargs )
     
         append_input_shape = self.base.output_shape
         self.append_fcs = []
@@ -126,8 +126,8 @@ class Net(nn.Module):
             self.__setattr__("append_fc{}".format(i), fc)
 
             append_input_shape = next_shape
-    
-        self.last = nn.Linear( append_hidden_shapes[-1], output_shape )     
+
+        self.last = nn.Linear( append_input_shape, output_shape )     
         last_init_func( self.last )
 
     def forward(self, x):

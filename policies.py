@@ -35,12 +35,15 @@ class UniformPolicyDiscrete(nn.Module):
 
 
 class MLPDetContPolicy(networks.Net):
+    def forward(self, x):
+        return torch.tanh(super().forward(x))    
+
     def eval( self, x ):
         with torch.no_grad():
-            return torch.tanh(self.forward(x))
+            return self.forward(x)
     
     def explore( self, x ):
-        return None, None, torch.tanh(self.forward(x)), None
+        return None, None, self.forward(x), None
 
 class MLPGuassianContPolicy(networks.Net):
 

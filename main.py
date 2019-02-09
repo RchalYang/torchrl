@@ -18,10 +18,6 @@ from env import NormalizedContinuousEnv
 from utils import get_args
 from utils import get_params
 from utils import get_agent
-from policies import MLPGuassianPolicy
-from policies import UniformPolicy
-from networks import QNet
-from networks import VNet
 
 from replay_buffer import SimpleReplayBuffer
 from logger import Logger
