@@ -92,8 +92,9 @@ class TD3(RLAlgo):
         """
         QF Loss
         """
-        _, _, target_actions, _ = self.target_pf.explore(next_obs )
-        
+        sample_info = self.target_pf.explore(next_obs )
+        target_actions = sample_info["action"]
+
         noise = Normal(
                  torch.zeros( target_actions.size()),
                  self.norm_std_policy * torch.ones( target_actions.size())

@@ -68,12 +68,14 @@ class RLAlgo():
         self.eval_episodes = eval_episodes
 
     def get_actions(self, policy, ob):
-        _, _, action, _ = policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+        out = policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+        action = out["action"]
         action = action.detach().cpu().numpy()
         return action
 
     def get_pretrain_actions(self, policy, ob):
-        _, _, action, _ = policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+        out = policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+        action = out["action"]
         action = action.detach().cpu().numpy()
         return action
 
@@ -138,7 +140,7 @@ class RLAlgo():
             rew = 0
             while not done:
                 act = self.pf.eval( torch.Tensor( eval_ob ).to(self.device).unsqueeze(0) )
-                eval_ob, r, done, _ = eval_env.step( act.detach().cpu().numpy() )
+                eval_ob, r, done, _ = eval_env.step( act )
                 rew += r
 
             eval_rews.append(rew)
@@ -168,9 +170,12 @@ class RLAlgo():
                     action = self.get_actions( self.pf, ob )
 
                 # Nan detected, stop training
-                if np.isnan(action).any():
-                    print("NaN detected. BOOM")
-                    exit()
+            
+                if type(action) is not int:
+                    print(action)
+                    if np.isnan(action).any():
+                        print("NaN detected. BOOM")
+                        exit()
                 # Obser reward and next obs
                 next_ob, reward, done, _ = self.env.step(action)
 

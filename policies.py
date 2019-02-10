@@ -20,7 +20,8 @@ class UniformPolicy(nn.Module):
         return torch.Tensor(np.random.uniform(-1., 1., self.action_shape))
 
     def explore(self, x):
-        return None, None, torch.Tensor(np.random.uniform(-1., 1., self.action_shape)), None
+        {"action":self.forward(x)}
+        return {"action":torch.Tensor(np.random.uniform(-1., 1., self.action_shape))}
 
 class UniformPolicyDiscrete(nn.Module):
     def __init__(self, action_num):
@@ -31,21 +32,21 @@ class UniformPolicyDiscrete(nn.Module):
         return np.random.randint(self.action_num)
 
     def explore(self, x):
-        return None, None, np.random.randint(self.action_num), None
+        return {"action":np.random.randint(self.action_num)}
 
 
-class MLPDetContPolicy(networks.Net):
+class DetContPolicy(networks.Net):
     def forward(self, x):
         return torch.tanh(super().forward(x))    
 
     def eval( self, x ):
         with torch.no_grad():
-            return self.forward(x)
+            return self.forward(x).detach().cpu().numpy()
     
     def explore( self, x ):
-        return None, None, self.forward(x), None
+        return {"action":self.forward(x)}
 
-class MLPGuassianContPolicy(networks.Net):
+class GuassianContPolicy(networks.Net):
 
     def forward(self, x):
         x = super().forward(x)
@@ -60,7 +61,7 @@ class MLPGuassianContPolicy(networks.Net):
     def eval( self, x ):
         with torch.no_grad():
             mean, std, log_std = self.forward(x)
-        return torch.tanh(mean)
+        return torch.tanh(mean).detach().cpu().numpy()
     
     def explore( self, x, return_log_probs = False ):
         
@@ -70,6 +71,12 @@ class MLPGuassianContPolicy(networks.Net):
 
         ent = dis.entropy().sum(1, keepdim=True) 
         
+        dic = {
+            "mean": mean,
+            "log_std": log_std,
+            "ent":ent
+        }
+
         if return_log_probs:
             action, z = dis.rsample( return_pretanh_value = True )
             log_prob = dis.log_prob(
@@ -77,11 +84,12 @@ class MLPGuassianContPolicy(networks.Net):
                 pre_tanh_value=z
             )
             log_prob = log_prob.sum(dim=1, keepdim=True)
-            return mean, log_std, action, log_prob, ent
-
+            dic["log_prob"] = log_prob
         else:
             action = dis.rsample( return_pretanh_value = False )
-            return mean, log_std, action, ent
+
+        dic["action"] = action
+        return dic
     
     def get_log_probs(self, mean, std, action, pre_tanh_value = None):
         
@@ -90,3 +98,41 @@ class MLPGuassianContPolicy(networks.Net):
         log_probs = dis.log_prob( action, pre_tanh_value ).sum(1,keepdim=True)
 
         return log_probs 
+
+class EpsilonGreedyDQNDiscretePolicy():
+    """
+    wrapper over QNet
+    """
+    def __init__(self, qf, start_epsilon, end_epsilon, decay_frames, action_shape):
+        self.qf = qf
+        self.start_epsilon = start_epsilon
+        self.end_epsilon = end_epsilon
+        self.decay_frames = decay_frames
+        self.count = 0
+        self.action_shape = action_shape
+    
+    def explore(self, x):
+        self.count += 1
+        r = np.random.rand()
+        if self.count < self.decay_frames:
+            epsilon =  self.start_epsilon - ( self.start_epsilon - self.end_epsilon ) \
+                * ( self.count / self.decay_frames )
+        else:
+            epsilon = self.end_epsilon
+        
+        if r < epsilon:
+            return {
+                "action":np.random.randint(0, self.action_shape )
+            }
+    
+        output = self.qf(x)
+        action = output.max(dim=-1)[1].detach().item()
+        return {
+            "q_value": output,
+            "action":action
+        }
+    
+    def eval(self, x):
+        output = self.qf(x)
+        action = output.max(dim=-1)[1].detach().item()
+        return action

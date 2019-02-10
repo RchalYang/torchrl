@@ -38,11 +38,11 @@ def calc_next_shape(input_shape, conv_info):
     take input shape per-layer conv-info as input
     """
     out_channels, kernel_size, stride, padding = conv_info
-    h , w, c = input_shape
+    c, h, w = input_shape
     # for padding, dilation, kernel_size, stride in conv_info:
     h = int((h + 2*padding[0] - ( kernel_size[0] - 1 ) - 1 ) / stride[0] + 1)
     w = int((w + 2*padding[1] - ( kernel_size[1] - 1 ) - 1 ) / stride[1] + 1)
-    return (h,w, out_channels)
+    return (out_channels, h, w )
 
 
 class MLPBase(nn.Module):
@@ -75,12 +75,13 @@ class MLPBase(nn.Module):
 class CNNBase(nn.Module):
     def __init__(self, input_shape, hidden_shapes, activation_func=F.relu, init_func = basic_init ):
         super().__init__()
-
+    
         current_shape = input_shape
-        in_channels = input_shape[-1]
+        in_channels = input_shape[0]
         self.activation_func = activation_func
         self.convs = []
         for i, conv_info in enumerate( hidden_shapes ):
+            print(current_shape)
             out_channels, kernel_size, stride, padding = conv_info
             conv = nn.Conv2d( in_channels, out_channels, kernel_size, stride, padding )
             init_func(conv)
@@ -90,7 +91,7 @@ class CNNBase(nn.Module):
 
             in_channels = out_channels
             current_shape = calc_next_shape( current_shape, conv_info )
-        
+        print(current_shape)
         self.output_shape = current_shape[0] * current_shape[1] * current_shape[2]
     
     def forward(self, x):
@@ -113,10 +114,11 @@ class Net(nn.Module):
              **kwargs ):
         
         super().__init__()
-
+        
         self.base = base_type( activation_func = activation_func, **kwargs )
-    
+        self.activation_func = activation_func
         append_input_shape = self.base.output_shape
+        print(append_input_shape)
         self.append_fcs = []
         for i, next_shape in enumerate( append_hidden_shapes ):
             fc = nn.Linear(append_input_shape, next_shape)
@@ -126,7 +128,7 @@ class Net(nn.Module):
             self.__setattr__("append_fc{}".format(i), fc)
 
             append_input_shape = next_shape
-
+        print(output_shape)
         self.last = nn.Linear( append_input_shape, output_shape )     
         last_init_func( self.last )
 
