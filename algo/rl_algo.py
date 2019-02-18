@@ -172,7 +172,6 @@ class RLAlgo():
                 # Nan detected, stop training
             
                 if type(action) is not int:
-                    print(action)
                     if np.isnan(action).any():
                         print("NaN detected. BOOM")
                         exit()

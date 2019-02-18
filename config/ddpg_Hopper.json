@@ -1,0 +1,37 @@
+{
+    "agent":"ddpg",
+    "env_name" : "Hopper-v2",
+    "env":{
+        "reward_scale":1,
+        "obs_norm":false,
+        "obs_alpha":0.001
+    },
+    "replay_buffer":{
+        "size": 1e6
+    },
+    "net":{ 
+        "hidden_shapes": [400,300],
+        "append_hidden_shapes":[]        
+    },
+    "general_setting": {
+        "discount" : 0.99,
+        "pretrain_frames" : 0,
+        "num_epochs" : 3000,
+        "epoch_frames" : 1000,
+        "max_episode_frames" : 1000,
+
+        "batch_size" : 64,
+        "min_pool" : 1000,
+
+        "target_hard_update_period" : 1000,
+        "use_soft_update" : true,
+        "tau" : 0.001,
+        "opt_times" : 1,
+
+        "eval_episodes" : 1
+    },
+    "ddpg":{
+        "plr" : 1e-4,
+        "qlr" : 1e-3
+    }
+}
