@@ -115,12 +115,12 @@ class EpsilonGreedyDQNDiscretePolicy():
         self.count += 1
         r = np.random.rand()
         if self.count < self.decay_frames:
-            epsilon =  self.start_epsilon - ( self.start_epsilon - self.end_epsilon ) \
+            self.epsilon =  self.start_epsilon - ( self.start_epsilon - self.end_epsilon ) \
                 * ( self.count / self.decay_frames )
         else:
-            epsilon = self.end_epsilon
+            self.epsilon = self.end_epsilon
         
-        if r < epsilon:
+        if r < self.epsilon:
             return {
                 "action":np.random.randint(0, self.action_shape )
             }

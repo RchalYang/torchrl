@@ -51,6 +51,7 @@ class MLPBase(nn.Module):
         
         self.activation_func = activation_func
         self.fcs = []
+        input_shape = np.prod(input_shape)
         for i, next_shape in enumerate( hidden_shapes ):
             fc = nn.Linear(input_shape, next_shape)
             init_func(fc)

@@ -17,7 +17,7 @@ class BaseWrapper(gym.Wrapper):
     def eval(self):
         self.training = False
 
-class NormObs(gym.ObservationWrapper):
+class NormObs(gym.ObservationWrapper, BaseWrapper):
     """
     Normalized Observation => Optional, Use Momentum
     """
@@ -38,9 +38,9 @@ class NormObs(gym.ObservationWrapper):
         return (raw_obs - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
 
     def observation(self, observation):
-        return observation = self._apply_normalize_obs(observation)
+        return self._apply_normalize_obs(observation)
 
-class NormAct(gym.ActionWrapper):
+class NormAct(gym.ActionWrapper, BaseWrapper):
     """
     Normalized Action      => [ -1, 1 ]
     """
@@ -55,7 +55,7 @@ class NormAct(gym.ActionWrapper):
         scaled_action = lb + (action + 1.) * 0.5 * (ub - lb)
         return np.clip(scaled_action, lb, ub)
 
-class RewardShift(gym.RewardWrapper):
+class RewardShift(gym.RewardWrapper, BaseWrapper):
     def __init__(self, env, reward_scale = 1):
         super(RewardShift, self).__init__(env)
         self._reward_scale = reward_scale
@@ -215,7 +215,7 @@ class LazyFrames(object):
 """
 Origin from OpenAI Baselines
 """
-class WarpFrame(gym.ObservationWrapper):
+class WarpFrame(gym.ObservationWrapper, BaseWrapper):
     """Warp frames to 84x84 as done in the Nature paper and later work."""
     def __init__(self, env, width=84, height=84, grayscale=True):
         gym.ObservationWrapper.__init__(self, env)
@@ -238,7 +238,7 @@ class WarpFrame(gym.ObservationWrapper):
         frame = np.transpose(frame, (2,0,1) )
         return frame
 
-class FrameStack(gym.Wrapper):
+class FrameStack( BaseWrapper):
     def __init__(self, env, k):
         """Stack k last frames.
         Returns lazy array, which is much more memory efficient.
@@ -267,7 +267,7 @@ class FrameStack(gym.Wrapper):
         assert len(self.frames) == self.k
         return np.concatenate(list(self.frames),axis=0)
 
-class ScaledFloatFrame(gym.ObservationWrapper):
+class ScaledFloatFrame(gym.ObservationWrapper, BaseWrapper):
     def __init__(self, env):
         gym.ObservationWrapper.__init__(self, env)
         self.observation_space = gym.spaces.Box(low=0, high=1, shape=env.observation_space.shape, dtype=np.float32)
@@ -309,8 +309,8 @@ def wrap_deepmind(env, frame_stack=False, scale=False, clip_rewards=False):
         env = FrameStack(env, 4)    
     return env
 
-def wrap_continuous_env(env, obs_norm, obs_alpha ):
-    env = RewardShift(env)
+def wrap_continuous_env(env, obs_norm, obs_alpha, reward_scale ):
+    env = RewardShift(env, reward_scale)
     if obs_norm:
         return NormObs(env, obs_alpha=obs_alpha) 
     return env

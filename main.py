@@ -13,8 +13,6 @@ import stat
 from collections import deque
 import numpy as np
 
-from algo.sac import SAC
-from env import NormalizedContinuousEnv
 from utils import get_args
 from utils import get_params
 from utils import get_agent
