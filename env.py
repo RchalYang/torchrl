@@ -146,7 +146,7 @@ class FrameStack(gym.Wrapper):
 
     def _get_ob(self):
         assert len(self.frames) == self.k
-        return LazyFrames(list(self.frames))
+        return np.concatenate(list(self.frames),axis=0)
     
     def train(self):
         pass
@@ -180,11 +180,11 @@ def wrap_deepmind(env, frame_stack=False, scale=False):
         env = FrameStack(env, 4)
     return env
 
-def get_env( env_id, *env_param ):
+def get_env( env_id, env_param ):
 
     env = gym.make(env_id)
     ob_space = env.observation_space
     if len(ob_space.shape) == 3:
-        return wrap_deepmind(env, *env_param)
+        return wrap_deepmind(env, **env_param)
     else:
-        return NormalizedContinuousEnv(env, *env_param)
+        return NormalizedContinuousEnv(env, **env_param)
