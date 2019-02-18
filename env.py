@@ -6,64 +6,62 @@ from gym import Env
 from collections import deque
 import cv2
 
-class NormalizedContinuousEnv(Env):
+class BaseWrapper(gym.Wrapper):
+    def __init__(self, env):
+        super(BaseWrapper, self).__init__(env)
+        self.training = True
+
+    def train(self):
+        self.training = True
+
+    def eval(self):
+        self.training = False
+
+class NormObs(gym.ObservationWrapper):
     """
-    Normalized Action      => [ -1, 1 ]
     Normalized Observation => Optional, Use Momentum
     """
-    def __init__(
-            self,
-            env,
-            reward_scale=1.,
-            obs_norm = False,
-            obs_alpha = 0.001
-    ):
-        self._wrapped_env = env
-        self._obs_norm = obs_norm
-        if self._obs_norm:
-            self._obs_alpha = obs_alpha
-            self._obs_mean = np.zeros(env.observation_space.shape[0])
-            self._obs_var = np.ones(env.observation_space.shape[0])
+    def __init__( self, env, obs_alpha = 0.001 ):
+        super(NormObs,self).__init__(env)
+        self._obs_alpha = obs_alpha
+        self._obs_mean = np.zeros(env.observation_space.shape[0])
+        self._obs_var = np.ones(env.observation_space.shape[0])
 
-        self._reward_scale = reward_scale
-
-        ub = np.ones(self._wrapped_env.action_space.shape)
-        self.action_space = Box(-1 * ub, ub)
-        self.observation_space = self._wrapped_env.observation_space
-
-        self.training = False
-    
     def _update_obs_estimate(self, obs):
         
         self._obs_mean = (1 - self._obs_alpha) * self._obs_mean + self._obs_alpha * obs
         self._obs_var = (1 - self._obs_alpha) * self._obs_var + self._obs_alpha * np.square(obs - self._obs_mean)
 
     def _apply_normalize_obs(self, raw_obs):
-        if not self._obs_norm:
-            return raw_obs
         if self.training:
             self._update_obs_estimate(raw_obs)
         return (raw_obs - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
 
-    def step(self, action):
-        lb = self._wrapped_env.action_space.low
-        ub = self._wrapped_env.action_space.high
+    def observation(self, observation):
+        return observation = self._apply_normalize_obs(observation)
+
+class NormAct(gym.ActionWrapper):
+    """
+    Normalized Action      => [ -1, 1 ]
+    """
+    def __init__(self, env):
+        super(NormAct, self).__init__(env)
+        ub = np.ones(self.env.action_space.shape)
+        self.action_space = Box(-1 * ub, ub)
+    
+    def action(self, action):        
+        lb = self.env.action_space.low
+        ub = self.env.action_space.high
         scaled_action = lb + (action + 1.) * 0.5 * (ub - lb)
-        scaled_action = np.clip(scaled_action, lb, ub)
+        return np.clip(scaled_action, lb, ub)
 
-        raw_next_obs, reward, done, info = self._wrapped_env.step(scaled_action)
-        next_obs = self._apply_normalize_obs(raw_next_obs)
-        return next_obs, reward * self._reward_scale, done, info
+class RewardShift(gym.RewardWrapper):
+    def __init__(self, env, reward_scale = 1):
+        super(RewardShift, self).__init__(env)
+        self._reward_scale = reward_scale
     
-    def reset(self):
-        raw_obs = self._wrapped_env.reset()
-        return self._apply_normalize_obs(raw_obs)
-
-    def train(self):
-        self.training = True
-    
-    def eval(self):
-        self.training = False
+    def reward(self, reward):
+        return self._reward_scale * reward
 
 class LazyFrames(object):
     def __init__(self, frames):
@@ -147,12 +145,6 @@ class FrameStack(gym.Wrapper):
     def _get_ob(self):
         assert len(self.frames) == self.k
         return np.concatenate(list(self.frames),axis=0)
-    
-    def train(self):
-        pass
-
-    def eval(self):
-        pass
 
 class ScaledFloatFrame(gym.ObservationWrapper):
     def __init__(self, env):
@@ -180,11 +172,22 @@ def wrap_deepmind(env, frame_stack=False, scale=False):
         env = FrameStack(env, 4)
     return env
 
+def wrap_continuous_env(env, obs_norm, obs_alpha ):
+    env = RewardShift(env)
+    if obs_norm:
+        return NormObs(env, obs_alpha=obs_alpha) 
+    return env
+
 def get_env( env_id, env_param ):
 
-    env = gym.make(env_id)
+    env = BaseWrapper( gym.make(env_id) )
     ob_space = env.observation_space
     if len(ob_space.shape) == 3:
-        return wrap_deepmind(env, **env_param)
+        env = wrap_deepmind(env, **env_param)
     else:
-        return NormalizedContinuousEnv(env, **env_param)
+        env = wrap_continuous_env(env, **env_param)
+    
+    act_space = env.action_space
+    if isinstance(act_space, gym.spaces.Box):
+        return NormAct(env)
+    return env
