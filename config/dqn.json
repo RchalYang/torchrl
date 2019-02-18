@@ -1,9 +1,10 @@
 {
     "agent":"dqn",
-    "env_name" : "Pong-v0",
+    "env_name" : "PongNoFrameskip-v4",
     "env":{
         "frame_stack":true,
-        "scale": true
+        "scale": true,
+        "clip_rewards": true
     },
     "replay_buffer":{
         "size": 1e4
