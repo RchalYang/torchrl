@@ -3,6 +3,7 @@ import json
 import gym
 
 import torch
+import torch.optim as optim
 
 import algo
 import policies
@@ -75,10 +76,10 @@ def get_agent( params):
 
     env = params['general_setting']['env']
 
-
-    base_type = networks.MLPBase
-
-    params['net']['base_type']=base_type
+    if len(env.observation_space.shape) == 3:
+        params['net']['base_type']=networks.CNNBase
+    else:
+        params['net']['base_type']=networks.MLPBase
 
     if params['agent'] == 'sac':
         pf = policies.GuassianContPolicy (
@@ -178,7 +179,6 @@ def get_agent( params):
     
     if params['agent'] == 'dqn':
         
-        params['net']['base_type']=networks.CNNBase
         qf = networks.Net(
             input_shape = env.observation_space.shape,
             output_shape = env.action_space.n,
@@ -192,6 +192,7 @@ def get_agent( params):
         pretrain_pf = policies.UniformPolicyDiscrete(
             action_num = env.action_space.n
         )
+        params["general_setting"]["optimizer_class"] = optim.RMSprop
         return algo.DQN(
             pf = pf,
             qf = qf,

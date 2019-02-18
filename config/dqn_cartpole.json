@@ -1,34 +1,32 @@
 {
     "agent":"dqn",
-    "env_name" : "Pong-v0",
+    "env_name" : "CartPole-v1",
     "env":{
-        "frame_stack":true,
-        "scale": true
+        "reward_scale":1,
+        "obs_norm":false,
+        "obs_alpha":0.001
     },
     "replay_buffer":{
-        "size": 1e5
+        "size": 1e6
     },
     "net":{ 
-        "hidden_shapes": [
-            [16, [8,8], [4,4], [0,0]],
-            [32, [4,4], [2,2], [0,0]]
-        ],
-        "append_hidden_shapes":[256]        
+        "hidden_shapes": [ 64, 64 ],
+        "append_hidden_shapes":[]        
     },
     "policy":{
         "start_epsilon":1,
         "end_epsilon":0.1,
-        "decay_frames":100000
+        "decay_frames":10000
     },
     "general_setting": {
         "discount" : 0.99,
-        "pretrain_frames" : 5000,
+        "pretrain_frames" : 1000,
         "num_epochs" : 3000,
         "epoch_frames" : 1000,
         "max_episode_frames" : 1000,
 
         "batch_size" : 32,
-        "min_pool" : 5000,
+        "min_pool" : 1000,
 
         "target_hard_update_period" : 10000,
         "use_soft_update" : false,
@@ -38,10 +36,6 @@
         "eval_episodes" : 1
     },
     "dqn":{
-        "qlr" : 2.5e-4,
-        "optimizer_info":{
-            "alpha":0.95,
-            "eps":0.01
-        }
+        "qlr" : 2.5e-4
     }
 }

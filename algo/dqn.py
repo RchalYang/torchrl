@@ -15,6 +15,7 @@ class DQN(RLAlgo):
         qf, pf, pretrain_pf,
         qlr,
         optimizer_class=optim.Adam,
+        optimizer_info = {},
         **kwargs
     ):
         super(DQN, self).__init__(**kwargs)
@@ -27,6 +28,7 @@ class DQN(RLAlgo):
         self.qf_optimizer = optimizer_class(
             self.qf.parameters(),
             lr=self.qlr,
+            **optimizer_info
         )
         
         self.to(self.device)
@@ -73,7 +75,8 @@ class DQN(RLAlgo):
         info = {}
         info['Reward_Mean'] = rewards.mean().item()
         info['Traning/qf_loss'] = qf_loss.item()
-
+        info['epsilon']= self.pf.epsilon
+        info['q_s_a'] = q_s_a.mean().item()
         return info
         
 
