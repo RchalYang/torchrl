@@ -63,7 +63,7 @@ class RewardShift(gym.RewardWrapper, BaseWrapper):
     def reward(self, reward):
         return self._reward_scale * reward
 
-class NoopResetEnv(gym.Wrapper):
+class NoopResetEnv( BaseWrapper):
     def __init__(self, env, noop_max=30):
         """Sample initial states by taking random number of no-ops on reset.
         No-op is assumed to be action 0.
@@ -92,7 +92,7 @@ class NoopResetEnv(gym.Wrapper):
     def step(self, ac):
         return self.env.step(ac)
 
-class FireResetEnv(gym.Wrapper):
+class FireResetEnv( BaseWrapper ):
     def __init__(self, env):
         """Take action on reset for environments that are fixed until firing."""
         gym.Wrapper.__init__(self, env)
@@ -112,7 +112,7 @@ class FireResetEnv(gym.Wrapper):
     def step(self, ac):
         return self.env.step(ac)
 
-class EpisodicLifeEnv(gym.Wrapper):
+class EpisodicLifeEnv( BaseWrapper):
     def __init__(self, env):
         """Make end-of-life == end-of-episode, but only reset on true game over.
         Done by DeepMind for the DQN and co. since it helps value estimation.
@@ -148,7 +148,7 @@ class EpisodicLifeEnv(gym.Wrapper):
         self.lives = self.env.unwrapped.ale.lives()
         return obs
 
-class MaxAndSkipEnv(gym.Wrapper):
+class MaxAndSkipEnv( BaseWrapper):
     def __init__(self, env, skip=4):
         """Return only every `skip`-th frame"""
         gym.Wrapper.__init__(self, env)
@@ -176,7 +176,7 @@ class MaxAndSkipEnv(gym.Wrapper):
     def reset(self, **kwargs):
         return self.env.reset(**kwargs)
 
-class ClipRewardEnv(gym.RewardWrapper):
+class ClipRewardEnv( gym.RewardWrapper, BaseWrapper ):
     def __init__(self, env):
         gym.RewardWrapper.__init__(self, env)
 
