@@ -2,7 +2,9 @@
 
 Pytorch Implementation for Off Policy RL Methods
 
-Environments with continuous action space are supported.
+Environments with continuous & discrete action space are supported.
+
+Environments with 1d & 3d observation space are supported.
 
 ## Requirements
 1. General Requirements
@@ -33,16 +35,14 @@ specify parameters for algorithms in config file & specify log directory / seed 
 ```
 
 ## Currently contains:
-* SAC (TwinSAC)
-* DDPG
+* Soft Actor Critic: SAC(TwinSAC)
+* Deep Deterministic Policy Gradient :DDPG
 * TD3
+* DQN:
+    * Basic Double DQN
 
 ![HalfCheetah-v2 SAC DDPG](./fig/HalfCheetah-v2.png "HalfCheetah-v2")
 
 ## TODO:
 1. Add More Algorithm
-* DQN ( all kinds of )
-
-2. 3-Dimension input support
-
-3. Discrete action space support
+* DQN: C51 / QRDQN / IQN
