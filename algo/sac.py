@@ -101,7 +101,7 @@ class SAC(RLAlgo):
         mean        = sample_info["mean"]
         log_std     = sample_info["log_std"]
         new_actions = sample_info["action"]
-        log_probs   = sample_info["log_probs"]
+        log_probs   = sample_info["log_prob"]
         ent         = sample_info["ent"]
 
         q_pred = self.qf(obs, actions)
