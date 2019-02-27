@@ -1,0 +1,107 @@
+import time
+import numpy as np
+import copy
+
+import torch.optim as optim
+import pytorch_util as ptu
+import torch
+from torch import nn as nn
+
+from algo.dqn import DQN
+import math
+
+class BootstrappedDQN(DQN):
+    def __init__(self, 
+        head_num = 10,
+        bernoulli_p = 0.5,
+        **kwargs
+    ):
+        super(BootstrappedDQN, self).__init__(**kwargs)
+        
+        # self.m_distribution = torch.distributions.bernoulli.Bernoulli( bernoulli_p )
+        self.bernoulli_p = bernoulli_p
+        self.head_num = head_num
+        
+        self.sample_key = [ "obs", "next_obs", "actions", "rewards", "terminals", "masks" ]
+
+    def take_actions(self, ob, action_func):
+        
+        action = action_func( ob )
+
+        next_ob, reward, done, info = self.env.step(action)
+
+        mask = np.random.binomial( n=1, p = self.bernoulli_p, size = self.head_num )
+
+        sample_dict = {
+            "obs":ob,
+            "next_obs": next_ob,
+            "actions":action,
+            "rewards": [reward],
+            "terminals": [done],
+            "masks": mask
+        }
+
+        self.replay_buffer.add_sample( sample_dict )
+
+        return next_ob, done, reward, info
+
+
+    def update(self, batch):
+        self.training_update_num += 1
+
+        obs = batch['obs']
+        actions = batch['actions']
+        next_obs = batch['next_obs']
+        rewards = batch['rewards']
+        terminals = batch['terminals']
+        masks = batch['masks']
+
+        obs = torch.Tensor(obs).to( self.device )
+        actions = torch.Tensor(actions).to( self.device )
+        next_obs = torch.Tensor(next_obs).to( self.device )
+        rewards = torch.Tensor(rewards).to( self.device )
+        terminals = torch.Tensor(terminals).to( self.device )
+        masks = torch.Tensor(terminals).to(self.device)
+
+        mse_losses = []
+        for i in range(self.head_num):
+
+            q_pred = self.qf( obs, [i] )
+            q_s_a = q_pred.gather( 1, actions.unsqueeze(1).long() ) 
+            next_q_pred = self.target_qf( next_obs, [i] )
+
+            target_q_s_a = rewards + self.discount * ( 1 - terminals) * next_q_pred.max(1, keepdim=True)[0]
+            # qf_loss = self.qf_criterion( q_s_a, target_q_s_a.detach() )
+            mse_loss = ( q_s_a - target_q_s_a ) ** 2
+            mse_losses.append( mse_loss )
+        
+        mse_losses = torch.cat( mse_losses, dim=1 )
+        qf_loss = ( mse_losses * masks / self.head_num ).sum(1).mean()
+
+        self.qf_optimizer.zero_grad()
+        qf_loss.backward()
+        self.qf_optimizer.step()
+        
+        self._update_target_networks()
+
+        # Information For Logger
+        info = {}
+        info['Reward_Mean'] = rewards.mean().item()
+        info['Traning/qf_loss'] = qf_loss.item()
+        info['epsilon']= self.pf.epsilon
+        info['q_s_a'] = q_s_a.mean().item()
+        return info
+        
+
+    @property
+    def networks(self):
+        return [
+            self.qf,
+            self.target_qf
+        ]
+    
+    @property
+    def target_networks(self):
+        return [
+            ( self.qf, self.target_qf )
+        ]

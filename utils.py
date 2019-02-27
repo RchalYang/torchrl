@@ -201,4 +201,31 @@ def get_agent( params):
             **params["general_setting"]
         )
 
+
+    if params['agent'] == 'bootstrapped dqn':
+        
+        qf = networks.BootstrppedNet(
+            input_shape = env.observation_space.shape,
+            output_shape = env.action_space.n,
+            head_num = params['bootstrapped dqn']['head_num'],
+            **params['net']
+        )
+        pf = policies.BootstrappedDQNDiscretePolicy(
+            qf = qf,
+            head_num = params['bootstrapped dqn']['head_num'],
+            action_shape = env.action_space.n,
+            **params['policy']
+        )
+        pretrain_pf = policies.UniformPolicyDiscrete(
+            action_num = env.action_space.n
+        )
+        params["general_setting"]["optimizer_class"] = optim.RMSprop
+        return algo.BootstrappedDQN (
+            pf = pf,
+            qf = qf,
+            pretrain_pf = pretrain_pf,
+            **params["bootstrapped dqn"],
+            **params["general_setting"]
+        )
+
     raise Exception("specified algorithm is not implemented")

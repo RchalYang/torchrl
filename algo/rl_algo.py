@@ -66,18 +66,55 @@ class RLAlgo():
         self.training_update_num = 0
         self.episode_rewards = deque(maxlen=10)
         self.eval_episodes = eval_episodes
+        
+        self.sample_key = [ "obs", "next_obs", "actions", "rewards", "terminals" ]
 
-    def get_actions(self, policy, ob):
-        out = policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+    def get_actions(self, ob):
+        out = self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
         action = out["action"]
         action = action.detach().cpu().numpy()
         return action
 
-    def get_pretrain_actions(self, policy, ob):
-        out = policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+    def get_pretrain_actions(self, ob):
+        out = self.pretrain_pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
         action = out["action"]
         action = action.detach().cpu().numpy()
         return action
+
+    def take_actions(self, ob, action_func):
+        
+        action = action_func( ob )
+
+        if type(action) is not int:
+            if np.isnan(action).any():
+                print("NaN detected. BOOM")
+                exit()
+
+        next_ob, reward, done, info = self.env.step(action)
+
+        sample_dict = {
+            "obs":ob,
+            "next_obs": next_ob,
+            "actions":action,
+            "rewards": [reward],
+            "terminals": [done]
+        }
+
+        self.replay_buffer.add_sample( sample_dict )
+
+        return next_ob, done, reward, info
+
+    def start_episode(self):
+        pass
+
+    def start_epoch(self):
+        pass
+
+    def finish_episode(self):
+        pass
+
+    def finish_epoch(self):
+        return {}
 
     def pretrain(self):
         
@@ -86,6 +123,9 @@ class RLAlgo():
 
         self.current_step = 0
         ob = self.env.reset()
+
+        self.start_episode()
+
         pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames)
 
         for pretrain_epoch in range( pretrain_epochs ):
@@ -93,14 +133,11 @@ class RLAlgo():
             start = time.time()
             for step in range( self.epoch_frames):
             
-                action = self.get_pretrain_actions( self.pretrain_pf, ob )
-
-                next_ob, reward, done, _ = self.env.step(action)
-                self.replay_buffer.add_sample( ob, action, reward, done, next_ob )
+                next_ob, done, reward, info = self.take_actions( ob, self.get_pretrain_actions )
 
                 if self.replay_buffer.num_steps_can_sample() > max( self.min_pool, self.batch_size ):
                     for _ in range( self.opt_times ):
-                        batch = self.replay_buffer.random_batch( self.batch_size)
+                        batch = self.replay_buffer.random_batch( self.batch_size, self.sample_key)
                         infos = self.update( batch )
                         self.logger.add_update_info( infos )
 
@@ -108,12 +145,15 @@ class RLAlgo():
                 self.current_step += 1
                 if done or self.current_step >= self.max_episode_frames:
                     ob = self.env.reset()
+                    self.finish_episode()
+                    self.start_episode()
                     self.current_step = 0
                 
                 total_frames = pretrain_epoch * self.epoch_frames + step
                 if total_frames > self.pretrain_frames:
                     break
             
+            finish_epoch_info = self.finish_epoch()
             eval_infos = self.eval()
 
             total_frames = (pretrain_epoch + 1) * self.epoch_frames
@@ -121,9 +161,53 @@ class RLAlgo():
             infos = {}
             infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
             infos.update(eval_infos)
+            infos.update(finish_epoch_info)
 
             self.logger.add_epoch_info(pretrain_epoch, total_frames, time.time() - start, infos )
+
+    def train(self):
+        self.pretrain()
+        self.logger.log("Finished Pretrain")
+
+        self.current_step = 0
+        ob = self.env.reset()
+
+        self.start_episode()
+        
+        for epoch in range( self.num_epochs ):
             
+            start = time.time()
+            for frame in range(self.epoch_frames):
+                # Sample actions
+                next_ob, done, reward, info = self.take_actions( ob, self.get_actions )
+
+                if self.replay_buffer.num_steps_can_sample() > max( self.min_pool, self.batch_size ):
+                    for _ in range( self.opt_times ):
+                        batch = self.replay_buffer.random_batch(self.batch_size, self.sample_key)
+                        infos = self.update( batch )
+                        self.logger.add_update_info( infos )
+                
+                ob = next_ob
+                self.current_step += 1
+                if done or self.current_step >= self.max_episode_frames:
+                    ob = self.env.reset()
+                    self.finish_episode()
+                    self.start_episode()
+                    self.current_step = 0
+            
+            finish_epoch_info = self.finish_epoch()
+            eval_infos = self.eval()
+
+            total_frames = (epoch + 1) * self.epoch_frames + self.pretrain_frames
+            
+            infos = {}
+            infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
+            infos.update(eval_infos)
+            infos.update(finish_epoch_info)
+            
+            self.logger.add_epoch_info(epoch, total_frames, time.time() - start, infos )
+            
+
     def eval(self):
 
         eval_env = copy.deepcopy(self.env)
@@ -154,54 +238,6 @@ class RLAlgo():
     def update(self, batch):
         raise NotImplementedError
 
-    def train(self):
-        self.pretrain()
-        self.logger.log("Finished Pretrain")
-
-        self.current_step = 0
-        ob = self.env.reset()
-
-        for epoch in range( self.num_epochs ):
-            
-            start = time.time()
-            for frame in range(self.epoch_frames):
-                # Sample actions
-                with torch.no_grad():
-                    action = self.get_actions( self.pf, ob )
-
-                # Nan detected, stop training
-            
-                if type(action) is not int:
-                    if np.isnan(action).any():
-                        print("NaN detected. BOOM")
-                        exit()
-                # Obser reward and next obs
-                next_ob, reward, done, _ = self.env.step(action)
-
-                self.replay_buffer.add_sample(ob, action, reward, done, next_ob )
-                if self.replay_buffer.num_steps_can_sample() > max( self.min_pool, self.batch_size ):
-                    for _ in range( self.opt_times ):
-                        batch = self.replay_buffer.random_batch(self.batch_size)
-                        infos = self.update( batch )
-
-                        self.logger.add_update_info( infos )
-                
-                ob = next_ob
-                self.current_step += 1
-                if done or self.current_step >= self.max_episode_frames:
-                    ob = self.env.reset()
-                    self.current_step = 0
-            
-            eval_infos = self.eval()
-
-            total_frames = (epoch + 1) * self.epoch_frames + self.pretrain_frames
-            
-            infos = {}
-            infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
-            infos.update(eval_infos)
-            
-            self.logger.add_epoch_info(epoch, total_frames, time.time() - start, infos )
-            
     def _update_target_networks(self):
         if self.use_soft_update:
             for net, target_net in self.target_networks:

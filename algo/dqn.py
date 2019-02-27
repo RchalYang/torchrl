@@ -34,11 +34,11 @@ class DQN(RLAlgo):
         self.to(self.device)
         self.qf_criterion = nn.MSELoss()
         
-    def get_actions(self, policy, ob):
-        return policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )["action"]
+    def get_actions(self, ob):
+        return self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )["action"]
 
-    def get_pretrain_actions(self, policy, ob):
-        return policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )["action"]
+    def get_pretrain_actions(self, ob):
+        return self.pretrain_pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )["action"]
 
     def update(self, batch):
         self.training_update_num += 1

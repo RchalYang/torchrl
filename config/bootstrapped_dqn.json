@@ -1,5 +1,5 @@
 {
-    "agent":"dqn",
+    "agent":"bootstrapped dqn",
     "env_name" : "PongNoFrameskip-v4",
     "env":{
         "frame_stack":false,
@@ -7,7 +7,7 @@
         "clip_rewards": true
     },
     "replay_buffer":{
-        "size": 1e6
+        "size": 1e4
     },
     "net":{ 
         "hidden_shapes": [
@@ -18,9 +18,6 @@
         "append_hidden_shapes":[512]        
     },
     "policy":{
-        "start_epsilon":1,
-        "end_epsilon":0.1,
-        "decay_frames":1000000
     },
     "general_setting": {
         "discount" : 0.99,
@@ -39,8 +36,10 @@
 
         "eval_episodes" : 1
     },
-    "dqn":{
+    "bootstrapped dqn":{
         "qlr" : 2.5e-4,
+        "head_num": 10,
+        "bernoulli_p": 0.5,
         "optimizer_info":{
             "alpha":0.95,
             "eps":0.01

@@ -136,3 +136,31 @@ class EpsilonGreedyDQNDiscretePolicy():
         output = self.qf(x)
         action = output.max(dim=-1)[1].detach().item()
         return action
+
+class BootstrappedDQNDiscretePolicy():
+    """
+    wrapper over QNet
+    """
+    def __init__(self, qf, head_num, action_shape):
+        self.qf = qf
+        self.head_num = head_num
+        self.action_shape = action_shape
+        self.idx = 0
+
+    def sample_head(self):
+        self.idx = np.random.randint(self.head_num)
+
+    def explore(self, x):
+        output = self.qf( x, [ self.idx ] )
+        action = output[0].max(dim=-1)[1].detach().item()
+        return {
+            "q_value": output[0],
+            "action":action
+        }
+    
+    def eval(self, x):
+        output = self.qf( x, range(self.head_num) )
+        output = torch.mean( torch.cat(output, dim=0 ), dim=0 )
+        action = output.max(dim=-1)[1].detach().item()
+        return action
+

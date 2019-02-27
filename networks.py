@@ -147,3 +147,54 @@ class FlattenNet(Net):
     def forward(self, *input):
         out = torch.cat( input, dim = 1 )
         return super().forward(out)
+
+class BootstrppedNet(nn.Module):
+    def __init__(self, output_shape, 
+            base_type, head_num = 10,
+            append_hidden_shapes=[], append_hidden_init_func = basic_init,
+            last_init_func = uniform_init,
+            activation_func = F.relu,
+             **kwargs ):
+        
+        super().__init__()
+        
+        self.base = base_type( activation_func = activation_func, **kwargs )
+        self.activation_func = activation_func
+
+
+        self.bootstrapped_append_fc = []
+        self.bootstrapped_last = []
+
+        append_input_shape = self.base.output_shape
+        print(append_input_shape)
+
+        for idx in range(head_num):
+            append_input_shape = self.base.output_shape
+            append_fcs = []
+            for i, next_shape in enumerate( append_hidden_shapes ):
+                fc = nn.Linear(append_input_shape, next_shape)
+                append_hidden_init_func(fc)
+                append_fcs.append(fc)
+                # set attr for pytorch to track parameters( device )
+                self.__setattr__("head_{}_append_fc{}".format(idx,i), fc)
+                append_input_shape = next_shape
+
+            last = nn.Linear( append_input_shape, output_shape )     
+            last_init_func( last )
+            self.bootstrapped_last.append( last )
+            self.__setattr__("head_{}_last".format(idx), last)
+
+            self.bootstrapped_append_fc.append(append_fcs)
+
+    def forward(self, x, head_idxs):
+        output = []
+        feature = self.base(x)
+        for idx in head_idxs:
+            out = feature
+            for append_fc in self.bootstrapped_append_fc[ idx ]:
+                out = append_fc(out)
+                out = self.activation_func(out)
+            out = self.bootstrapped_last[ idx ](out)
+
+            output.append(out)
+        return output

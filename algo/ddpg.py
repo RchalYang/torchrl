@@ -48,11 +48,12 @@ class DDPG(RLAlgo):
 
     def update(self, batch):
         self.training_update_num += 1
+        
+        obs = batch['obs']
+        actions = batch['actions']
+        next_obs = batch['next_obs']
         rewards = batch['rewards']
         terminals = batch['terminals']
-        obs = batch['observations']
-        actions = batch['actions']
-        next_obs = batch['next_observations']
 
         rewards = torch.Tensor(rewards).to( self.device )
         terminals = torch.Tensor(terminals).to( self.device )
