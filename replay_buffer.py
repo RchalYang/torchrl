@@ -30,7 +30,7 @@ class SimpleReplayBuffer():
         indices = np.random.randint(0, self._size, batch_size)
         return_dict = {}
         for key in sample_key:
-            return_dict[key] = self.__getattribute__(key) [indices]
+            return_dict[key] = self.__getattribute__("_"+key) [indices]
         return return_dict
 
     def num_steps_can_sample(self):

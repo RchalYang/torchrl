@@ -61,14 +61,17 @@ class BootstrappedDQN(DQN):
         next_obs = torch.Tensor(next_obs).to( self.device )
         rewards = torch.Tensor(rewards).to( self.device )
         terminals = torch.Tensor(terminals).to( self.device )
-        masks = torch.Tensor(terminals).to(self.device)
+        masks = torch.Tensor(masks).to(self.device)
 
         mse_losses = []
+        q_pred_all = self.qf(obs, range(self.head_num))
+        next_q_pred_all = self.target_qf( next_obs, range(self.head_num) )
+
         for i in range(self.head_num):
 
-            q_pred = self.qf( obs, [i] )
+            q_pred = q_pred_all[i]
             q_s_a = q_pred.gather( 1, actions.unsqueeze(1).long() ) 
-            next_q_pred = self.target_qf( next_obs, [i] )
+            next_q_pred = next_q_pred_all[i] 
 
             target_q_s_a = rewards + self.discount * ( 1 - terminals) * next_q_pred.max(1, keepdim=True)[0]
             # qf_loss = self.qf_criterion( q_s_a, target_q_s_a.detach() )
@@ -76,6 +79,7 @@ class BootstrappedDQN(DQN):
             mse_losses.append( mse_loss )
         
         mse_losses = torch.cat( mse_losses, dim=1 )
+        #print(mse_losses.shape)
         qf_loss = ( mse_losses * masks / self.head_num ).sum(1).mean()
 
         self.qf_optimizer.zero_grad()
@@ -88,8 +92,8 @@ class BootstrappedDQN(DQN):
         info = {}
         info['Reward_Mean'] = rewards.mean().item()
         info['Traning/qf_loss'] = qf_loss.item()
-        info['epsilon']= self.pf.epsilon
-        info['q_s_a'] = q_s_a.mean().item()
+        #info['epsilon']= self.pf.epsilon
+        #info['q_s_a'] = q_s_a.mean().item()
         return info
         
 

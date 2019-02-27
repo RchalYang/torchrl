@@ -7,7 +7,7 @@
         "clip_rewards": true
     },
     "replay_buffer":{
-        "size": 1e4
+        "size": 1e6
     },
     "net":{ 
         "hidden_shapes": [
@@ -27,7 +27,7 @@
         "max_episode_frames" : 10000,
 
         "batch_size" : 32,
-        "min_pool" : 50000,
+        "min_pool" : 5000,
 
         "target_hard_update_period" : 10000,
         "use_soft_update" : false,
