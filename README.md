@@ -40,6 +40,7 @@ specify parameters for algorithms in config file & specify log directory / seed 
 * TD3
 * DQN:
     * Basic Double DQN
+    * Bootstrapped DQN
 
 ![HalfCheetah-v2 SAC DDPG](./fig/HalfCheetah-v2.png "HalfCheetah-v2")
 

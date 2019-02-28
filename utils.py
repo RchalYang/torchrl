@@ -204,7 +204,7 @@ def get_agent( params):
 
     if params['agent'] == 'bootstrapped dqn':
         
-        qf = networks.BootstrppedNet(
+        qf = networks.BootstrappedNet(
             input_shape = env.observation_space.shape,
             output_shape = env.action_space.n,
             head_num = params['bootstrapped dqn']['head_num'],

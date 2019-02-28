@@ -148,7 +148,7 @@ class FlattenNet(Net):
         out = torch.cat( input, dim = 1 )
         return super().forward(out)
 
-class BootstrppedNet(nn.Module):
+class BootstrappedNet(nn.Module):
     def __init__(self, output_shape, 
             base_type, head_num = 10,
             append_hidden_shapes=[], append_hidden_init_func = basic_init,
