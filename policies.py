@@ -111,7 +111,10 @@ class EpsilonGreedyDQNDiscretePolicy():
         self.count = 0
         self.action_shape = action_shape
         self.epsilon = self.start_epsilon
-            
+    
+    def q_to_a(self, q):
+        return q.max(dim=-1)[1].detach().item()
+
     def explore(self, x):
         self.count += 1
         r = np.random.rand()
@@ -127,7 +130,7 @@ class EpsilonGreedyDQNDiscretePolicy():
             }
     
         output = self.qf(x)
-        action = output.max(dim=-1)[1].detach().item()
+        action = self.q_to_a(output)
         return {
             "q_value": output,
             "action":action
@@ -135,8 +138,20 @@ class EpsilonGreedyDQNDiscretePolicy():
     
     def eval(self, x):
         output = self.qf(x)
-        action = output.max(dim=-1)[1].detach().item()
+        action = self.q_to_a(output)
         return action
+
+class EpsilonGreedyQRDQNDiscretePolicy(EpsilonGreedyDQNDiscretePolicy):
+    """
+    wrapper over QNet
+    """
+    def __init__(self, quantile_num, **kwargs):
+        super(EpsilonGreedyQRDQNDiscretePolicy,self).__init__( **kwargs)
+        self.quantile_num = quantile_num
+
+    def q_to_a(self, q):
+        q = q.view(-1, self.action_shape, self.quantile_num)
+        return q.mean(dim=-1).max(dim=-1)[1].detach().item()
 
 class BootstrappedDQNDiscretePolicy():
     """

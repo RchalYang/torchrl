@@ -230,4 +230,27 @@ def get_agent( params):
             **params["general_setting"]
         )
 
+    if params['agent'] == 'qrdqn':
+        qf = networks.Net(
+            input_shape = env.observation_space.shape,
+            output_shape = env.action_space.n * params["qrdqn"]["quantile_num"],
+            **params['net']
+        )
+        pf = policies.EpsilonGreedyQRDQNDiscretePolicy(
+            qf = qf,
+            action_shape = env.action_space.n,
+            **params['policy']
+        )
+        pretrain_pf = policies.UniformPolicyDiscrete(
+            action_num = env.action_space.n
+        )
+        params["general_setting"]["optimizer_class"] = optim.RMSprop
+        return algo.QRDQN (
+            pf = pf,
+            qf = qf,
+            pretrain_pf = pretrain_pf,
+            **params["qrdqn"],
+            **params["general_setting"]
+        )
+
     raise Exception("specified algorithm is not implemented")

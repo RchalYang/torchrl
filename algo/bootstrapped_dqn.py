@@ -95,17 +95,3 @@ class BootstrappedDQN(DQN):
         #info['epsilon']= self.pf.epsilon
         #info['q_s_a'] = q_s_a.mean().item()
         return info
-        
-
-    @property
-    def networks(self):
-        return [
-            self.qf,
-            self.target_qf
-        ]
-    
-    @property
-    def target_networks(self):
-        return [
-            ( self.qf, self.target_qf )
-        ]

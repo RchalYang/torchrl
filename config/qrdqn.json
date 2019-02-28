@@ -1,0 +1,51 @@
+{
+    "agent":"qrdqn",
+    "env_name" : "PongNoFrameskip-v4",
+    "env":{
+        "frame_stack": true,
+        "scale": true,
+        "clip_rewards": true
+    },
+    "replay_buffer":{
+        "size": 1e6
+    },
+    "net":{ 
+        "hidden_shapes": [
+            [16, [8,8], [4,4], [0,0]],
+            [32, [4,4], [2,2], [0,0]],
+            [64, [3,3], [1,1], [0,0]]
+        ],
+        "append_hidden_shapes":[512]        
+    },
+    "policy":{
+        "quantile_num": 100,
+        "start_epsilon":1,
+        "end_epsilon":0.1,
+        "decay_frames":1000000
+    },
+    "general_setting": {
+        "discount" : 0.99,
+        "pretrain_frames" : 50000,
+        "num_epochs" : 300,
+        "epoch_frames" : 10000,
+        "max_episode_frames" : 10000,
+
+        "batch_size" : 32,
+        "min_pool" : 5000,
+
+        "target_hard_update_period" : 10000,
+        "use_soft_update" : false,
+        "tau" : 0.001,
+        "opt_times" : 1,
+
+        "eval_episodes" : 1
+    },
+    "qrdqn":{
+        "qlr" : 2.5e-4,
+        "quantile_num": 100,
+        "optimizer_info":{
+            "alpha":0.95,
+            "eps":0.01
+        }
+    }
+}
