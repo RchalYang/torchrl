@@ -110,7 +110,8 @@ class EpsilonGreedyDQNDiscretePolicy():
         self.decay_frames = decay_frames
         self.count = 0
         self.action_shape = action_shape
-    
+        self.epsilon = self.start_epsilon
+            
     def explore(self, x):
         self.count += 1
         r = np.random.rand()

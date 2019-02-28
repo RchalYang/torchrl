@@ -265,7 +265,7 @@ class FrameStack( BaseWrapper):
 
     def _get_ob(self):
         assert len(self.frames) == self.k
-        return np.concatenate(list(self.frames),axis=0)
+        return LazyFrames(list(self.frames))
 
 class ScaledFloatFrame(gym.ObservationWrapper, BaseWrapper):
     def __init__(self, env):

@@ -40,13 +40,16 @@ class DQN(RLAlgo):
     def get_pretrain_actions(self, ob):
         return self.pretrain_pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )["action"]
 
+
+
     def update(self, batch):
         self.training_update_num += 1
+
+        obs = batch['obs']
+        actions = batch['actions']
+        next_obs = batch['next_obs']
         rewards = batch['rewards']
         terminals = batch['terminals']
-        obs = batch['observations']
-        actions = batch['actions']
-        next_obs = batch['next_observations']
 
         rewards = torch.Tensor(rewards).to( self.device )
         terminals = torch.Tensor(terminals).to( self.device )

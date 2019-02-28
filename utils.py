@@ -9,6 +9,7 @@ import algo
 import policies
 import networks
 import env
+import replay_buffer
 
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
@@ -78,6 +79,10 @@ def get_agent( params):
 
     if len(env.observation_space.shape) == 3:
         params['net']['base_type']=networks.CNNBase
+        if params['env']['frame_stack']:    
+            buffer_param = params['replay_buffer'] 
+            efficient_buffer = replay_buffer.MemoryEfficientReplayBuffer(int(buffer_param['size']))
+            params['general_setting']['replay_buffer'] = efficient_buffer
     else:
         params['net']['base_type']=networks.MLPBase
 
@@ -178,7 +183,6 @@ def get_agent( params):
         )
     
     if params['agent'] == 'dqn':
-        
         qf = networks.Net(
             input_shape = env.observation_space.shape,
             output_shape = env.action_space.n,
@@ -201,9 +205,7 @@ def get_agent( params):
             **params["general_setting"]
         )
 
-
     if params['agent'] == 'bootstrapped dqn':
-        
         qf = networks.BootstrappedNet(
             input_shape = env.observation_space.shape,
             output_shape = env.action_space.n,

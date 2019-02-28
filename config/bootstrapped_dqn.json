@@ -2,8 +2,8 @@
     "agent":"bootstrapped dqn",
     "env_name" : "PongNoFrameskip-v4",
     "env":{
-        "frame_stack":false,
-        "scale": false,
+        "frame_stack": true,
+        "scale": true,
         "clip_rewards": true
     },
     "replay_buffer":{
