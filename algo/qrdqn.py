@@ -41,13 +41,14 @@ class QRDQN(DQN):
         q_pred = self.qf(obs)
         q_pred = q_pred.view(batch_size, -1, self.quantile_num)
         q_s_a = q_pred.gather( 1, actions.unsqueeze(1).unsqueeze(2).repeat([1,1,self.quantile_num]).long() ) 
+        q_s_a = q_s_a.squeeze(1)
 
         next_q_pred = self.target_qf( next_obs )
         next_q_pred = next_q_pred.view(batch_size, -1, self.quantile_num)
         target_action = next_q_pred.detach().mean(dim=2).max(dim=1, keepdim=True)[1]
 
         target_q_s_a = rewards + self.discount * \
-            ( 1 - terminals) * next_q_pred.gather( 1, target_action.unsqueeze(2).repeat([1,1,self.quantile_num]))
+            ( 1 - terminals) * next_q_pred.gather( 1, target_action.unsqueeze(2).repeat([1,1,self.quantile_num])).squeeze(1)
         
         qf_loss = self.qf_criterion( self.quantile_coefficient, q_s_a, target_q_s_a.detach() )
 

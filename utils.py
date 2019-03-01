@@ -47,32 +47,6 @@ def get_params(file_name):
         params = json.load(f)
     return params
 
-
-def wrap_deepmind(env, frame_stack=False, scale=False):
-    """Configure environment for DeepMind-style Atari.
-    """
-    # if episode_life:
-    #     env = EpisodicLifeEnv(env)
-    # if 'FIRE' in env.unwrapped.get_action_meanings():
-    #     env = FireResetEnv(env)
-    env = env.WarpFrame(env)
-    if scale:
-        env = env.ScaledFloatFrame(env)
-    # if clip_rewards:
-    #     env = ClipRewardEnv(env)
-    if frame_stack:
-        env = env.FrameStack(env, 4)
-    return env
-
-def get_env( env_id, env_param ):
-
-    env = gym.make(env_id)
-    ob_space = env.observation_space
-    if len(ob_space.shape) == 3:
-        return wrap_deepmind(env, **env_param)
-    else:
-        return env.NormalizedContinuousEnv(env, **env_param)
-
 def get_agent( params):
 
     env = params['general_setting']['env']
@@ -244,7 +218,6 @@ def get_agent( params):
         pretrain_pf = policies.UniformPolicyDiscrete(
             action_num = env.action_space.n
         )
-        params["general_setting"]["optimizer_class"] = optim.RMSprop
         return algo.QRDQN (
             pf = pf,
             qf = qf,

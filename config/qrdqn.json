@@ -18,8 +18,8 @@
         "append_hidden_shapes":[512]        
     },
     "policy":{
-        "quantile_num": 100,
-        "start_epsilon":1,
+        "quantile_num": 200,
+        "start_epsilon":0.1,
         "end_epsilon":0.1,
         "decay_frames":1000000
     },
@@ -27,8 +27,8 @@
         "discount" : 0.99,
         "pretrain_frames" : 50000,
         "num_epochs" : 300,
-        "epoch_frames" : 10000,
-        "max_episode_frames" : 10000,
+        "epoch_frames" : 50000,
+        "max_episode_frames" : 50000,
 
         "batch_size" : 32,
         "min_pool" : 5000,
@@ -41,11 +41,10 @@
         "eval_episodes" : 1
     },
     "qrdqn":{
-        "qlr" : 2.5e-4,
-        "quantile_num": 100,
+        "qlr" : 5e-5,
+        "quantile_num": 200,
         "optimizer_info":{
-            "alpha":0.95,
-            "eps":0.01
+            "eps": 0.0003125
         }
     }
 }
