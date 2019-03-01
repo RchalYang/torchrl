@@ -45,6 +45,8 @@ class BootstrappedDQN(DQN):
 
         return next_ob, done, reward, info
 
+    def start_episode(self):
+        self.pf.sample_head() 
 
     def update(self, batch):
         self.training_update_num += 1
