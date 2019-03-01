@@ -41,9 +41,10 @@ specify parameters for algorithms in config file & specify log directory / seed 
 * DQN:
     * Basic Double DQN
     * Bootstrapped DQN
+    * QRDQN
 
 ![HalfCheetah-v2 SAC DDPG](./fig/HalfCheetah-v2.png "HalfCheetah-v2")
 
 ## TODO:
 1. Add More Algorithm
-* DQN: C51 / QRDQN / IQN
+* DQN: C51 / IQN
