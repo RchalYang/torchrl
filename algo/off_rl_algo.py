@@ -1,7 +1,4 @@
-
-import copy
 import time
-from collections import deque
 import numpy as np
 import math
 
@@ -100,3 +97,5 @@ class OffRLAlgo(RLAlgo):
             infos.update(finish_epoch_info)
 
             self.logger.add_epoch_info(pretrain_epoch, total_frames, time.time() - start, infos )
+        
+        self.logger.log("Finished Pretrain")

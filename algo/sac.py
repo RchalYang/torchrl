@@ -12,7 +12,6 @@ class SAC(OffRLAlgo):
     """
     SAC
     """
-
     def __init__(
             self,
             pf, vf, qf,
@@ -75,7 +74,6 @@ class SAC(OffRLAlgo):
         self.policy_mean_reg_weight = policy_mean_reg_weight
 
         self.reparameterization = reparameterization
-
 
     def update(self, batch):
         self.training_update_num += 1

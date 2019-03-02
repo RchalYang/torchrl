@@ -6,6 +6,10 @@ import torch.nn.functional as F
 
 import networks.init as init
 
+class ZeroNet(nn.Module):
+    def forward(self, x):
+        return torch.zeros(1)
+
 class Net(nn.Module):
     def __init__(self, output_shape, 
             base_type, 

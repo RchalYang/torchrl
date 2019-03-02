@@ -2,7 +2,6 @@ import copy
 import time
 from collections import deque
 import numpy as np
-import math
 
 import torch
 
@@ -107,7 +106,6 @@ class RLAlgo():
         
     def train(self):
         self.pretrain()
-        self.logger.log("Finished Pretrain")
 
         self.current_step = 0
         ob = self.env.reset()
