@@ -7,11 +7,12 @@ class OnPolicyReplayBuffer(SimpleReplayBuffer):
     """
 
     def last_sample(self, sample_key):
+        return_dict = {}
         for key in sample_key:
             return_dict[key] = self.__getattribute__("_"+key)[ self._max_replay_buffer_size - 1 ]
         return return_dict
 
-    def generalized_advantage_estimation(self, last_value):
+    def generalized_advantage_estimation(self, last_value, gamma, tau):
         """
         use GAE to process rewards
         P.S: only one round no need to process done info
@@ -22,16 +23,16 @@ class OnPolicyReplayBuffer(SimpleReplayBuffer):
 
         values= np.concatenate( [self._values, np.array([[last_value]])], 0 )
 
-        for t in reversed(range(len(rewards))):
-            delta = rewards[t] + ( 1 - self._terminals[t] ) * self.gamma * values[t + 1] - values[t]
-            A = delta + ( 1 - self._terminals[t] ) * self.gamma * self.tau * A
-            advantages.insert( 0, A )
+        for t in reversed(range(len(self._rewards))):
+            delta = self._rewards[t] + ( 1 - self._terminals[t] ) * gamma * self._values[t + 1] - values[t]
+            A = delta + ( 1 - self._terminals[t] ) * gamma * tau * A
+            advs.insert( 0, A )
             estimate_returns.insert( 0, A + values[t] )
 
         self._advs = np.array(advs)
         self._estimate_returns = np.array(estimate_returns)
 
-    def discount_reward(self, last_value):
+    def discount_reward(self, last_value, gamma):
         """
         Compute the discounted reward to estimate return and advantages
         """
@@ -39,9 +40,9 @@ class OnPolicyReplayBuffer(SimpleReplayBuffer):
         estimate_returns = []
 
         R = last_value
-        for t in reversed(range(len(rewards))):
-            R = rewards[t] + ( 1 - self._terminals[t] ) * self.gamma * R
-            advantages.insert( 0, R - values[t] )
+        for t in reversed(range(len(self._rewards))):
+            R = self._rewards[t] + ( 1 - self._terminals[t] ) * gamma * R
+            advs.insert( 0, R - self._values[t] )
             estimate_returns.insert( 0, R )
 
         self._advs = np.array(advs)
@@ -50,12 +51,13 @@ class OnPolicyReplayBuffer(SimpleReplayBuffer):
     def one_iteration(self, batch_size, sample_key, shuffle):
         
         indices = np.arange(self._max_replay_buffer_size)
-        if  self.shuffle:
+        if shuffle:
             indices = np.random.permutation( self._max_replay_buffer_size )
 
         pos = 0
         while pos < self._max_replay_buffer_size:
+            return_dict = {}
             for key in sample_key:
-                return_dict[key] = self.__getattribute__("_"+key)[ indices[pos, pos+batch_size] ]
+                return_dict[key] = self.__getattribute__("_"+key)[ indices[pos: pos+batch_size] ]
             yield return_dict
-            pos += self.batch_size
+            pos += batch_size

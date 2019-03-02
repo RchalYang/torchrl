@@ -18,7 +18,6 @@ class DDPG(OffRLAlgo):
             pretrain_pf,
             plr,qlr,
             optimizer_class=optim.Adam,
-            
             **kwargs
     ):
         super(DDPG, self).__init__(**kwargs)

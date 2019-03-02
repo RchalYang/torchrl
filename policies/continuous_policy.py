@@ -77,10 +77,26 @@ class GuassianContPolicy(networks.Net):
         dic["action"] = action.squeeze(0)
         return dic
     
-    def get_log_probs(self, mean, std, action, pre_tanh_value = None):
+    # def get_log_probs(self, mean, std, action, pre_tanh_value = None):
         
-        dis = TanhNormal (mean, std )
+    #     dis = TanhNormal (mean, std )
 
-        log_probs = dis.log_prob( action, pre_tanh_value ).sum(1,keepdim=True)
+    #     log_probs = dis.log_prob( action, pre_tanh_value ).sum(1,keepdim=True)
 
-        return log_probs 
+    #     return log_probs 
+
+
+    def update(self, obs, actions):
+        mean, std, log_std = self.forward(obs)
+        dis = TanhNormal(mean, std)
+
+        log_prob = dis.log_prob(actions).sum(1, keepdim=True)
+        ent = dis.entropy().sum(1, keepdim=True) 
+        
+        out = {
+            "mean": mean,
+            "log_std": log_std,
+            "log_prob": log_prob,
+            "ent": ent
+        }
+        return out

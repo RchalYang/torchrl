@@ -138,7 +138,9 @@ class RLAlgo():
 
             eval_infos = self.eval()
 
-            total_frames = (epoch + 1) * self.epoch_frames + self.pretrain_frames
+            total_frames = (epoch + 1) * self.epoch_frames
+            if hasattr(self, "pretrain_frames"):
+                total_frames += self.pretrain_frames
             
             infos = {}
             infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)

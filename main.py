@@ -30,7 +30,6 @@ def experiment(args):
         torch.backends.cudnn.deterministic=True
     
     buffer_param = params['replay_buffer']    
-    # replay_buffer = SimpleReplayBuffer( int(buffer_param['size']), env.observation_space.shape, env.action_space.shape )
     replay_buffer = SimpleReplayBuffer( int(buffer_param['size']) )
 
     experiment_name = os.path.split( os.path.splitext( args.config )[0] )[-1] if args.id is None \

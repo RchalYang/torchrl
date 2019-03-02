@@ -8,9 +8,16 @@ class OnRLAlgo(RLAlgo):
     """
     Base RL Algorithm Framework
     """
-    def __init__(self, **kwargs):
-        super(OnRLAlgo, self).__init__(self, **kwargs )
+    def __init__(
+        self, 
+        continuous,
+        shuffle = True,
+        **kwargs
+    ):
+        super(OnRLAlgo, self).__init__(**kwargs )
         self.sample_key = [ "obs", "actions", "advs", "estimate_returns" ]
+        self.shuffle = shuffle
+        self.continuous = continuous
 
     def take_actions(self, ob, action_func):
         
@@ -18,6 +25,9 @@ class OnRLAlgo(RLAlgo):
 
         value = self.vf( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
         value = value.item()
+
+        if not self.continuous:
+            action = action[0]
 
         if type(action) is not int:
             if np.isnan(action).any():
@@ -48,11 +58,11 @@ class OnRLAlgo(RLAlgo):
             last_value = self.vf( last_ob ).item()
         
         if self.gae:
-            self.replay_buffer.generalized_advantage_estimation(last_value)
+            self.replay_buffer.generalized_advantage_estimation(last_value, self.discount, self.tau)
         else:
-            self.replay_buffer.discount_reward(last_value)
-
-        for batch in self.replay_buffer.one_iteration(self.batch_size, self.sample_key):
+            self.replay_buffer.discount_reward(last_value, self.discount)
+            
+        for batch in self.replay_buffer.one_iteration(self.batch_size, self.sample_key, self.shuffle):
             # batch = self.replay_buffer.random_batch(self.batch_size, self.sample_key)
             infos = self.update( batch )
             self.logger.add_update_info( infos )

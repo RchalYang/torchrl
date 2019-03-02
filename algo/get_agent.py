@@ -1,3 +1,11 @@
+import gym
+
+import torch.optim as optim
+
+import networks
+import replay_buffers
+import policies
+
 from .sac import SAC
 from .ddpg import DDPG
 from .twin_sac import TwinSAC
@@ -7,11 +15,8 @@ from .dqn import DQN
 from .bootstrapped_dqn import BootstrappedDQN
 from .qrdqn import QRDQN
 
-import networks
-import replay_buffers
-import policies
+from .reinforce import Reinforce
 
-import torch.optim as optim
 
 def get_agent( params):
 
@@ -189,6 +194,33 @@ def get_agent( params):
             qf = qf,
             pretrain_pf = pretrain_pf,
             **params["qrdqn"],
+            **params["general_setting"]
+        )
+
+    act_space = env.action_space
+    params[params['agent']]['continuous'] = isinstance(act_space, gym.spaces.Box)
+
+    if params['agent'] == 'reinforce':
+        
+        buffer_param = params['replay_buffer'] 
+        buffer = replay_buffers.OnPolicyReplayBuffer(int(buffer_param['size']))
+        params['general_setting']['replay_buffer'] = buffer
+
+        if params[params['agent']]['continuous']:
+            pf = policies.GuassianContPolicy(
+                input_shape = env.observation_space.shape,
+                output_shape = 2 * env.action_space.shape[0],
+                **params['net']
+            )
+        else:
+            pf = policies.CategoricalDisPolicy(
+                input_shape = env.observation_space.shape,
+                output_shape = env.action_space.n,
+                **params['net']
+            )
+        return Reinforce(
+            pf = pf,
+            **params["reinforce"],
             **params["general_setting"]
         )
 

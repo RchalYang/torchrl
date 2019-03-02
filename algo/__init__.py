@@ -7,4 +7,6 @@ from .dqn import DQN
 from .bootstrapped_dqn import BootstrappedDQN
 from .qrdqn import QRDQN
 
+from .reinforce import Reinforce
+
 from .get_agent import get_agent

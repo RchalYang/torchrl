@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
+from torch.distributions import Categorical
 
 import numpy as np
 import networks
+
 
 class UniformPolicyDiscrete(nn.Module):
     def __init__(self, action_num):
@@ -59,7 +61,7 @@ class EpsilonGreedyDQNDiscretePolicy():
 
 class EpsilonGreedyQRDQNDiscretePolicy(EpsilonGreedyDQNDiscretePolicy):
     """
-    wrapper over QNet
+    wrapper over DRQNet
     """
     def __init__(self, quantile_num, **kwargs):
         super(EpsilonGreedyQRDQNDiscretePolicy,self).__init__( **kwargs)
@@ -71,7 +73,7 @@ class EpsilonGreedyQRDQNDiscretePolicy(EpsilonGreedyDQNDiscretePolicy):
 
 class BootstrappedDQNDiscretePolicy():
     """
-    wrapper over QNet
+    wrapper over Bootstrapped QNet
     """
     def __init__(self, qf, head_num, action_shape):
         self.qf = qf
@@ -96,3 +98,42 @@ class BootstrappedDQNDiscretePolicy():
         action = output.max(dim=-1)[1].detach().item()
         return action
 
+class CategoricalDisPolicy(networks.Net):
+    """
+    Discrete Policy
+    """
+    def forward(self, x):
+        logits = super().forward(x)
+        return torch.softmax(logits, dim=1)
+
+    def explore(self, x, return_log_probs = False):
+        output = self.forward(x)
+        dis = Categorical(output)
+        action = dis.sample()
+
+        out = {
+            "dis": output,
+            "action":action
+        }
+        if return_log_probs:
+            out['log_prob'] = dis.log_prob(action)
+
+        return out
+    
+    def eval(self, x):
+        output = self.forward(x)
+        return output.max(dim=-1)[1].detach().item()
+
+    def update(self, obs, actions):
+        output = self.forward( obs )
+        dis = Categorical(output)
+        log_prob = dis.log_prob(actions).unsqueeze(1)
+        ent = dis.entropy()
+        
+        out = {
+            "dis":output,
+            "log_prob": log_prob,
+            "ent": ent
+        }
+        return out
+        
