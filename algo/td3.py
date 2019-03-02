@@ -1,16 +1,14 @@
 import numpy as np
 import copy
-import math
 
-import torch.optim as optim
 import torch
+import torch.optim as optim
 from torch import nn as nn
 from torch.distributions import  Normal
 
-from algo.rl_algo import RLAlgo
-import pytorch_util as ptu
+from algo.off_rl_algo import OffRLAlgo
 
-class TD3(RLAlgo):
+class TD3(OffRLAlgo):
     def __init__(self,
         pf, qf1, qf2,
         pretrain_pf,
@@ -61,8 +59,9 @@ class TD3(RLAlgo):
         self.norm_std_policy = norm_std_policy
         self.noise_clip = noise_clip
 
-    def get_actions(self, policy, ob):
-        _, _, action, _ = policy.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+    def get_actions(self, ob):
+        out = self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+        action = out["action"]
         action = action.detach().cpu()
         
         action += Normal(
@@ -112,14 +111,14 @@ class TD3(RLAlgo):
         )
 
         target_q_values = torch.min( 
-                self.target_qf1(next_obs, target_actions) ,
-                self.target_qf2(next_obs, target_actions)
+                self.target_qf1([next_obs, target_actions]) ,
+                self.target_qf2([next_obs, target_actions])
         )
                         
 
         q_target = rewards + (1. - terminals) * self.discount * target_q_values
-        q1_pred = self.qf1(obs, actions)
-        q2_pred = self.qf2(obs, actions)
+        q1_pred = self.qf1([obs, actions])
+        q2_pred = self.qf2([obs, actions])
 
         qf1_loss = self.qf_criterion( q1_pred, q_target.detach())
         qf2_loss = self.qf_criterion( q2_pred, q_target.detach())
@@ -146,7 +145,7 @@ class TD3(RLAlgo):
             Policy Loss.
             """
             new_actions = self.pf(obs)
-            new_q_pred_1 = self.qf1(obs, new_actions)
+            new_q_pred_1 = self.qf1([obs, new_actions])
             
             policy_loss = -new_q_pred_1.mean()
 

@@ -1,14 +1,11 @@
 import time
 import numpy as np
-import copy
 
-import torch.optim as optim
-import pytorch_util as ptu
 import torch
 from torch import nn as nn
 
+import algo.utils as atu
 from algo.dqn import DQN
-import math
 
 class QRDQN(DQN):
     def __init__(self, 
@@ -19,7 +16,7 @@ class QRDQN(DQN):
         
         self.quantile_num = quantile_num
         self.quantile_coefficient = torch.Tensor((2 * np.arange(quantile_num) + 1) / (2.0 * quantile_num)).view(1, -1).to(self.device)
-        self.qf_criterion = ptu.quantile_regression_loss
+        self.qf_criterion = atu.quantile_regression_loss
 
     def update(self, batch):
         self.training_update_num += 1

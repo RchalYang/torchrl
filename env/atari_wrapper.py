@@ -1,67 +1,13 @@
-from gym import Wrapper
-from gym.spaces import Box
 import gym
 import numpy as np
-from gym import Env
-from collections import deque
 import cv2
+from collections import deque
 
-class BaseWrapper(gym.Wrapper):
-    def __init__(self, env):
-        super(BaseWrapper, self).__init__(env)
-        self.training = True
+from .base_wrapper import BaseWrapper
 
-    def train(self):
-        self.training = True
-
-    def eval(self):
-        self.training = False
-
-class NormObs(gym.ObservationWrapper, BaseWrapper):
-    """
-    Normalized Observation => Optional, Use Momentum
-    """
-    def __init__( self, env, obs_alpha = 0.001 ):
-        super(NormObs,self).__init__(env)
-        self._obs_alpha = obs_alpha
-        self._obs_mean = np.zeros(env.observation_space.shape[0])
-        self._obs_var = np.ones(env.observation_space.shape[0])
-
-    def _update_obs_estimate(self, obs):
-        
-        self._obs_mean = (1 - self._obs_alpha) * self._obs_mean + self._obs_alpha * obs
-        self._obs_var = (1 - self._obs_alpha) * self._obs_var + self._obs_alpha * np.square(obs - self._obs_mean)
-
-    def _apply_normalize_obs(self, raw_obs):
-        if self.training:
-            self._update_obs_estimate(raw_obs)
-        return (raw_obs - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
-
-    def observation(self, observation):
-        return self._apply_normalize_obs(observation)
-
-class NormAct(gym.ActionWrapper, BaseWrapper):
-    """
-    Normalized Action      => [ -1, 1 ]
-    """
-    def __init__(self, env):
-        super(NormAct, self).__init__(env)
-        ub = np.ones(self.env.action_space.shape)
-        self.action_space = Box(-1 * ub, ub)
-    
-    def action(self, action):        
-        lb = self.env.action_space.low
-        ub = self.env.action_space.high
-        scaled_action = lb + (action + 1.) * 0.5 * (ub - lb)
-        return np.clip(scaled_action, lb, ub)
-
-class RewardShift(gym.RewardWrapper, BaseWrapper):
-    def __init__(self, env, reward_scale = 1):
-        super(RewardShift, self).__init__(env)
-        self._reward_scale = reward_scale
-    
-    def reward(self, reward):
-        return self._reward_scale * reward
+"""
+Basically from OpenAI Baseline
+"""
 
 class NoopResetEnv( BaseWrapper):
     def __init__(self, env, noop_max=30):
@@ -211,10 +157,7 @@ class LazyFrames(object):
 
     def __getitem__(self, i):
         return self._force()[i]
-
-"""
-Origin from OpenAI Baselines
-"""
+   
 class WarpFrame(gym.ObservationWrapper, BaseWrapper):
     """Warp frames to 84x84 as done in the Nature paper and later work."""
     def __init__(self, env, width=84, height=84, grayscale=True):
@@ -223,10 +166,10 @@ class WarpFrame(gym.ObservationWrapper, BaseWrapper):
         self.height = height
         self.grayscale = grayscale
         if self.grayscale:
-            self.observation_space = Box(low=0, high=255,
+            self.observation_space = gym.spaces.Box(low=0, high=255,
                 shape=(1, self.height, self.width), dtype=np.uint8)
         else:
-            self.observation_space = Box(low=0, high=255,
+            self.observation_space = gym.spaces.Box(low=0, high=255,
                 shape=(3, self.height, self.width), dtype=np.uint8)
 
     def observation(self, frame):
@@ -250,7 +193,7 @@ class FrameStack( BaseWrapper):
         self.k = k
         self.frames = deque([], maxlen=k)
         shp = env.observation_space.shape
-        self.observation_space = Box(low=0, high=255, shape=( (shp[0] * k,) + shp[1:] ), dtype=env.observation_space.dtype)
+        self.observation_space = gym.spaces.Box(low=0, high=255, shape=( (shp[0] * k,) + shp[1:] ), dtype=env.observation_space.dtype)
 
     def reset(self):
         ob = self.env.reset()
@@ -276,55 +219,3 @@ class ScaledFloatFrame(gym.ObservationWrapper, BaseWrapper):
         # careful! This undoes the memory optimization, use
         # with smaller replay buffers only.
         return np.array(observation).astype(np.float32) / 255.0
-
-# def wrap_deepmind(env, frame_stack=False, scale=False):
-#     """Configure environment for DeepMind-style Atari.
-#     """
-#     if episode_life:
-#         env = EpisodicLifeEnv(env)
-#     if 'FIRE' in env.unwrapped.get_action_meanings():
-#         env = FireResetEnv(env)
-#     env = WarpFrame(env)
-#     if scale:
-#         env = ScaledFloatFrame(env)
-#     if clip_rewards:
-#         env = ClipRewardEnv(env)
-#     if frame_stack:
-#         env = FrameStack(env, 4)
-#     return env
-
-def wrap_deepmind(env, frame_stack=False, scale=False, clip_rewards=False):
-    assert 'NoFrameskip' in env.spec.id
-    env = EpisodicLifeEnv(env)
-    env = NoopResetEnv(env, noop_max=30)
-    env = MaxAndSkipEnv(env, skip=4)
-    if 'FIRE' in env.unwrapped.get_action_meanings():
-        env = FireResetEnv(env)
-    env = WarpFrame(env)
-    if scale:
-        env = ScaledFloatFrame(env)
-    if clip_rewards:
-        env = ClipRewardEnv(env)
-    if frame_stack:
-        env = FrameStack(env, 4)    
-    return env
-
-def wrap_continuous_env(env, obs_norm, obs_alpha, reward_scale ):
-    env = RewardShift(env, reward_scale)
-    if obs_norm:
-        return NormObs(env, obs_alpha=obs_alpha) 
-    return env
-
-def get_env( env_id, env_param ):
-
-    env = BaseWrapper( gym.make(env_id) )
-    ob_space = env.observation_space
-    if len(ob_space.shape) == 3:
-        env = wrap_deepmind(env, **env_param)
-    else:
-        env = wrap_continuous_env(env, **env_param)
-    
-    act_space = env.action_space
-    if isinstance(act_space, gym.spaces.Box):
-        return NormAct(env)
-    return env

@@ -3,6 +3,8 @@ from torch.distributions import Distribution, Normal
 
 class TanhNormal(Distribution):
     """
+    Basically from RLKIT
+    
     Represent distribution of X where
         X ~ tanh(Z)
         Z ~ N(mean, std)

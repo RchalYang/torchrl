@@ -1,14 +1,9 @@
-import time
 import numpy as np
-import copy
 
-import torch.optim as optim
-import pytorch_util as ptu
 import torch
 from torch import nn as nn
 
 from algo.dqn import DQN
-import math
 
 class BootstrappedDQN(DQN):
     def __init__(self, 

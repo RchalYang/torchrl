@@ -1,51 +1,17 @@
-import argparse
-import json
-import gym
+from .sac import SAC
+from .ddpg import DDPG
+from .twin_sac import TwinSAC
+from .td3 import TD3
 
-import torch
-import torch.optim as optim
+from .dqn import DQN
+from .bootstrapped_dqn import BootstrappedDQN
+from .qrdqn import QRDQN
 
-import algo
-import policies
 import networks
-import env
-import replay_buffer
+import replay_buffers
+import policies
 
-def get_args():
-    parser = argparse.ArgumentParser(description='RL')
-    
-    parser.add_argument('--seed', type=int, default=1,
-                        help='random seed (default: 1)')
-
-    parser.add_argument("--config", type=str,   default=None,
-                        help="config file", )
-
-    parser.add_argument('--save_dir', type=str, default='./snapshots',
-                        help='directory for snapshots (default: ./snapshots)')
-                        
-    parser.add_argument('--log_dir', type=str, default='./log',
-                        help='directory for tensorboard logs (default: ./log)')
-
-    parser.add_argument('--no_cuda', action='store_true', default=False,
-                        help='disables CUDA training')
-
-    parser.add_argument("--device", type=int, default=0,
-                        help="gpu secification", )
-
-	# tensorboard
-    parser.add_argument("--id", type=str,   default=None,
-                        help="id for tensorboard", )
-
-    args = parser.parse_args()
-
-    args.cuda = not args.no_cuda and torch.cuda.is_available()
-
-    return args
-
-def get_params(file_name):
-    with open(file_name) as f:
-        params = json.load(f)
-    return params
+import torch.optim as optim
 
 def get_agent( params):
 
@@ -55,7 +21,7 @@ def get_agent( params):
         params['net']['base_type']=networks.CNNBase
         if params['env']['frame_stack']:    
             buffer_param = params['replay_buffer'] 
-            efficient_buffer = replay_buffer.MemoryEfficientReplayBuffer(int(buffer_param['size']))
+            efficient_buffer = replay_buffers.MemoryEfficientReplayBuffer(int(buffer_param['size']))
             params['general_setting']['replay_buffer'] = efficient_buffer
     else:
         params['net']['base_type']=networks.MLPBase
@@ -65,7 +31,7 @@ def get_agent( params):
             input_shape = env.observation_space.shape[0], 
             output_shape = 2 * env.action_space.shape[0],
             **params['net'] )
-        vf = networks.FlattenNet( 
+        vf = networks.Net( 
             input_shape = env.observation_space.shape[0],
             output_shape = 1,
             **params['net'] )
@@ -73,9 +39,9 @@ def get_agent( params):
             input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
             output_shape = 1,
             **params['net'] )
-        pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
+        pretrain_pf = policies.UniformPolicyContinuous(env.action_space.shape[0])
 
-        return algo.SAC(
+        return SAC(
             pf = pf,
             vf = vf,
             qf = qf,
@@ -89,7 +55,7 @@ def get_agent( params):
             input_shape = env.observation_space.shape[0], 
             output_shape = 2 * env.action_space.shape[0],
             **params['net'] )
-        vf = networks.FlattenNet( 
+        vf = networks.Net( 
             input_shape = env.observation_space.shape[0],
             output_shape = 1,
             **params['net'] )
@@ -101,9 +67,9 @@ def get_agent( params):
             input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
             output_shape = 1,
             **params['net'] )
-        pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
+        pretrain_pf = policies.UniformPolicyContinuous(env.action_space.shape[0])
 
-        return algo.TwinSAC(
+        return TwinSAC(
             pf = pf,
             vf = vf,
             qf1 = qf1,
@@ -126,9 +92,9 @@ def get_agent( params):
             input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
             output_shape = 1,
             **params['net'] )
-        pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
+        pretrain_pf = policies.UniformPolicyContinuous(env.action_space.shape[0])
 
-        return algo.TD3(
+        return TD3(
             pf = pf,
             qf1 = qf1,
             qf2 = qf2,
@@ -146,9 +112,9 @@ def get_agent( params):
             input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
             output_shape = 1,
             **params['net'] )
-        pretrain_pf = policies.UniformPolicy(env.action_space.shape[0])
+        pretrain_pf = policies.UniformPolicyContinuous(env.action_space.shape[0])
             
-        return algo.DDPG(
+        return DDPG(
             pf = pf,
             qf = qf,
             pretrain_pf = pretrain_pf,
@@ -171,7 +137,7 @@ def get_agent( params):
             action_num = env.action_space.n
         )
         params["general_setting"]["optimizer_class"] = optim.RMSprop
-        return algo.DQN(
+        return DQN(
             pf = pf,
             qf = qf,
             pretrain_pf = pretrain_pf,
@@ -196,7 +162,7 @@ def get_agent( params):
             action_num = env.action_space.n
         )
         params["general_setting"]["optimizer_class"] = optim.RMSprop
-        return algo.BootstrappedDQN (
+        return BootstrappedDQN (
             pf = pf,
             qf = qf,
             pretrain_pf = pretrain_pf,
@@ -218,7 +184,7 @@ def get_agent( params):
         pretrain_pf = policies.UniformPolicyDiscrete(
             action_num = env.action_space.n
         )
-        return algo.QRDQN (
+        return QRDQN (
             pf = pf,
             qf = qf,
             pretrain_pf = pretrain_pf,

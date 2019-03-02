@@ -1,25 +1,18 @@
 import torch
-import torch.optim as optim
 
-import gym
-from tensorboardX import SummaryWriter
-import copy
-import glob
 import os
 import time
-import shutil
 import os.path as osp
-import stat
-from collections import deque
+
 import numpy as np
 
 from utils import get_args
 from utils import get_params
-from utils import get_agent
-
-from replay_buffer import SimpleReplayBuffer
-from logger import Logger
+from algo import get_agent
 from env import get_env
+
+from replay_buffers import SimpleReplayBuffer
+from utils import Logger
 
 args = get_args()
 params = get_params(args.config)

@@ -1,17 +1,15 @@
 import numpy as np
 import copy
 
-import torch.optim as optim
-import pytorch_util as ptu
 import torch
+import torch.optim as optim
 from torch import nn as nn
 
-from algo.rl_algo import RLAlgo
-import math
+from algo.off_rl_algo import OffRLAlgo
 
-class DDPG(RLAlgo):
+class DDPG(OffRLAlgo):
     """
-    SAC
+    DDPG
     """
 
     def __init__(
@@ -66,7 +64,7 @@ class DDPG(RLAlgo):
         """
         
         new_actions = self.pf(obs)
-        new_q_pred = self.qf(obs, new_actions)
+        new_q_pred = self.qf([obs, new_actions])
         
         policy_loss = -new_q_pred.mean()
 
@@ -74,10 +72,10 @@ class DDPG(RLAlgo):
         QF Loss
         """
         target_actions = self.target_pf(next_obs)
-        target_q_values = self.target_qf(next_obs, target_actions)
+        target_q_values = self.target_qf([next_obs, target_actions])
 
         q_target = rewards + (1. - terminals) * self.discount * target_q_values
-        q_pred = self.qf(obs, actions)
+        q_pred = self.qf([obs, actions])
         qf_loss = self.qf_criterion( q_pred, q_target.detach())
 
         """

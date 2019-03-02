@@ -1,6 +1,6 @@
-# Pytorch-Off-Policy-Agent
+# TorchRL
 
-Pytorch Implementation for Off Policy RL Methods
+Pytorch Implementation for RL Methods
 
 Environments with continuous & discrete action space are supported.
 
@@ -35,16 +35,22 @@ specify parameters for algorithms in config file & specify log directory / seed 
 ```
 
 ## Currently contains:
-* Soft Actor Critic: SAC(TwinSAC)
-* Deep Deterministic Policy Gradient :DDPG
-* TD3
-* DQN:
-    * Basic Double DQN
-    * Bootstrapped DQN
-    * QRDQN
+* On-Policy Methods:
+    * ...
+* Off-Policy Methods:
+    * Soft Actor Critic: SAC(TwinSAC)
+    * Deep Deterministic Policy Gradient :DDPG
+    * TD3
+    * DQN:
+        * Basic Double DQN
+        * Bootstrapped DQN
+        * QRDQN
 
+## Figure:
 ![HalfCheetah-v2 SAC DDPG](./fig/HalfCheetah-v2.png "HalfCheetah-v2")
 
 ## TODO:
 1. Add More Algorithm
+* On-Policy Methods
 * DQN: C51 / IQN
+2. Add multiprocess support for environments

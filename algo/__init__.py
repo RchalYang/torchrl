@@ -6,3 +6,5 @@ from .td3 import TD3
 from .dqn import DQN
 from .bootstrapped_dqn import BootstrappedDQN
 from .qrdqn import QRDQN
+
+from .get_agent import get_agent

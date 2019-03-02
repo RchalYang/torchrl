@@ -1,16 +1,14 @@
-import time
 import numpy as np
 import copy
 
-import torch.optim as optim
-import pytorch_util as ptu
 import torch
+import torch.optim as optim
 from torch import nn as nn
 
-from algo.rl_algo import RLAlgo
-import math
+from algo.off_rl_algo import OffRLAlgo
 
-class DQN(RLAlgo):
+
+class DQN(OffRLAlgo):
     def __init__(self, 
         qf, pf, pretrain_pf,
         qlr,

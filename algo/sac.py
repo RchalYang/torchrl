@@ -2,15 +2,13 @@ import time
 import numpy as np
 import copy
 
-import torch.optim as optim
-import pytorch_util as ptu
 import torch
+import torch.optim as optim
 from torch import nn as nn
 
-from algo.rl_algo import RLAlgo
-import math
+from algo.off_rl_algo import OffRLAlgo
 
-class SAC(RLAlgo):
+class SAC(OffRLAlgo):
     """
     SAC
     """
@@ -63,7 +61,7 @@ class SAC(RLAlgo):
                 self.target_entropy = target_entropy
             else:
                 self.target_entropy = -np.prod(self.env.action_space.shape).item()  # from rlkit
-            self.log_alpha = ptu.zeros(1).to(self.device)
+            self.log_alpha = torch.zeros(1).to(self.device)
             self.log_alpha.requires_grad_()
             self.alpha_optimizer = optimizer_class(
                 [self.log_alpha],
@@ -105,7 +103,7 @@ class SAC(RLAlgo):
         log_probs   = sample_info["log_prob"]
         ent         = sample_info["ent"]
 
-        q_pred = self.qf(obs, actions)
+        q_pred = self.qf([obs, actions])
         v_pred = self.vf(obs)
 
         if self.automatic_entropy_tuning:
@@ -131,7 +129,7 @@ class SAC(RLAlgo):
         """
         VF Loss
         """
-        q_new_actions = self.qf(obs, new_actions)
+        q_new_actions = self.qf([obs, new_actions])
         v_target = q_new_actions - alpha * log_probs
         vf_loss = self.vf_criterion( v_pred, v_target.detach())
 
