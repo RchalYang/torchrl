@@ -24,7 +24,7 @@ class OnPolicyReplayBuffer(SimpleReplayBuffer):
         values= np.concatenate( [self._values, np.array([[last_value]])], 0 )
 
         for t in reversed(range(len(self._rewards))):
-            delta = self._rewards[t] + ( 1 - self._terminals[t] ) * gamma * self._values[t + 1] - values[t]
+            delta = self._rewards[t] + ( 1 - self._terminals[t] ) * gamma * values[t + 1] - values[t]
             A = delta + ( 1 - self._terminals[t] ) * gamma * tau * A
             advs.insert( 0, A )
             estimate_returns.insert( 0, A + values[t] )

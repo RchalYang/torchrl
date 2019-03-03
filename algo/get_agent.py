@@ -16,6 +16,8 @@ from .bootstrapped_dqn import BootstrappedDQN
 from .qrdqn import QRDQN
 
 from .reinforce import Reinforce
+from .a2c import A2C
+from .ppo import PPO
 
 
 def get_agent( params):
@@ -197,30 +199,53 @@ def get_agent( params):
             **params["general_setting"]
         )
 
+    # On Policy Methods
     act_space = env.action_space
     params[params['agent']]['continuous'] = isinstance(act_space, gym.spaces.Box)
 
-    if params['agent'] == 'reinforce':
-        
-        buffer_param = params['replay_buffer'] 
-        buffer = replay_buffers.OnPolicyReplayBuffer(int(buffer_param['size']))
-        params['general_setting']['replay_buffer'] = buffer
+    buffer_param = params['replay_buffer'] 
+    buffer = replay_buffers.OnPolicyReplayBuffer(int(buffer_param['size']))
+    params['general_setting']['replay_buffer'] = buffer
 
-        if params[params['agent']]['continuous']:
-            pf = policies.GuassianContPolicy(
-                input_shape = env.observation_space.shape,
-                output_shape = 2 * env.action_space.shape[0],
-                **params['net']
-            )
-        else:
-            pf = policies.CategoricalDisPolicy(
-                input_shape = env.observation_space.shape,
-                output_shape = env.action_space.n,
-                **params['net']
-            )
+    if params[params['agent']]['continuous']:
+        pf = policies.GuassianContPolicy(
+            input_shape = env.observation_space.shape,
+            output_shape = 2 * env.action_space.shape[0],
+            **params['net']
+        )
+    else:
+        pf = policies.CategoricalDisPolicy(
+            input_shape = env.observation_space.shape,
+            output_shape = env.action_space.n,
+            **params['net']
+        )
+
+    if params['agent'] == 'reinforce':
         return Reinforce(
             pf = pf,
             **params["reinforce"],
+            **params["general_setting"]
+        )
+
+    # Actor-Critic Frameworks
+    vf = networks.Net( 
+        input_shape = env.observation_space.shape,
+        output_shape = 1,
+        **params['net'] )
+        
+    if params['agent'] == 'a2c':
+        return A2C(
+            pf = pf,
+            vf = vf,
+            **params["a2c"],
+            **params["general_setting"]
+        )
+
+    if params['agent'] == 'ppo':
+        return PPO(
+            pf = pf,
+            vf = vf,
+            **params["ppo"],
             **params["general_setting"]
         )
 

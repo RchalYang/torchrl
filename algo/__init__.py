@@ -8,5 +8,7 @@ from .bootstrapped_dqn import BootstrappedDQN
 from .qrdqn import QRDQN
 
 from .reinforce import Reinforce
+from .a2c import A2C
+from .ppo import PPO
 
 from .get_agent import get_agent

@@ -12,12 +12,16 @@ class OnRLAlgo(RLAlgo):
         self, 
         continuous,
         shuffle = True,
+        tau = None,
+        gae = True,
         **kwargs
     ):
         super(OnRLAlgo, self).__init__(**kwargs )
         self.sample_key = [ "obs", "actions", "advs", "estimate_returns" ]
         self.shuffle = shuffle
         self.continuous = continuous
+        self.tau = tau
+        self.gae = gae
 
     def take_actions(self, ob, action_func):
         

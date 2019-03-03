@@ -45,7 +45,7 @@ def calc_next_shape(input_shape, conv_info):
 class CNNBase(nn.Module):
     def __init__(self, input_shape, hidden_shapes, activation_func=F.relu, init_func = init.basic_init ):
         super().__init__()
-    
+        
         current_shape = input_shape
         in_channels = input_shape[0]
         self.activation_func = activation_func

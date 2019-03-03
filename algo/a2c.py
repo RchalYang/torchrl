@@ -2,38 +2,43 @@ import numpy as np
 
 import torch
 import torch.optim as optim
+import torch.nn as nn
 
 from .on_rl_algo import OnRLAlgo
-from networks.nets import ZeroNet
 
-class Reinforce(OnRLAlgo):
+class A2C(OnRLAlgo):
     """
-    Reinforce
+    Actor Critic
     """
     def __init__(
         self,
-        pf, 
-        plr,
+        pf, vf, 
+        plr, vlr,
         optimizer_class=optim.Adam,
         entropy_coeff = 0.001,
         **kwargs
     ):
-        super(Reinforce, self).__init__(**kwargs)
+        super(A2C, self).__init__(**kwargs)
         self.pf = pf
-        # Use a vacant value network to simplify the code structure
-        self.vf = ZeroNet()
+        self.vf = vf
         self.to(self.device)
 
         self.plr = plr
+        self.vlr = vlr
 
         self.pf_optimizer = optimizer_class(
             self.pf.parameters(),
             lr=self.plr,
         )
 
+        self.vf_optimizer = optimizer_class(
+            self.vf.parameters(),
+            lr=self.vlr,
+        )
+
         self.entropy_coeff = entropy_coeff
         
-        self.gae = False
+        self.vf_criterion = nn.MSELoss()
     
     def update(self, batch):
         self.training_update_num += 1
@@ -52,23 +57,30 @@ class Reinforce(OnRLAlgo):
         advs = (advs - advs.mean()) / (advs.std() + 1e-8)
 
         out = self.pf.update( obs, actions )
-        
         log_probs = out['log_prob']
         ent = out['ent']
 
         policy_loss = -log_probs * advs
         policy_loss = policy_loss.mean() - self.entropy_coeff * ent.mean()
 
+        values = self.vf(obs)
+        vf_loss = self.vf_criterion( values, estimate_returns )
+
         self.pf_optimizer.zero_grad()
         policy_loss.backward()
         self.pf_optimizer.step()
 
+        self.vf_optimizer.zero_grad()
+        vf_loss.backward()
+        self.vf_optimizer.step()
+
         info = {}
         info['Traning/policy_loss'] = policy_loss.item()
+        info['Traning/vf_loss'] = vf_loss.item()
 
-        info['returns/mean'] = advs.mean().item()
-        info['returns/std'] = advs.std().item()
-        info['returns/max'] = advs.max().item()
-        info['returns/min'] = advs.min().item()
+        info['advs/mean'] = advs.mean().item()
+        info['advs/std'] = advs.std().item()
+        info['advs/max'] = advs.max().item()
+        info['advs/min'] = advs.min().item()
 
         return info
