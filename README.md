@@ -36,7 +36,9 @@ specify parameters for algorithms in config file & specify log directory / seed 
 
 ## Currently contains:
 * On-Policy Methods:
-    * ...
+    * Reinforce
+    * A2C(Actor Critic)
+    * PPO(Proximal Policy Optimization)
 * Off-Policy Methods:
     * Soft Actor Critic: SAC(TwinSAC)
     * Deep Deterministic Policy Gradient :DDPG
@@ -51,6 +53,10 @@ specify parameters for algorithms in config file & specify log directory / seed 
 
 ## TODO:
 1. Add More Algorithm
-* On-Policy Methods
-* DQN: C51 / IQN
+    * On-Policy Methods:
+        * TRPO
+        * A3C
+    * DQN: C51 / IQN
 2. Add multiprocess support for environments
+3. Different experience replay buffer:
+    * Priotized experience replay
