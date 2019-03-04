@@ -14,13 +14,14 @@ class PPO(A2C):
     """
     def __init__(
         self,
+        pf,
         clip_para = 0.2,
         opt_epochs = 10,
         **kwargs
     ):
-        super(PPO, self).__init__(**kwargs)
-        self.target_pf = copy.deepcopy(self.pf)
-        self.to(self.device)
+
+        self.target_pf = copy.deepcopy(pf)
+        super(PPO, self).__init__(pf = pf, **kwargs)
 
         self.clip_para = clip_para
         self.opt_epochs = opt_epochs
@@ -66,7 +67,7 @@ class PPO(A2C):
         out = self.pf.update( obs, actions )
         log_probs = out['log_prob']
         ent = out['ent']
-        
+       
         target_out = self.target_pf.update( obs, actions )
         target_log_probs = target_out['log_prob']
         
@@ -101,3 +102,12 @@ class PPO(A2C):
         info['advs/min'] = advs.min().item()
 
         return info
+
+    @property
+    def networks(self):
+        return [
+            self.pf,
+            self.vf,
+            self.target_pf
+        ]
+    
