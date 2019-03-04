@@ -35,7 +35,7 @@ class NormAct(gym.ActionWrapper, BaseWrapper):
         ub = np.ones(self.env.action_space.shape)
         self.action_space = gym.spaces.Box(-1 * ub, ub)
     
-    def action(self, action):        
+    def action(self, action):
         lb = self.env.action_space.low
         ub = self.env.action_space.high
         scaled_action = lb + (action + 1.) * 0.5 * (ub - lb)
@@ -47,4 +47,7 @@ class RewardShift(gym.RewardWrapper, BaseWrapper):
         self._reward_scale = reward_scale
     
     def reward(self, reward):
-        return self._reward_scale * reward
+        if self.training:
+            return self._reward_scale * reward
+        else:
+            return reward
