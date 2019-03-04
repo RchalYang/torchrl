@@ -4,6 +4,7 @@ import copy
 import torch
 import torch.optim as optim
 from torch import nn as nn
+from torch.distributions import Normal
 
 from algo.off_rl_algo import OffRLAlgo
 
@@ -17,6 +18,7 @@ class DDPG(OffRLAlgo):
             pf, qf,
             pretrain_pf,
             plr,qlr,
+            norm_std_explore,
             optimizer_class=optim.Adam,
             **kwargs
     ):
@@ -31,6 +33,8 @@ class DDPG(OffRLAlgo):
         self.plr = plr
         self.qlr = qlr
 
+        self.norm_std_explore = norm_std_explore
+
         self.pf_optimizer = optimizer_class(
             self.pf.parameters(),
             lr=self.plr,
@@ -42,6 +46,20 @@ class DDPG(OffRLAlgo):
         )
 
         self.qf_criterion = nn.MSELoss()
+
+    def get_actions(self, ob):
+        out = self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+        action = out["action"]
+        action = action.detach().cpu()
+        
+        action += Normal(
+                 torch.zeros( action.size()),
+                 self.norm_std_explore * torch.ones( action.size())
+        ).sample()
+
+        action = action.numpy()
+
+        return action
 
     def update(self, batch):
         self.training_update_num += 1

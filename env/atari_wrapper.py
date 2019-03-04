@@ -14,7 +14,7 @@ class NoopResetEnv( BaseWrapper):
         """Sample initial states by taking random number of no-ops on reset.
         No-op is assumed to be action 0.
         """
-        gym.Wrapper.__init__(self, env)
+        super().__init__(env)
         self.noop_max = noop_max
         self.override_num_noops = None
         self.noop_action = 0
@@ -41,7 +41,7 @@ class NoopResetEnv( BaseWrapper):
 class FireResetEnv( BaseWrapper ):
     def __init__(self, env):
         """Take action on reset for environments that are fixed until firing."""
-        gym.Wrapper.__init__(self, env)
+        super().__init__(env)
         assert env.unwrapped.get_action_meanings()[1] == 'FIRE'
         assert len(env.unwrapped.get_action_meanings()) >= 3
 
@@ -63,7 +63,7 @@ class EpisodicLifeEnv( BaseWrapper):
         """Make end-of-life == end-of-episode, but only reset on true game over.
         Done by DeepMind for the DQN and co. since it helps value estimation.
         """
-        gym.Wrapper.__init__(self, env)
+        super().__init__( env )
         self.lives = 0
         self.was_real_done  = True
 
@@ -97,7 +97,7 @@ class EpisodicLifeEnv( BaseWrapper):
 class MaxAndSkipEnv( BaseWrapper):
     def __init__(self, env, skip=4):
         """Return only every `skip`-th frame"""
-        gym.Wrapper.__init__(self, env)
+        super().__init__( env)
         # most recent raw observations (for max pooling across time steps)
         self._obs_buffer = np.zeros((2,)+env.observation_space.shape, dtype=np.uint8)
         self._skip       = skip
@@ -124,7 +124,7 @@ class MaxAndSkipEnv( BaseWrapper):
 
 class ClipRewardEnv( gym.RewardWrapper, BaseWrapper ):
     def __init__(self, env):
-        gym.RewardWrapper.__init__(self, env)
+        super().__init__(env)
 
     def reward(self, reward):
         """Bin reward to {+1, 0, -1} by its sign."""
@@ -161,7 +161,7 @@ class LazyFrames(object):
 class WarpFrame(gym.ObservationWrapper, BaseWrapper):
     """Warp frames to 84x84 as done in the Nature paper and later work."""
     def __init__(self, env, width=84, height=84, grayscale=True):
-        gym.ObservationWrapper.__init__(self, env)
+        super().__init__(env)
         self.width = width
         self.height = height
         self.grayscale = grayscale
@@ -189,7 +189,7 @@ class FrameStack( BaseWrapper):
         --------
         baselines.common.atari_wrappers.LazyFrames
         """
-        gym.Wrapper.__init__(self, env)
+        super().__init__(env)
         self.k = k
         self.frames = deque([], maxlen=k)
         shp = env.observation_space.shape
@@ -212,7 +212,7 @@ class FrameStack( BaseWrapper):
 
 class ScaledFloatFrame(gym.ObservationWrapper, BaseWrapper):
     def __init__(self, env):
-        gym.ObservationWrapper.__init__(self, env)
+        super().__init__(env)
         self.observation_space = gym.spaces.Box(low=0, high=1, shape=env.observation_space.shape, dtype=np.float32)
 
     def observation(self, observation):

@@ -54,7 +54,7 @@ class OnRLAlgo(RLAlgo):
         if done or self.current_step >= self.max_episode_frames:
             if self.current_step >= self.max_episode_frames:
                 
-                last_ob = torch.Tensor( sample['obs'] ).to(self.device).unsqueeze(0) 
+                last_ob = torch.Tensor( next_ob ).to(self.device).unsqueeze(0) 
                 last_value = self.vf( last_ob ).item()
                 
                 sample_dict["terminals"] = [True]

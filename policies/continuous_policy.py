@@ -49,7 +49,7 @@ class GuassianContPolicy(networks.Net):
             mean, std, log_std = self.forward(x)
         return torch.tanh(mean.squeeze(0)).detach().cpu().numpy()
     
-    def explore( self, x, return_log_probs = False ):
+    def explore( self, x, return_log_probs = False, return_pre_tanh = False ):
         
         mean, std, log_std = self.forward(x)
 
@@ -70,8 +70,12 @@ class GuassianContPolicy(networks.Net):
                 pre_tanh_value=z
             )
             log_prob = log_prob.sum(dim=1, keepdim=True)
+            dic["pre_tanh"] = z.squeeze(0)
             dic["log_prob"] = log_prob
         else:
+            if return_pre_tanh:
+                action, z = dis.rsample( return_pretanh_value = True )
+                dic["pre_tanh"] = z.squeeze(0)
             action = dis.rsample( return_pretanh_value = False )
 
         dic["action"] = action.squeeze(0)

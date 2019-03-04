@@ -32,6 +32,7 @@
     },
     "ddpg":{
         "plr" : 1e-4,
-        "qlr" : 1e-3
+        "qlr" : 1e-3,
+        "norm_std_explore": 0.1
     }
 }

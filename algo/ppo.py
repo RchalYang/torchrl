@@ -28,11 +28,11 @@ class PPO(A2C):
     
     def update_per_epoch(self):
 
-        sample = self.replay_buffer.last_sample( ['obs', 'terminals' ] )
+#        sample = self.replay_buffer.last_sample( ['obs', 'terminals' ] )
         last_value = 0
-        if not sample['terminals']:
-            last_ob = torch.Tensor( sample['obs'] ).to(self.device).unsqueeze(0) 
-            last_value = self.vf( last_ob ).item()
+#        if not sample['terminals']:
+#            last_ob = torch.Tensor( sample['obs'] ).to(self.device).unsqueeze(0) 
+#            last_value = self.vf( last_ob ).item()
         
         if self.gae:
             self.replay_buffer.generalized_advantage_estimation(last_value, self.discount, self.tau)
@@ -100,6 +100,9 @@ class PPO(A2C):
         info['advs/std'] = advs.std().item()
         info['advs/max'] = advs.max().item()
         info['advs/min'] = advs.min().item()
+
+        info['ratio/max'] = ratio.max().item()
+        info['ratio/min'] = ratio.min().item()
 
         return info
 
