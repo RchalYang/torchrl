@@ -40,6 +40,8 @@ class OnRLAlgo(RLAlgo):
 
         next_ob, reward, done, info = self.env.step(action)
 
+        self.current_step += 1
+
         sample_dict = {
             "obs":ob,
             "next_obs": next_ob,
@@ -49,17 +51,31 @@ class OnRLAlgo(RLAlgo):
             "terminals": [done]
         }
 
+        if done or self.current_step >= self.max_episode_frames:
+            if self.current_step >= self.max_episode_frames:
+                
+                last_ob = torch.Tensor( sample['obs'] ).to(self.device).unsqueeze(0) 
+                last_value = self.vf( last_ob ).item()
+                
+                sample_dict["terminals"] = [True]
+                sample_dict["rewards"] = [ reward + self.discount * last_value ]
+                
+            next_ob = self.env.reset()
+            self.finish_episode()
+            self.start_episode()
+            self.current_step = 0
+
         self.replay_buffer.add_sample( sample_dict )
 
         return next_ob, done, reward, info
 
     def update_per_epoch(self):
 
-        sample = self.replay_buffer.last_sample( ['obs', 'terminals' ] )
+        # sample = self.replay_buffer.last_sample( ['obs', 'terminals' ] )
         last_value = 0
-        if not sample['terminals']:
-            last_ob = torch.Tensor( sample['obs'] ).to(self.device).unsqueeze(0) 
-            last_value = self.vf( last_ob ).item()
+        # if not sample['terminals']:
+        #     last_ob = torch.Tensor( sample['obs'] ).to(self.device).unsqueeze(0) 
+        #     last_value = self.vf( last_ob ).item()
         
         if self.gae:
             self.replay_buffer.generalized_advantage_estimation(last_value, self.discount, self.tau)

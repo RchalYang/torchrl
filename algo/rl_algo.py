@@ -70,6 +70,8 @@ class RLAlgo():
                 exit()
 
         next_ob, reward, done, info = self.env.step(action)
+        
+        self.current_step += 1
 
         sample_dict = {
             "obs":ob,
@@ -79,12 +81,18 @@ class RLAlgo():
             "terminals": [done]
         }
 
+        if done or self.current_step >= self.max_episode_frames:
+            next_ob = self.env.reset()
+            self.finish_episode()
+            self.start_episode()
+            self.current_step = 0
+
         self.replay_buffer.add_sample( sample_dict )
 
         return next_ob, done, reward, info
 
     def start_episode(self):
-        pass
+        self.current_step = 0
 
     def start_epoch(self):
         pass
@@ -107,7 +115,6 @@ class RLAlgo():
     def train(self):
         self.pretrain()
 
-        self.current_step = 0
         ob = self.env.reset()
 
         self.start_episode()
@@ -122,15 +129,9 @@ class RLAlgo():
                 # Sample actions
                 next_ob, done, reward, info = self.take_actions( ob, self.get_actions )
                 
-                self.update_per_timestep()
-        
                 ob = next_ob
-                self.current_step += 1
-                if done or self.current_step >= self.max_episode_frames:
-                    ob = self.env.reset()
-                    self.finish_episode()
-                    self.start_episode()
-                    self.current_step = 0
+                
+                self.update_per_timestep()
 
             self.update_per_epoch()
                     
