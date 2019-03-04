@@ -18,7 +18,7 @@
         "pretrain_frames" : 10000,
         "num_epochs" : 3000,
         "epoch_frames" : 1000,
-        "max_episode_frames" : 999,
+        "max_episode_frames" : 1000,
 
         "batch_size" : 256,
         "min_pool" : 10000,
