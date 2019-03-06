@@ -25,6 +25,8 @@ class BootstrappedDQN(DQN):
 
         next_ob, reward, done, info = self.env.step(action)
 
+        self.current_step += 1
+
         mask = np.random.binomial( n=1, p = self.bernoulli_p, size = self.head_num )
 
         sample_dict = {
@@ -36,6 +38,12 @@ class BootstrappedDQN(DQN):
             "masks": mask
         }
 
+        if done or self.current_step >= self.max_episode_frames:
+            next_ob = self.env.reset()
+            self.finish_episode()
+            self.start_episode()
+            self.current_step = 0
+            
         self.replay_buffer.add_sample( sample_dict )
 
         return next_ob, done, reward, info
