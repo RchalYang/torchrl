@@ -169,10 +169,15 @@ class RLAlgo():
                 eval_ob, r, done, _ = eval_env.step( act )
                 rew += r
 
+                # eval_env.render()
+
             eval_rews.append(rew)
             self.episode_rewards.append(rew)
 
             done = False
+        
+        eval_env.close()
+        del eval_env
 
         eval_infos["Eval_Rewards_Average"] = np.mean( eval_rews )
         return eval_infos

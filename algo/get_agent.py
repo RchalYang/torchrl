@@ -214,10 +214,14 @@ def get_agent( params):
             **params['net']
         )
     else:
+        print(params['policy'])
+        print(params['net'])
+        # print(**params['policy'])
         pf = policies.CategoricalDisPolicy(
             input_shape = env.observation_space.shape,
             output_shape = env.action_space.n,
-            **params['net']
+            **params['net'],
+            **params['policy']
         )
 
     if params['agent'] == 'reinforce':

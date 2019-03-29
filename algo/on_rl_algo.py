@@ -39,7 +39,7 @@ class OnRLAlgo(RLAlgo):
                 exit()
 
         next_ob, reward, done, info = self.env.step(action)
-
+        # self.env.render()
         self.current_step += 1
 
         sample_dict = {
@@ -71,19 +71,19 @@ class OnRLAlgo(RLAlgo):
 
     def update_per_epoch(self):
 
-        # sample = self.replay_buffer.last_sample( ['obs', 'terminals' ] )
+        sample = self.replay_buffer.last_sample( ['next_obs', 'terminals' ] )
         last_value = 0
-        # if not sample['terminals']:
-        #     last_ob = torch.Tensor( sample['obs'] ).to(self.device).unsqueeze(0) 
-        #     last_value = self.vf( last_ob ).item()
+        if not sample['terminals']:
+            last_ob = torch.Tensor( sample['next_obs'] ).to(self.device).unsqueeze(0) 
+            last_value = self.vf( last_ob ).item()
         
         if self.gae:
             self.replay_buffer.generalized_advantage_estimation(last_value, self.discount, self.tau)
         else:
             self.replay_buffer.discount_reward(last_value, self.discount)
         #print(self.replay_buffer._advs)
-        print(self.replay_buffer._advs.shape) 
-        print(self.replay_buffer._obs.shape)
+        # print(self.replay_buffer._advs.shape) 
+        # print(self.replay_buffer._obs.shape)
         for batch in self.replay_buffer.one_iteration(self.batch_size, self.sample_key, self.shuffle):
             # batch = self.replay_buffer.random_batch(self.batch_size, self.sample_key)
             infos = self.update( batch )

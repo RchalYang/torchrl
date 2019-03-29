@@ -54,6 +54,7 @@ class Reinforce(OnRLAlgo):
         out = self.pf.update( obs, actions )
         
         log_probs = out['log_prob']
+        # print(log_probs)
         ent = out['ent']
 
         policy_loss = -log_probs * advs

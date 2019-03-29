@@ -102,11 +102,36 @@ class CategoricalDisPolicy(networks.Net):
     """
     Discrete Policy
     """
+
+    def __init__( self, start_epsilon, end_epsilon, decay_frames, output_shape, **kwargs):
+        super( CategoricalDisPolicy, self).__init__( output_shape = output_shape, **kwargs )
+        self.start_epsilon = start_epsilon
+        self.end_epsilon = end_epsilon
+        self.decay_frames = decay_frames
+        self.count = 0
+        self.epsilon = self.start_epsilon
+        self.action_shape = output_shape
+
+
     def forward(self, x):
         logits = super().forward(x)
         return torch.softmax(logits, dim=1)
 
     def explore(self, x, return_log_probs = False):
+
+        self.count += 1
+        r = np.random.rand()
+        if self.count < self.decay_frames:
+            self.epsilon =  self.start_epsilon - ( self.start_epsilon - self.end_epsilon ) \
+                * ( self.count / self.decay_frames )
+        else:
+            self.epsilon = self.end_epsilon
+        if r < self.epsilon:
+            return {
+                "dis": None,
+                "action":torch.Tensor( [np.random.randint(0, self.action_shape )] ).int()
+            }
+
         output = self.forward(x)
         dis = Categorical(output)
         action = dis.sample()
@@ -122,6 +147,7 @@ class CategoricalDisPolicy(networks.Net):
     
     def eval(self, x):
         output = self.forward(x)
+        # print(torch.softmax(output, dim=1))
         return output.max(dim=-1)[1].detach().item()
 
     def update(self, obs, actions):
