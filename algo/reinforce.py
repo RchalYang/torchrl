@@ -41,15 +41,15 @@ class Reinforce(OnRLAlgo):
         obs = batch['obs']
         actions = batch['actions']
         advs = batch['advs']
-        estimate_returns = batch['estimate_returns']
 
         obs = torch.Tensor(obs).to( self.device )
         actions = torch.Tensor(actions).to( self.device )
         advs = torch.Tensor(advs).to( self.device )
-        estimate_returns = torch.Tensor(estimate_returns).to( self.device )
 
         # Normalize the advantage
+        # print(advs)
         advs = (advs - advs.mean()) / (advs.std() + 1e-8)
+        #print(advs)
 
         out = self.pf.update( obs, actions )
         
@@ -57,6 +57,8 @@ class Reinforce(OnRLAlgo):
         ent = out['ent']
 
         policy_loss = -log_probs * advs
+        #print(log_probs.shape)
+        #print(advs.shape)
         policy_loss = policy_loss.mean() - self.entropy_coeff * ent.mean()
 
         self.pf_optimizer.zero_grad()

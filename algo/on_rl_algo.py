@@ -53,13 +53,13 @@ class OnRLAlgo(RLAlgo):
 
         if done or self.current_step >= self.max_episode_frames:
             if self.current_step >= self.max_episode_frames:
-                
+                 
                 last_ob = torch.Tensor( next_ob ).to(self.device).unsqueeze(0) 
                 last_value = self.vf( last_ob ).item()
                 
                 sample_dict["terminals"] = [True]
                 sample_dict["rewards"] = [ reward + self.discount * last_value ]
-                
+            #print(self.current_step)    
             next_ob = self.env.reset()
             self.finish_episode()
             self.start_episode()
@@ -81,7 +81,9 @@ class OnRLAlgo(RLAlgo):
             self.replay_buffer.generalized_advantage_estimation(last_value, self.discount, self.tau)
         else:
             self.replay_buffer.discount_reward(last_value, self.discount)
-            
+        #print(self.replay_buffer._advs)
+        print(self.replay_buffer._advs.shape) 
+        print(self.replay_buffer._obs.shape)
         for batch in self.replay_buffer.one_iteration(self.batch_size, self.sample_key, self.shuffle):
             # batch = self.replay_buffer.random_batch(self.batch_size, self.sample_key)
             infos = self.update( batch )
