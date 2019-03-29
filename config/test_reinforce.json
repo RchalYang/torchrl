@@ -1,0 +1,44 @@
+{
+    "agent":"reinforce",
+    "env_name" : "PongNoFrameskip-v4",
+    "env":{
+        "frame_stack":false,
+        "scale": true,
+        "clip_rewards": true
+    },
+    "replay_buffer":{
+        "size": 1000
+    },
+    "net":{ 
+        "hidden_shapes": [
+            [32, [8,8], [4,4], [0,0]],
+            [32, [4,4], [2,2], [0,0]],
+            [64, [3,3], [1,1], [0,0]]
+        ],
+        "append_hidden_shapes":[512]        
+    },
+    "policy":{
+        "start_epsilon":1,
+        "end_epsilon":0.1,
+        "decay_frames":1000000
+    },
+    "general_setting": {
+        "discount" : 0.99,
+        "tau" : 0.95,
+
+        "num_epochs" : 3000,
+        "epoch_frames" : 1000,
+        "max_episode_frames" : 10000000,
+
+        "batch_size" : 64,
+
+        "gae": false,
+        "shuffle":true,
+
+        "eval_episodes" : 1
+    },
+    "reinforce":{
+        
+        "plr" : 3e-4
+    }
+}
