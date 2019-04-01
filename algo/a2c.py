@@ -42,7 +42,9 @@ class A2C(OnRLAlgo):
     
     def update(self, batch):
         self.training_update_num += 1
-        
+
+        info = {}
+
         obs = batch['obs']
         actions = batch['actions']
         advs = batch['advs']
@@ -54,6 +56,11 @@ class A2C(OnRLAlgo):
         estimate_returns = torch.Tensor(estimate_returns).to( self.device )
 
         # Normalize the advantage
+        info['advs/mean'] = advs.mean().item()
+        info['advs/std'] = advs.std().item()
+        info['advs/max'] = advs.max().item()
+        info['advs/min'] = advs.min().item()
+
         advs = (advs - advs.mean()) / (advs.std() + 1e-8)
 
         out = self.pf.update( obs, actions )
@@ -74,13 +81,15 @@ class A2C(OnRLAlgo):
         vf_loss.backward()
         self.vf_optimizer.step()
 
-        info = {}
         info['Traning/policy_loss'] = policy_loss.item()
         info['Traning/vf_loss'] = vf_loss.item()
 
-        info['advs/mean'] = advs.mean().item()
-        info['advs/std'] = advs.std().item()
-        info['advs/max'] = advs.max().item()
-        info['advs/min'] = advs.min().item()
+        
+        info['v_pred/mean'] = values.mean().item()
+        info['v_pred/std'] = values.std().item()
+        info['v_pred/max'] = values.max().item()
+        info['v_pred/min'] = values.min().item()
+
+        info['ent'] = ent.mean().item()
 
         return info

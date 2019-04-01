@@ -50,6 +50,7 @@ class RLAlgo():
 
         self.training_update_num = 0
         self.episode_rewards = deque(maxlen=10)
+        self.training_episode_rewards = deque(maxlen=10)
         self.eval_episodes = eval_episodes
         
         self.sample_key = [ "obs", "next_obs", "actions", "rewards", "terminals" ]
@@ -118,6 +119,8 @@ class RLAlgo():
         ob = self.env.reset()
 
         self.start_episode()
+
+        train_rew = 0
         
         for epoch in range( self.num_epochs ):
             
@@ -131,6 +134,11 @@ class RLAlgo():
                 
                 ob = next_ob
                 
+                train_rew += reward
+                if done:
+                    self.training_episode_rewards.append(train_rew)
+                    train_rew = 0
+
                 self.update_per_timestep()
 
             self.update_per_epoch()
@@ -145,6 +153,7 @@ class RLAlgo():
             
             infos = {}
             infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
+            infos["Running_Training_Average_Rewards"] = np.mean(self.training_episode_rewards)
             infos.update(eval_infos)
             infos.update(finish_epoch_info)
             
