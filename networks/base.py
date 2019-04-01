@@ -11,6 +11,8 @@ class MLPBase(nn.Module):
         self.activation_func = activation_func
         self.fcs = []
         input_shape = np.prod(input_shape)
+
+        self.output_shape = input_shape
         for i, next_shape in enumerate( hidden_shapes ):
             fc = nn.Linear(input_shape, next_shape)
             init_func(fc)
@@ -19,8 +21,7 @@ class MLPBase(nn.Module):
             self.__setattr__("fc{}".format(i), fc)
 
             input_shape = next_shape
-        
-        self.output_shape = hidden_shapes[-1]
+            self.output_shape = next_shape
     
     def forward(self, x):
 
@@ -50,6 +51,7 @@ class CNNBase(nn.Module):
         in_channels = input_shape[0]
         self.activation_func = activation_func
         self.convs = []
+        self.output_shape = current_shape[0] * current_shape[1] * current_shape[2]
         for i, conv_info in enumerate( hidden_shapes ):
             out_channels, kernel_size, stride, padding = conv_info
             conv = nn.Conv2d( in_channels, out_channels, kernel_size, stride, padding )
@@ -60,8 +62,7 @@ class CNNBase(nn.Module):
 
             in_channels = out_channels
             current_shape = calc_next_shape( current_shape, conv_info )
-        
-        self.output_shape = current_shape[0] * current_shape[1] * current_shape[2]
+            self.output_shape = current_shape[0] * current_shape[1] * current_shape[2]
     
     def forward(self, x):
 

@@ -32,7 +32,7 @@ class Net(nn.Module):
             self.__setattr__("append_fc{}".format(i), fc)
 
             append_input_shape = next_shape
-        print( append_input_shape, output_shape ) 
+        
         self.last = nn.Linear( append_input_shape, output_shape )     
         last_init_func( self.last )
 
