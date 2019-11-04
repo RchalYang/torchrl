@@ -1,14 +1,15 @@
-from .sac import SAC
-from .ddpg import DDPG
-from .twin_sac import TwinSAC
-from .td3 import TD3
+from .on_policy import *
+from .off_policy import *
 
-from .dqn import DQN
-from .bootstrapped_dqn import BootstrappedDQN
-from .qrdqn import QRDQN
-
-from .reinforce import Reinforce
-from .a2c import A2C
-from .ppo import PPO
-
-from .get_agent import get_agent
+__all__ = [
+    'SAC',
+    'DDPG',
+    'TwinSAC',
+    'TD3',
+    'DQN',
+    'BootstrappedDQN',
+    'QRDQN',
+    'Reinforce',
+    'A2C',
+    'PPO'
+]

@@ -1,6 +1,6 @@
 import numpy as np
 
-def _fanin_init(tensor):
+def _fanin_init(tensor, alpha = 0):
     size = tensor.size()
     if len(size) == 2:
         fan_in = size[0]
@@ -8,7 +8,8 @@ def _fanin_init(tensor):
         fan_in = np.prod(size[1:])
     else:
         raise Exception("Shape must be have dimension at least 2.")
-    bound = 1. / np.sqrt(fan_in)
+    # bound = 1. / np.sqrt(fan_in)
+    bound = np.sqrt( 1. / ( (1 + alpha * alpha ) * fan_in) )
     return tensor.data.uniform_(-bound, bound)
 
 def _uniform_init(tensor, param=3e-3):

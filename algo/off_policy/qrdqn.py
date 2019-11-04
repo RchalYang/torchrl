@@ -5,7 +5,7 @@ import torch
 from torch import nn as nn
 
 import algo.utils as atu
-from algo.dqn import DQN
+from .dqn import DQN
 
 class QRDQN(DQN):
     def __init__(self, 

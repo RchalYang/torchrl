@@ -13,7 +13,8 @@ class A2C(OnRLAlgo):
     def __init__(
         self,
         pf, vf, 
-        plr, vlr,
+        plr = 3e-4,
+        vlr = 3e-4,
         optimizer_class=optim.Adam,
         entropy_coeff = 0.001,
         **kwargs
@@ -29,11 +30,13 @@ class A2C(OnRLAlgo):
         self.pf_optimizer = optimizer_class(
             self.pf.parameters(),
             lr=self.plr,
+            weight_decay=0.002
         )
 
         self.vf_optimizer = optimizer_class(
             self.vf.parameters(),
             lr=self.vlr,
+            weight_decay=0.002
         )
 
         self.entropy_coeff = entropy_coeff
@@ -46,39 +49,42 @@ class A2C(OnRLAlgo):
         info = {}
 
         obs = batch['obs']
-        actions = batch['actions']
+        acts = batch['acts']
         advs = batch['advs']
-        estimate_returns = batch['estimate_returns']
+        est_rets = batch['estimate_returns']
+        print(acts)
+        
+        assert len(advs.shape) == 2
+        assert len(est_rets.shape) == 2
 
         obs = torch.Tensor(obs).to( self.device )
-        actions = torch.Tensor(actions).to( self.device )
+        acts = torch.Tensor(acts).to( self.device )
         advs = torch.Tensor(advs).to( self.device )
-        estimate_returns = torch.Tensor(estimate_returns).to( self.device )
+        est_rets = torch.Tensor(est_rets).to( self.device )
 
         # Normalize the advantage
-        info['advs/mean'] = advs.mean().item()
-        info['advs/std'] = advs.std().item()
-        info['advs/max'] = advs.max().item()
-        info['advs/min'] = advs.min().item()
+        # advs = (advs - advs.mean()) / (advs.std() + 1e-8)
 
-        advs = (advs - advs.mean()) / (advs.std() + 1e-8)
-
-        out = self.pf.update( obs, actions )
+        out = self.pf.update( obs, acts )
         log_probs = out['log_prob']
         ent = out['ent']
+
+        assert log_probs.shape == advs.shape
 
         policy_loss = -log_probs * advs
         policy_loss = policy_loss.mean() - self.entropy_coeff * ent.mean()
 
         values = self.vf(obs)
-        vf_loss = self.vf_criterion( values, estimate_returns )
+        vf_loss = self.vf_criterion( values, est_rets )
 
         self.pf_optimizer.zero_grad()
         policy_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.pf.parameters(), 0.5)
         self.pf_optimizer.step()
 
         self.vf_optimizer.zero_grad()
         vf_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.vf.parameters(), 0.5)
         self.vf_optimizer.step()
 
         info['Traning/policy_loss'] = policy_loss.item()
@@ -91,5 +97,6 @@ class A2C(OnRLAlgo):
         info['v_pred/min'] = values.min().item()
 
         info['ent'] = ent.mean().item()
+        info['log_prob'] = log_probs.mean().item()
 
         return info

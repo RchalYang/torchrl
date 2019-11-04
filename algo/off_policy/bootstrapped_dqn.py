@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from torch import nn as nn
 
-from algo.dqn import DQN
+from .dqn import DQN
 
 class BootstrappedDQN(DQN):
     def __init__(self, 

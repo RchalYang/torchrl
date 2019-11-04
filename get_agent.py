@@ -6,19 +6,19 @@ import networks
 import replay_buffers
 import policies
 
-from .sac import SAC
-from .ddpg import DDPG
-from .twin_sac import TwinSAC
-from .td3 import TD3
+# from .sac import SAC
+# from .ddpg import DDPG
+# from .twin_sac import TwinSAC
+# from .td3 import TD3
 
-from .dqn import DQN
-from .bootstrapped_dqn import BootstrappedDQN
-from .qrdqn import QRDQN
+# from .dqn import DQN
+# from .bootstrapped_dqn import BootstrappedDQN
+# from .qrdqn import QRDQN
 
-from .reinforce import Reinforce
-from .a2c import A2C
-from .ppo import PPO
-
+# from .reinforce import Reinforce
+# from .a2c import A2C
+# from .ppo import PPO
+from algo import *
 
 def get_agent( params):
 

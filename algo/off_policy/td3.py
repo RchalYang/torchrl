@@ -6,7 +6,7 @@ import torch.optim as optim
 from torch import nn as nn
 from torch.distributions import  Normal
 
-from algo.off_rl_algo import OffRLAlgo
+from .off_rl_algo import OffRLAlgo
 
 class TD3(OffRLAlgo):
     def __init__(self,

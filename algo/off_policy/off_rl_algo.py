@@ -4,7 +4,7 @@ import math
 
 import torch
 
-from .rl_algo import RLAlgo
+from algo.rl_algo import RLAlgo
 
 class OffRLAlgo(RLAlgo):
     """

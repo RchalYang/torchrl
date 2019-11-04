@@ -5,7 +5,7 @@ import torch
 import torch.optim as optim
 from torch import nn as nn
 
-from algo.off_rl_algo import OffRLAlgo
+from .off_rl_algo import OffRLAlgo
 
 
 class DQN(OffRLAlgo):

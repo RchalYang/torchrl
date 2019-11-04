@@ -1,5 +1,3 @@
-import numpy as np
-
 import torch
 import torch.optim as optim
 
@@ -29,6 +27,7 @@ class Reinforce(OnRLAlgo):
         self.pf_optimizer = optimizer_class(
             self.pf.parameters(),
             lr=self.plr,
+            weight_decay=0.002
         )
 
         self.entropy_coeff = entropy_coeff
@@ -37,41 +36,48 @@ class Reinforce(OnRLAlgo):
     
     def update(self, batch):
         self.training_update_num += 1
-        
+
+        info = {}
+
         obs = batch['obs']
-        actions = batch['actions']
+        acts = batch['acts']
         advs = batch['advs']
 
+        print(acts)
+        # print(advs)
+        # exit()
+        assert len(advs.shape) == 2
+
         obs = torch.Tensor(obs).to( self.device )
-        actions = torch.Tensor(actions).to( self.device )
+        acts = torch.Tensor(acts).to( self.device )
         advs = torch.Tensor(advs).to( self.device )
 
         # Normalize the advantage
-        # print(advs)
-        advs = (advs - advs.mean()) / (advs.std() + 1e-8)
-        #print(advs)
+        # info['returns/mean'] = advs.mean().item()
+        # info['returns/std'] = advs.std().item()
+        # info['returns/max'] = advs.max().item()
+        # info['returns/min'] = advs.min().item()
 
-        out = self.pf.update( obs, actions )
-        
+        # Maybe normalize before training
+        # advs = (advs - advs.mean()) / (advs.std() + 1e-8)
+
+        out = self.pf.update( obs, acts )
         log_probs = out['log_prob']
-        # print(log_probs)
         ent = out['ent']
 
+        assert log_probs.shape == advs.shape
+
         policy_loss = -log_probs * advs
-        #print(log_probs.shape)
-        #print(advs.shape)
         policy_loss = policy_loss.mean() - self.entropy_coeff * ent.mean()
 
         self.pf_optimizer.zero_grad()
         policy_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.pf.parameters(), 0.5)
         self.pf_optimizer.step()
 
-        info = {}
         info['Traning/policy_loss'] = policy_loss.item()
 
-        info['returns/mean'] = advs.mean().item()
-        info['returns/std'] = advs.std().item()
-        info['returns/max'] = advs.max().item()
-        info['returns/min'] = advs.min().item()
+        info['ent'] = ent.mean().item()
+        info['log_prob'] = log_probs.mean().item()
 
         return info

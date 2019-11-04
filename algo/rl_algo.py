@@ -7,6 +7,8 @@ import torch
 
 import algo.utils as atu
 
+import gym
+
 class RLAlgo():
     """
     Base RL Algorithm Framework
@@ -15,22 +17,22 @@ class RLAlgo():
         env = None,
         replay_buffer = None,
         logger = None,
-
+        continuous = None,
         discount=0.99,
-
         num_epochs = 3000,
         epoch_frames = 1000,
         max_episode_frames = 999,
-        
+        train_render = False,
         batch_size = 128,
-        
         device = 'cpu',
-        
         eval_episodes = 1,
-
+        eval_render = False
     ):
 
         self.env = env
+
+        self.continuous = isinstance(self.env.action_space, gym.spaces.Box)
+
         self.replay_buffer = replay_buffer
         
         # device specification
@@ -42,6 +44,7 @@ class RLAlgo():
         self.epoch_frames = epoch_frames
         self.max_episode_frames = max_episode_frames
 
+        self.train_render = train_render
         # training information
         self.batch_size = batch_size
 
@@ -52,8 +55,10 @@ class RLAlgo():
         self.episode_rewards = deque(maxlen=10)
         self.training_episode_rewards = deque(maxlen=10)
         self.eval_episodes = eval_episodes
+        self.eval_render = eval_render
         
-        self.sample_key = [ "obs", "next_obs", "actions", "rewards", "terminals" ]
+        # self.sample_key = [ "obs", "next_obs", "actions", "rewards", "terminals" ]
+        self.sample_key = None
 
     def get_actions(self, ob):
         out = self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
@@ -61,23 +66,11 @@ class RLAlgo():
         action = action.detach().cpu().numpy()
         return action
 
-    def take_actions(self, ob, action_func):
-        
-        action = action_func( ob )
-
-        if type(action) is not int:
-            if np.isnan(action).any():
-                print("NaN detected. BOOM")
-                exit()
-
-        next_ob, reward, done, info = self.env.step(action)
-        
-        self.current_step += 1
-
-        sample_dict = {
+    def add_sample(self, ob, act, next_ob, reward, done):
+        sample_dict = { 
             "obs":ob,
             "next_obs": next_ob,
-            "actions":action,
+            "acts": act,
             "rewards": [reward],
             "terminals": [done]
         }
@@ -90,7 +83,29 @@ class RLAlgo():
 
         self.replay_buffer.add_sample( sample_dict )
 
-        return next_ob, done, reward, info
+        return next_ob
+
+
+    def take_actions(self, ob, action_func):
+        
+        act = action_func( ob )
+
+        if not self.continuous:
+            act = act[0]
+
+        if type(act) is not int:
+            if np.isnan(act).any():
+                print("NaN detected. BOOM")
+                exit()
+
+        next_ob, reward, done, _ = self.env.step(act)
+        if self.train_render:
+            self.env.render()
+        self.current_step += 1
+
+        next_ob = self.add_sample(ob, act, next_ob, reward, done )
+
+        return next_ob, done, reward
 
     def start_episode(self):
         self.current_step = 0
@@ -128,9 +143,9 @@ class RLAlgo():
                     
             self.start_epoch()
             
-            for frame in range(self.epoch_frames):
+            for _ in range(self.epoch_frames):
                 # Sample actions
-                next_ob, done, reward, info = self.take_actions( ob, self.get_actions )
+                next_ob, done, reward = self.take_actions( ob, self.get_actions )
                 
                 ob = next_ob
                 
@@ -177,8 +192,8 @@ class RLAlgo():
                 act = self.pf.eval( torch.Tensor( eval_ob ).to(self.device).unsqueeze(0) )
                 eval_ob, r, done, _ = eval_env.step( act )
                 rew += r
-
-                # eval_env.render()
+                if self.eval_render:
+                    eval_env.render()
 
             eval_rews.append(rew)
             self.episode_rewards.append(rew)

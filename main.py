@@ -8,7 +8,7 @@ import numpy as np
 
 from utils import get_args
 from utils import get_params
-from algo import get_agent
+from get_agent import get_agent
 from env import get_env
 
 from replay_buffers import SimpleReplayBuffer
