@@ -37,6 +37,8 @@ class OffRLAlgo(RLAlgo):
         self.opt_times = opt_times
         self.min_pool = min_pool
 
+        self.sample_key = [ "obs", "next_obs", "acts", "rewards", "terminals" ]
+
     def get_pretrain_actions(self, ob):
         out = self.pretrain_pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
         action = out["action"]

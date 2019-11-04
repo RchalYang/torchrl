@@ -32,7 +32,7 @@ class BootstrappedDQN(DQN):
         sample_dict = {
             "obs":ob,
             "next_obs": next_ob,
-            "actions":action,
+            "acts":action,
             "rewards": [reward],
             "terminals": [done],
             "masks": mask
@@ -55,7 +55,7 @@ class BootstrappedDQN(DQN):
         self.training_update_num += 1
 
         obs = batch['obs']
-        actions = batch['actions']
+        actions = batch['acts']
         next_obs = batch['next_obs']
         rewards = batch['rewards']
         terminals = batch['terminals']

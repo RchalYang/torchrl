@@ -52,7 +52,6 @@ class A2C(OnRLAlgo):
         acts = batch['acts']
         advs = batch['advs']
         est_rets = batch['estimate_returns']
-        print(acts)
         
         assert len(advs.shape) == 2
         assert len(est_rets.shape) == 2
@@ -61,9 +60,6 @@ class A2C(OnRLAlgo):
         acts = torch.Tensor(acts).to( self.device )
         advs = torch.Tensor(advs).to( self.device )
         est_rets = torch.Tensor(est_rets).to( self.device )
-
-        # Normalize the advantage
-        # advs = (advs - advs.mean()) / (advs.std() + 1e-8)
 
         out = self.pf.update( obs, acts )
         log_probs = out['log_prob']

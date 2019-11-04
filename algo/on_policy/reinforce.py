@@ -43,23 +43,11 @@ class Reinforce(OnRLAlgo):
         acts = batch['acts']
         advs = batch['advs']
 
-        print(acts)
-        # print(advs)
-        # exit()
         assert len(advs.shape) == 2
 
         obs = torch.Tensor(obs).to( self.device )
         acts = torch.Tensor(acts).to( self.device )
         advs = torch.Tensor(advs).to( self.device )
-
-        # Normalize the advantage
-        # info['returns/mean'] = advs.mean().item()
-        # info['returns/std'] = advs.std().item()
-        # info['returns/max'] = advs.max().item()
-        # info['returns/min'] = advs.min().item()
-
-        # Maybe normalize before training
-        # advs = (advs - advs.mean()) / (advs.std() + 1e-8)
 
         out = self.pf.update( obs, acts )
         log_probs = out['log_prob']

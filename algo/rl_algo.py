@@ -57,7 +57,6 @@ class RLAlgo():
         self.eval_episodes = eval_episodes
         self.eval_render = eval_render
         
-        # self.sample_key = [ "obs", "next_obs", "actions", "rewards", "terminals" ]
         self.sample_key = None
 
     def get_actions(self, ob):
@@ -98,14 +97,14 @@ class RLAlgo():
                 print("NaN detected. BOOM")
                 exit()
 
-        next_ob, reward, done, _ = self.env.step(act)
+        next_ob, reward, done, info = self.env.step(act)
         if self.train_render:
             self.env.render()
         self.current_step += 1
 
         next_ob = self.add_sample(ob, act, next_ob, reward, done )
 
-        return next_ob, done, reward
+        return next_ob, done, reward, info
 
     def start_episode(self):
         self.current_step = 0
@@ -145,7 +144,7 @@ class RLAlgo():
             
             for _ in range(self.epoch_frames):
                 # Sample actions
-                next_ob, done, reward = self.take_actions( ob, self.get_actions )
+                next_ob, done, reward, _ = self.take_actions( ob, self.get_actions )
                 
                 ob = next_ob
                 

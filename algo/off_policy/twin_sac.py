@@ -87,7 +87,7 @@ class TwinSAC(OffRLAlgo):
     def update(self, batch):
         self.training_update_num += 1
         obs = batch['obs']
-        actions = batch['actions']
+        actions = batch['acts']
         next_obs = batch['next_obs']
         rewards = batch['rewards']
         terminals = batch['terminals']

@@ -52,7 +52,7 @@ class PPO(A2C):
         self.training_update_num += 1
         
         obs = batch['obs']
-        actions = batch['actions']
+        actions = batch['acts']
         advs = batch['advs']
         estimate_returns = batch['estimate_returns']
 

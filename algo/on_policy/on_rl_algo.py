@@ -65,18 +65,9 @@ class OnRLAlgo(RLAlgo):
         else:
             self.replay_buffer.discount_reward(last_value, self.discount)
 
-        # print(self.replay_buffer._advs.mean())
-        # print(self.replay_buffer._advs.std())
-        # print(self.replay_buffer._advs)
-
         self.replay_buffer._advs = ( self.replay_buffer._advs - self.replay_buffer._advs.mean() ) / \
             ( self.replay_buffer._advs.std() + 1e-8 )
             
-        # print(self.replay_buffer._advs.shape)
-        # print(self.replay_buffer._advs)
-        # exit()
-        # advs = (advs - advs.mean()) / (advs.std() + 1e-8)
-
         for batch in self.replay_buffer.one_iteration(self.batch_size, self.sample_key, self.shuffle):
             infos = self.update( batch )
             self.logger.add_update_info( infos )
