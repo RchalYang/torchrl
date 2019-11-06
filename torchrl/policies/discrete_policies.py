@@ -3,8 +3,7 @@ import torch.nn as nn
 from torch.distributions import Categorical
 
 import numpy as np
-import networks
-
+import torchrl.networks as networks
 
 class UniformPolicyDiscrete(nn.Module):
     def __init__(self, action_num):

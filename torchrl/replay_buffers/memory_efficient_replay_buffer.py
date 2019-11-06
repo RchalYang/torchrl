@@ -1,7 +1,7 @@
 import numpy as np
-from .simple_replay_buffer import SimpleReplayBuffer
+from .base import BaseReplayBuffer
 
-class MemoryEfficientReplayBuffer(SimpleReplayBuffer):
+class MemoryEfficientReplayBuffer(BaseReplayBuffer):
     """
     Use list to store LazyFrame object
     LazyFrame store reference of the numpy array returned by the env

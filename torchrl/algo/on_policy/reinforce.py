@@ -2,7 +2,7 @@ import torch
 import torch.optim as optim
 
 from .on_rl_algo import OnRLAlgo
-from networks.nets import ZeroNet
+from torchrl.networks.nets import ZeroNet
 
 class Reinforce(OnRLAlgo):
     """

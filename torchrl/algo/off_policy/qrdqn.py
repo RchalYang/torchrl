@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn as nn
 
-import algo.utils as atu
+import torchrl.algo.utils as atu
 from .dqn import DQN
 
 class QRDQN(DQN):

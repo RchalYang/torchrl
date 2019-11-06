@@ -4,7 +4,7 @@ import math
 
 import torch
 
-from algo.rl_algo import RLAlgo
+from torchrl.algo.rl_algo import RLAlgo
 
 class OffRLAlgo(RLAlgo):
     """
@@ -51,6 +51,12 @@ class OffRLAlgo(RLAlgo):
                 batch = self.replay_buffer.random_batch(self.batch_size, self.sample_key)
                 infos = self.update( batch )
                 self.logger.add_update_info( infos )
+
+    def update_per_epoch(self):
+        for _ in range( self.opt_times ):
+            batch = self.replay_buffer.random_batch(self.batch_size, self.sample_key)
+            infos = self.update( batch )
+            self.logger.add_update_info( infos )
 
     def pretrain(self):
         

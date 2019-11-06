@@ -1,7 +1,7 @@
 import numpy as np
-from .simple_replay_buffer import SimpleReplayBuffer
+from .base import BaseReplayBuffer
 
-class OnPolicyReplayBuffer(SimpleReplayBuffer):
+class OnPolicyReplayBuffer(BaseReplayBuffer):
     """
     Replay Buffer for On Policy algorithms
     """

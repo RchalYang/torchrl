@@ -2,7 +2,7 @@ import numpy as np
 
 import torch
 
-from algo.rl_algo import RLAlgo
+from torchrl.algo.rl_algo import RLAlgo
 
 class OnRLAlgo(RLAlgo):
     """

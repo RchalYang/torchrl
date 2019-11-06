@@ -6,7 +6,7 @@ import torch.optim as optim
 import torch.nn as nn
 
 from .a2c import A2C
-import algo.utils as atu
+import torchrl.algo.utils as atu
 
 class PPO(A2C):
     """

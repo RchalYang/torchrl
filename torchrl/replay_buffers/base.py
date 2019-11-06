@@ -1,17 +1,17 @@
 import numpy as np
 
-class SimpleReplayBuffer():
+class BaseReplayBuffer():
     """
     Basic Replay Buffer
     """
-    def __init__(
-            self, max_replay_buffer_size 
+    def __init__(self, 
+        max_replay_buffer_size 
     ):
         self._max_replay_buffer_size = max_replay_buffer_size
         self._top = 0
         self._size = 0
 
-    def add_sample(self, sample_dict, **kwargs):
+    def add_sample(self, sample_dict, env_rank, **kwargs):
         for key in sample_dict:
             if not hasattr( self, "_" + key ):
                 self.__setattr__( "_" + key,

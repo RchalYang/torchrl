@@ -5,9 +5,12 @@ import numpy as np
 
 import torch
 
-import algo.utils as atu
+import torchrl.algo.utils as atu
 
 import gym
+
+import os
+import os.path as osp
 
 class RLAlgo():
     """
@@ -16,6 +19,7 @@ class RLAlgo():
     def __init__(self,
         env = None,
         replay_buffer = None,
+        collector = None,
         logger = None,
         continuous = None,
         discount=0.99,
@@ -26,7 +30,9 @@ class RLAlgo():
         batch_size = 128,
         device = 'cpu',
         eval_episodes = 1,
-        eval_render = False
+        eval_render = False,
+        save_interval = 100,
+        save_dir = None
     ):
 
         self.env = env
@@ -34,7 +40,7 @@ class RLAlgo():
         self.continuous = isinstance(self.env.action_space, gym.spaces.Box)
 
         self.replay_buffer = replay_buffer
-        
+        self.collector = collector        
         # device specification
         self.device = device
 
@@ -56,64 +62,20 @@ class RLAlgo():
         self.training_episode_rewards = deque(maxlen=10)
         self.eval_episodes = eval_episodes
         self.eval_render = eval_render
-        
+
         self.sample_key = None
 
-    def get_actions(self, ob):
-        out = self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
-        action = out["action"]
-        action = action.detach().cpu().numpy()
-        return action
+        self.save_interval = save_interval
+        self.save_dir = save_dir
+        if not osp.exists( self.save_dir ):
+            os.mkdir( self.save_dir )
 
-    def add_sample(self, ob, act, next_ob, reward, done):
-        sample_dict = { 
-            "obs":ob,
-            "next_obs": next_ob,
-            "acts": act,
-            "rewards": [reward],
-            "terminals": [done]
-        }
-
-        if done or self.current_step >= self.max_episode_frames:
-            next_ob = self.env.reset()
-            self.finish_episode()
-            self.start_episode()
-            self.current_step = 0
-
-        self.replay_buffer.add_sample( sample_dict )
-
-        return next_ob
-
-
-    def take_actions(self, ob, action_func):
-        
-        act = action_func( ob )
-
-        if not self.continuous:
-            act = act[0]
-
-        if type(act) is not int:
-            if np.isnan(act).any():
-                print("NaN detected. BOOM")
-                exit()
-
-        next_ob, reward, done, info = self.env.step(act)
-        if self.train_render:
-            self.env.render()
-        self.current_step += 1
-
-        next_ob = self.add_sample(ob, act, next_ob, reward, done )
-
-        return next_ob, done, reward, info
-
-    def start_episode(self):
-        self.current_step = 0
+    # def start_episode(self):
+    #     self.current_step = 0
 
     def start_epoch(self):
         pass
 
-    def finish_episode(self):
-        pass
 
     def finish_epoch(self):
         return {}
@@ -121,58 +83,59 @@ class RLAlgo():
     def pretrain(self):
         pass
 
-    def update_per_timestep(self):
-        pass
+    # def update_per_timestep(self):
+    #     pass
     
     def update_per_epoch(self):
         pass
-        
+
+    def snapshot(self, prefix, epoch):
+        model_file_name="model_{}.pth".format(epoch)
+        model_path=osp.join(prefix, model_file_name)
+        torch.save(self.pf.state_dict(), model_path)
+
     def train(self):
-        self.pretrain()
+        # self.pretrain()
+        # if hasattr(self, "pretrain_frames"):
+        #     total_frames = self.pretrain_frames
+        total_frames = 0
 
-        ob = self.env.reset()
+        self.start_epoch()
 
-        self.start_episode()
-
-        train_rew = 0
-        
         for epoch in range( self.num_epochs ):
-            
+
             start = time.time()
-                    
+
             self.start_epoch()
             
-            for _ in range(self.epoch_frames):
-                # Sample actions
-                next_ob, done, reward, _ = self.take_actions( ob, self.get_actions )
-                
-                ob = next_ob
-                
-                train_rew += reward
-                if done:
-                    self.training_episode_rewards.append(train_rew)
-                    train_rew = 0
-
-                self.update_per_timestep()
+            training_epoch_info =  self.collector.train_one_epoch()
+            for reward in training_epoch_info["train_rewards"]:
+                self.training_episode_rewards.append(reward)
 
             self.update_per_epoch()
-                    
+
             finish_epoch_info = self.finish_epoch()
 
-            eval_infos = self.eval()
+            eval_infos = self.collector.eval_one_epoch()
 
-            total_frames = (epoch + 1) * self.epoch_frames
-            if hasattr(self, "pretrain_frames"):
-                total_frames += self.pretrain_frames
+            total_frames += self.epoch_frames
             
             infos = {}
+            
+            for reward in eval_infos["eval_rewards"]:
+                self.episode_rewards.append(reward)
+            del eval_infos["eval_rewards"]
+
             infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
+            infos["Train_Epoch_Reward"] = training_epoch_info["train_epoch_reward"]
             infos["Running_Training_Average_Rewards"] = np.mean(self.training_episode_rewards)
             infos.update(eval_infos)
             infos.update(finish_epoch_info)
             
             self.logger.add_epoch_info(epoch, total_frames, time.time() - start, infos )
-            
+            if epoch % self.save_interval == 0:
+                self.snapshot(self.save_dir, epoch)
+                
     def eval(self):
 
         eval_env = copy.deepcopy(self.env)

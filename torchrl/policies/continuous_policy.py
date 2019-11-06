@@ -3,7 +3,7 @@ import torch.nn as nn
 
 import numpy as np
 from .distribution import TanhNormal
-import networks
+import torchrl.networks as networks
 
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20

@@ -10,8 +10,11 @@ import json
 class Logger():
     def __init__(self, experiment_id, env_name, seed, params, log_dir = "./log"):
 
-        self.logger = logging.getLogger("{}_{}_{}".format( experiment_id,env_name,str(seed)) )
-        sh = logging.StreamHandler( sys.stdout )
+        self.logger = logging.getLogger("{}_{}_{}".format(experiment_id,env_name,str(seed)))
+
+        self.logger.handlers = []
+        self.logger.propagate = False
+        sh = logging.StreamHandler(sys.stdout)
         format = "%(asctime)s %(threadName)s %(levelname)s: %(message)s"
         formatter = logging.Formatter(format)
         sh.setFormatter(formatter)
@@ -20,6 +23,7 @@ class Logger():
         self.logger.setLevel(logging.INFO)
 
         work_dir = os.path.join( log_dir, experiment_id, env_name, str(seed) )
+        self.work_dir = work_dir
         if os.path.exists( work_dir ):
             shutil.rmtree(work_dir)
         self.tf_writer = tensorboardX.SummaryWriter(work_dir)

@@ -26,7 +26,7 @@
         "target_hard_update_period" : 1000,
         "use_soft_update" : true,
         "tau" : 0.005,
-        "opt_times" : 1,
+        "opt_times" : 500,
 
         "eval_episodes" : 1
     },
