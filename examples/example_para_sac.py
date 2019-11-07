@@ -1,3 +1,7 @@
+import sys
+# import sys
+sys.path.append(".") 
+
 import torch
 
 import os
@@ -50,13 +54,10 @@ def experiment(args):
     params['general_setting']['device'] = device
 
     params['net']['base_type']=networks.MLPBase
-    # agent = get_agent( params )
-    # print(env)
-    # params['general_setting']['collector'] = BaseCollector(
-    #     env, pf, replay_buffer
-    # )
+
     import torch.multiprocessing as mp
     mp.set_start_method('spawn')
+
     pf = policies.GuassianContPolicy (
         input_shape = env.observation_space.shape[0], 
         output_shape = 2 * env.action_space.shape[0],

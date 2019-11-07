@@ -51,7 +51,7 @@ class FixGuassianContPolicy(networks.Net):
         action += Normal(
                  torch.zeros( action.size()),
                  self.norm_std_explore * torch.ones( action.size())
-        ).sample().to(self.device)
+        ).sample().to(action.device)
 
         return {"action":action}
 
