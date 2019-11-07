@@ -10,7 +10,9 @@ class EnvInfo():
             env,
             device,
             train_render,
+            eval_render,
             epoch_frames,
+            eval_episodes,
             max_episode_frames,
             continuous,
             env_rank):
@@ -20,7 +22,9 @@ class EnvInfo():
         self.env = env
         self.device = device
         self.train_render = train_render
+        self.eval_render = eval_render
         self.epoch_frames = epoch_frames
+        self.eval_episodes = eval_episodes
         self.max_episode_frames = max_episode_frames
         self.continuous = continuous
         self.env_rank = env_rank
@@ -47,24 +51,23 @@ class BaseCollector:
         self.replay_buffer = replay_buffer
         
         self.env = env
-        self.train_render = train_render
-
         continuous = isinstance(self.env.action_space, gym.spaces.Box)
-        self.env_info = EnvInfo(
-            env, device, train_render, epoch_frames,
-            max_episode_frames, continuous, None
-        )
+        self.train_render = train_render
 
         self.eval_env = copy.copy(env)
         self.eval_env._reward_scale = 1
         self.eval_episodes = eval_episodes
         self.eval_render = eval_render
-        
+
+        self.env_info = EnvInfo(
+            env, device, train_render, eval_render,
+            epoch_frames, eval_episodes,
+            max_episode_frames, continuous, None
+        )
 
         self.c_ob = self.env.reset()
 
         self.train_rew = 0
-
         self.training_episode_rewards = deque(maxlen=20)
         
         # device specification
@@ -74,8 +77,9 @@ class BaseCollector:
 
         self.epoch_frames = epoch_frames
         self.max_episode_frames = max_episode_frames
-        self.current_step = 0
-    
+
+        self.worker_nums = 1
+
     @staticmethod
     def get_actions(pf, ob, device):
         # ob = input_dic["ob"]
@@ -127,6 +131,9 @@ class BaseCollector:
 
         return next_ob, done, reward, info
 
+    def terminate(self):
+        pass
+
     def train_one_epoch(self):
         train_rews = []
         train_epoch_reward = 0
@@ -177,6 +184,5 @@ class BaseCollector:
         eval_env.close()
         del eval_env
 
-        # eval_infos["Eval_Rewards_Average"] = np.mean( eval_rews )
         eval_infos["eval_rewards"] = eval_rews
         return eval_infos

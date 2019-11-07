@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
+from torch.distributions import Normal
 
 import numpy as np
-from .distribution import TanhNormal
+
 import torchrl.networks as networks
+from .distribution import TanhNormal
 
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
@@ -31,6 +33,27 @@ class DetContPolicy(networks.Net):
     
     def explore( self, x ):
         return {"action":self.forward(x).squeeze(0)}
+
+class FixGuassianContPolicy(networks.Net):
+    def __init__(self, norm_std_explore, **kwargs):
+        super().__init__(**kwargs)
+        self.norm_std_explore = norm_std_explore
+
+    def forward(self, x):
+        return torch.tanh(super().forward(x))    
+
+    def eval( self, x ):
+        with torch.no_grad():
+            return self.forward(x).squeeze(0).detach().cpu().numpy()
+    
+    def explore( self, x ):
+        action = self.forward(x).squeeze(0)
+        action += Normal(
+                 torch.zeros( action.size()),
+                 self.norm_std_explore * torch.ones( action.size())
+        ).sample().to(self.device)
+
+        return {"action":action}
 
 class GuassianContPolicy(networks.Net):
 
@@ -80,15 +103,6 @@ class GuassianContPolicy(networks.Net):
 
         dic["action"] = action.squeeze(0)
         return dic
-    
-    # def get_log_probs(self, mean, std, action, pre_tanh_value = None):
-        
-    #     dis = TanhNormal (mean, std )
-
-    #     log_probs = dis.log_prob( action, pre_tanh_value ).sum(1,keepdim=True)
-
-    #     return log_probs 
-
 
     def update(self, obs, actions):
         mean, std, log_std = self.forward(obs)

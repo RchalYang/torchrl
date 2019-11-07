@@ -11,9 +11,9 @@ class OffRLAlgo(RLAlgo):
     Base RL Algorithm Framework
     """
     def __init__(self,
-        
+
         pretrain_frames=0,
-        
+
         min_pool = 0,
 
         target_hard_update_period = 1000,
@@ -59,51 +59,31 @@ class OffRLAlgo(RLAlgo):
             self.logger.add_update_info( infos )
 
     def pretrain(self):
+        total_frames = 0
+
+        pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames / self.collector.worker_nums)
+        self.pretrain_frames = pretrain_epochs * self.collector.worker_nums * self.epoch_frames
         
-        self.env.reset()
-        self.env.train()
-
-        self.current_step = 0
-        ob = self.env.reset()
-
-        self.start_episode()
-
-        pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames)
-
         for pretrain_epoch in range( pretrain_epochs ):
-            
+
             start = time.time()
-            for step in range( self.epoch_frames):
-            
-                next_ob, done, reward, info = self.take_actions( ob, self.get_pretrain_actions )
 
-                self.update_per_timestep()
-
-                ob = next_ob
-                self.current_step += 1
-                if done or self.current_step >= self.max_episode_frames:
-                    ob = self.env.reset()
-                    self.finish_episode()
-                    self.start_episode()
-                    self.current_step = 0
-                
-                total_frames = pretrain_epoch * self.epoch_frames + step
-                if total_frames > self.pretrain_frames:
-                    break
+            self.start_epoch()
             
-            self.update_per_epoch()
-                    
+            training_epoch_info =  self.collector.train_one_epoch()
+            for reward in training_epoch_info["train_rewards"]:
+                self.training_episode_rewards.append(reward)
+
             finish_epoch_info = self.finish_epoch()
 
-            eval_infos = self.eval()
-
-            total_frames = (pretrain_epoch + 1) * self.epoch_frames
+            total_frames += self.collector.worker_nums * self.epoch_frames
             
             infos = {}
-            infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
-            infos.update(eval_infos)
+            
+            infos["Train_Epoch_Reward"] = training_epoch_info["train_epoch_reward"]
+            infos["Running_Training_Average_Rewards"] = np.mean(self.training_episode_rewards)
             infos.update(finish_epoch_info)
-
+            
             self.logger.add_epoch_info(pretrain_epoch, total_frames, time.time() - start, infos )
-        
+
         self.logger.log("Finished Pretrain")

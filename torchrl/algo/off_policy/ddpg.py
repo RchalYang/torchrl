@@ -47,19 +47,19 @@ class DDPG(OffRLAlgo):
 
         self.qf_criterion = nn.MSELoss()
 
-    def get_actions(self, ob):
-        out = self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
-        action = out["action"]
-        action = action.detach().cpu()
+    # def get_actions(self, ob):
+    #     out = self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
+    #     action = out["action"]
+    #     action = action.detach().cpu()
         
-        action += Normal(
-                 torch.zeros( action.size()),
-                 self.norm_std_explore * torch.ones( action.size())
-        ).sample()
+    #     action += Normal(
+    #              torch.zeros( action.size()),
+    #              self.norm_std_explore * torch.ones( action.size())
+    #     ).sample()
 
-        action = action.numpy()
+    #     action = action.numpy()
 
-        return action
+    #     return action
 
     def update(self, batch):
         self.training_update_num += 1

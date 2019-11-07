@@ -80,12 +80,14 @@ def experiment(args):
         "terminals": [False]
     }
     replay_buffer = SharedBaseReplayBuffer( int(buffer_param['size']),
-            4, example_dict
+            2
     )
+    replay_buffer.build_by_example(example_dict)
+
     params['general_setting']['replay_buffer'] = replay_buffer
 
     params['general_setting']['collector'] = ParallelCollector(
-        env, pf, replay_buffer, device=device, worker_nums=4
+        env, pf, replay_buffer, device=device, worker_nums=2
     )
 
     params['general_setting']['save_dir'] = osp.join(logger.work_dir,"model")
