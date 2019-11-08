@@ -148,7 +148,8 @@ class RLAlgo():
     def networks(self):
         return [
         ]
-    
+        
+    @property
     def target_networks(self):
         return [
         ]

@@ -6,30 +6,31 @@ import numpy as np
 import gym
 from collections import deque
 
-from .base import BaseCollector
-from .base import EnvInfo
+from torchrl.collector.base import BaseCollector
+from torchrl.collector.base import EnvInfo
 
 from torchrl.replay_buffers.shared import SharedBaseReplayBuffer
 
-def train_worker_process(cls, shared_pf, env_info,
+def train_worker_process(cls, shared_funcs, env_info,
     replay_buffer, shared_que,
     start_barrier, terminate_mark ):
 
     replay_buffer.rebuild_from_tag()
-    pf = copy.deepcopy(shared_pf)
+    local_funcs = copy.deepcopy(shared_funcs) 
     c_ob = env_info.env.reset()
     train_rew = 0
     while True:
         start_barrier.wait()
         if terminate_mark.value == 1:
             break
-        pf.load_state_dict(shared_pf.state_dict())
+        for key in shared_funcs:
+            local_funcs[key].load_state_dict(shared_funcs[key].state_dict())
 
         train_rews = []
         train_epoch_reward = 0    
 
         for _ in range(env_info.epoch_frames):
-            next_ob, done, reward, _ = cls.take_actions(pf, env_info, c_ob, cls.get_actions, replay_buffer )
+            next_ob, done, reward, _ = cls.take_actions(local_funcs, env_info, c_ob, replay_buffer )
             c_ob = next_ob
             train_rew += reward
             train_epoch_reward += reward
@@ -115,7 +116,7 @@ class ParallelCollector(BaseCollector):
             env_info.env_rank = i
             p = mp.Process(
                 target=train_worker_process,
-                args=( self.__class__, self.pf,
+                args=( self.__class__, self.funcs,
                     env_info, self.replay_buffer, 
                     self.shared_que, self.start_barrier,
                     self.terminate_mark))
@@ -170,4 +171,10 @@ class ParallelCollector(BaseCollector):
         
         return {
             'eval_rewards':eval_rews,
+        }
+
+    @property
+    def funcs(self):
+        return {
+            "pf": self.pf
         }

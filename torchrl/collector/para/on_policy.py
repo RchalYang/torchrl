@@ -1,16 +1,14 @@
 import torch
 import numpy as np
 
-from .base import BaseCollector
+from .base import ParallelCollector
 
 
-class OnPlicyCollectorBase(BaseCollector):
+class ParallelOnPlicyCollector(ParallelCollector):
     def __init__(self, vf, discount = 0.99, **kwargs):
-
-        super().__init__(**kwargs)
         self.vf = vf
         self.discount = discount
-        # self.env_info.vf = self.vf
+        super().__init__(**kwargs)
 
     @classmethod
     def take_actions(cls, funcs, env_info, ob, replay_buffer):

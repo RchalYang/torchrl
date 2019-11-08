@@ -6,7 +6,7 @@ import torch
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
     
-    parser.add_argument('--seed', type=int, default=1,
+    parser.add_argument('--seed', type=int, default=0,
                         help='random seed (default: 1)')
 
     parser.add_argument("--config", type=str,   default=None,

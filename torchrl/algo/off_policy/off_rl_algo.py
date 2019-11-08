@@ -39,12 +39,6 @@ class OffRLAlgo(RLAlgo):
 
         self.sample_key = [ "obs", "next_obs", "acts", "rewards", "terminals" ]
 
-    def get_pretrain_actions(self, ob):
-        out = self.pretrain_pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
-        action = out["action"]
-        action = action.detach().cpu().numpy()
-        return action
-
     def update_per_timestep(self):
         if self.replay_buffer.num_steps_can_sample() > max( self.min_pool, self.batch_size ):
             for _ in range( self.opt_times ):

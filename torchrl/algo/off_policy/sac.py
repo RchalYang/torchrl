@@ -15,7 +15,6 @@ class SAC(OffRLAlgo):
     def __init__(
             self,
             pf, vf, qf,
-            pretrain_pf,
             plr,vlr,qlr,
             optimizer_class=optim.Adam,
             
@@ -29,7 +28,6 @@ class SAC(OffRLAlgo):
     ):
         super(SAC, self).__init__(**kwargs)
         self.pf = pf
-        self.pretrain_pf = pretrain_pf
         self.qf = qf
         self.vf = vf
         self.target_vf = copy.deepcopy(vf)
@@ -199,8 +197,7 @@ class SAC(OffRLAlgo):
             self.pf,
             self.qf,
             self.vf,
-            self.target_vf,
-            self.pretrain_pf
+            self.target_vf
         ]
     
     @property

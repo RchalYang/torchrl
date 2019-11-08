@@ -42,9 +42,8 @@ class Reinforce(OnRLAlgo):
         obs = batch['obs']
         acts = batch['acts']
         advs = batch['advs']
-
+        
         assert len(advs.shape) == 2
-
         obs = torch.Tensor(obs).to( self.device )
         acts = torch.Tensor(acts).to( self.device )
         advs = torch.Tensor(advs).to( self.device )
@@ -54,7 +53,6 @@ class Reinforce(OnRLAlgo):
         ent = out['ent']
 
         assert log_probs.shape == advs.shape
-
         policy_loss = -log_probs * advs
         policy_loss = policy_loss.mean() - self.entropy_coeff * ent.mean()
 

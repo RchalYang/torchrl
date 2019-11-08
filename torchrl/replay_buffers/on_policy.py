@@ -1,7 +1,8 @@
 import numpy as np
 from .base import BaseReplayBuffer
+from .shared.base import SharedBaseReplayBuffer
 
-class OnPolicyReplayBuffer(BaseReplayBuffer):
+class OnPolicyReplayBufferBase:
     """
     Replay Buffer for On Policy algorithms
     """
@@ -58,6 +59,17 @@ class OnPolicyReplayBuffer(BaseReplayBuffer):
         while pos < self._max_replay_buffer_size:
             return_dict = {}
             for key in sample_key:
-                return_dict[key] = self.__getattribute__("_"+key)[ indices[pos: pos+batch_size] ]
+                return_dict[key] = self.__getattribute__("_"+key)[indices[pos: pos+batch_size]]
+                data_shape = (-1, ) + return_dict[key].shape[2:]
+                return_dict[key] = return_dict[key].reshape(data_shape)
+
+
             yield return_dict
             pos += batch_size
+
+class OnPolicyReplayBuffer(OnPolicyReplayBufferBase, BaseReplayBuffer):
+    pass
+
+
+class SharedOnPolicyReplayBuffer(SharedBaseReplayBuffer, OnPolicyReplayBufferBase):
+    pass

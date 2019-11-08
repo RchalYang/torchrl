@@ -1,3 +1,3 @@
 from .base import BaseReplayBuffer
 from .memory_efficient_replay_buffer import MemoryEfficientReplayBuffer
-from .on_policy_replay_buffer import OnPolicyReplayBuffer
+from .on_policy import OnPolicyReplayBuffer
