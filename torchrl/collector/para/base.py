@@ -104,7 +104,7 @@ class ParallelCollector(BaseCollector):
         self.workers = []
         self.shared_que = self.manager.Queue()
         self.start_barrier = mp.Barrier(worker_nums+1)
-        self.terminate_mark = mp.Value( 'c', 0 )
+        self.terminate_mark = mp.Value( 'i', 0 )
                 
         self.eval_workers = []
         self.eval_shared_que = self.manager.Queue()
@@ -140,6 +140,11 @@ class ParallelCollector(BaseCollector):
     
     def terminate(self):
         self.terminate_mark.value = 1
+
+        self.eval_start_barrier.wait()
+
+        self.start_barrier.wait()
+        
         for p in self.workers:
             p.join()
         
