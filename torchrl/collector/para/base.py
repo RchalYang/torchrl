@@ -17,7 +17,9 @@ def train_worker_process(cls, shared_funcs, env_info,
 
     replay_buffer.rebuild_from_tag()
     local_funcs = copy.deepcopy(shared_funcs) 
-    c_ob = env_info.env.reset()
+    c_ob = {
+        "ob": env_info.env.reset()
+    }
     train_rew = 0
     while True:
         start_barrier.wait()
@@ -31,7 +33,7 @@ def train_worker_process(cls, shared_funcs, env_info,
 
         for _ in range(env_info.epoch_frames):
             next_ob, done, reward, _ = cls.take_actions(local_funcs, env_info, c_ob, replay_buffer )
-            c_ob = next_ob
+            c_ob["ob"] = next_ob
             train_rew += reward
             train_epoch_reward += reward
             if done:

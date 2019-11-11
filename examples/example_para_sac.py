@@ -26,7 +26,7 @@ import torchrl.policies as policies
 import torchrl.networks as networks
 from torchrl.algo import SAC
 from torchrl.collector import BaseCollector
-from torchrl.collector.parallel import ParallelCollector
+from torchrl.collector.para import ParallelCollector
 from torchrl.replay_buffers.shared import SharedBaseReplayBuffer
 import gym
 
@@ -70,7 +70,7 @@ def experiment(args):
         input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
         output_shape = 1,
         **params['net'] )
-    pretrain_pf = policies.UniformPolicyContinuous(env.action_space.shape[0])
+    # pretrain_pf = policies.UniformPolicyContinuous(env.action_space.shape[0])
     
     example_ob = env.reset()
     example_dict = { 
@@ -81,14 +81,14 @@ def experiment(args):
         "terminals": [False]
     }
     replay_buffer = SharedBaseReplayBuffer( int(buffer_param['size']),
-            2
+            1
     )
     replay_buffer.build_by_example(example_dict)
 
     params['general_setting']['replay_buffer'] = replay_buffer
 
     params['general_setting']['collector'] = ParallelCollector(
-        env, pf, replay_buffer, device=device, worker_nums=2
+        env, pf, replay_buffer, device=device, worker_nums=1
     )
 
     params['general_setting']['save_dir'] = osp.join(logger.work_dir,"model")
@@ -96,7 +96,6 @@ def experiment(args):
         pf = pf,
         vf = vf,
         qf = qf,
-        pretrain_pf = pretrain_pf,
         **params['sac'],
         **params['general_setting']
     )

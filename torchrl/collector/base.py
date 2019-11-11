@@ -64,7 +64,9 @@ class BaseCollector:
             epoch_frames, eval_episodes,
             max_episode_frames, continuous, None
         )
-        self.c_ob = self.env.reset()
+        self.c_ob = {
+            "ob": self.env.reset()
+        }
 
         self.train_rew = 0
         self.training_episode_rewards = deque(maxlen=20)
@@ -80,9 +82,10 @@ class BaseCollector:
         self.worker_nums = 1
 
     @classmethod
-    def take_actions(cls, funcs, env_info, ob, replay_buffer):
+    def take_actions(cls, funcs, env_info, ob_info, replay_buffer):
 
         pf = funcs["pf"]
+        ob = ob_info["ob"]
         out = pf.explore( torch.Tensor( ob ).to(env_info.device).unsqueeze(0))
         act = out["action"]
         act = act.detach().cpu().numpy()
@@ -127,7 +130,7 @@ class BaseCollector:
             # Sample actions
             next_ob, done, reward, _ = self.__class__.take_actions( self.funcs,
                 self.env_info, self.c_ob, self.replay_buffer )
-            self.c_ob = next_ob
+            self.c_ob["ob"] = next_ob
             # print(self.c_ob)
             self.train_rew += reward
             train_epoch_reward += reward
