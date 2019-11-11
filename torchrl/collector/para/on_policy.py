@@ -7,15 +7,17 @@ from .base import ParallelCollector
 class ParallelOnPlicyCollector(ParallelCollector):
     def __init__(self, vf, discount = 0.99, **kwargs):
         self.vf = vf
+        self.vf.share_memory()
         self.discount = discount
         super().__init__(**kwargs)
 
     @classmethod
-    def take_actions(cls, funcs, env_info, ob, replay_buffer):
+    def take_actions(cls, funcs, env_info, ob_info, replay_buffer):
 
         pf = funcs["pf"]
         vf = funcs["vf"]
 
+        ob = ob_info["ob"]
         ob_tensor = torch.Tensor(ob).to(env_info.device).unsqueeze(0)
 
         out = pf.explore(ob_tensor)
@@ -62,7 +64,7 @@ class ParallelOnPlicyCollector(ParallelCollector):
         replay_buffer.add_sample( sample_dict, env_info.env_rank)
 
         return next_ob, done, reward, info
-    
+
     @property
     def funcs(self):
         return {

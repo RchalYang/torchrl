@@ -146,10 +146,6 @@ class BaseCollector:
 
     def eval_one_epoch(self):
 
-        # eval_env = copy.deepcopy(self.env)
-        # eval_env.eval()
-        # eval_env._reward_scale = 1
-
         eval_infos = {}
         eval_rews = []
 
@@ -169,9 +165,6 @@ class BaseCollector:
 
             done = False
         
-        # self.eval_env.close()
-        # del eval_env
-
         eval_infos["eval_rewards"] = eval_rews
         return eval_infos
 
