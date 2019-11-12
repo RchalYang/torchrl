@@ -74,7 +74,7 @@ class BaseCollector:
         # device specification
         self.device = device
 
-        self.pf.to(self.device)
+        self.to(self.device)
 
         self.epoch_frames = epoch_frames
         self.max_episode_frames = max_episode_frames
@@ -167,6 +167,10 @@ class BaseCollector:
         
         eval_infos["eval_rewards"] = eval_rews
         return eval_infos
+
+    def to(self, device):
+        for func in self.funcs:
+            self.funcs[func].to(device)
 
     @property
     def funcs(self):

@@ -21,8 +21,7 @@ class OnPolicyReplayBufferBase:
         A = 0
         advs = []
         estimate_returns = []
-
-        values= np.concatenate( [self._values, np.array([[last_value]])], 0 )
+        values= np.concatenate( [self._values, np.array([last_value])], 0 )
 
         for t in reversed(range(len(self._rewards))):
             delta = self._rewards[t] + ( 1 - self._terminals[t] ) * gamma * values[t + 1] - values[t]
@@ -69,7 +68,6 @@ class OnPolicyReplayBufferBase:
 
 class OnPolicyReplayBuffer(OnPolicyReplayBufferBase, BaseReplayBuffer):
     pass
-
 
 class SharedOnPolicyReplayBuffer(SharedBaseReplayBuffer, OnPolicyReplayBufferBase):
     pass

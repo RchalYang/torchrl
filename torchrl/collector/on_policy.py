@@ -6,17 +6,17 @@ from .base import BaseCollector
 
 class OnPlicyCollectorBase(BaseCollector):
     def __init__(self, vf, discount = 0.99, **kwargs):
-
-        super().__init__(**kwargs)
         self.vf = vf
+        super().__init__(**kwargs)
         self.discount = discount
-        # self.env_info.vf = self.vf
 
     @classmethod
-    def take_actions(cls, funcs, env_info, ob, replay_buffer):
+    def take_actions(cls, funcs, env_info, ob_info, replay_buffer):
 
         pf = funcs["pf"]
         vf = funcs["vf"]
+
+        ob = ob_info["ob"]
 
         ob_tensor = torch.Tensor(ob).to(env_info.device).unsqueeze(0)
 

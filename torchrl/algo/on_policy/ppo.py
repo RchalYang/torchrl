@@ -27,17 +27,7 @@ class PPO(A2C):
         self.opt_epochs = opt_epochs
     
     def update_per_epoch(self):
-
-        sample = self.replay_buffer.last_sample( ['next_obs', 'terminals' ] )
-        last_value = 0
-        if not sample['terminals']:
-            last_ob = torch.Tensor( sample['next_obs'] ).to(self.device).unsqueeze(0) 
-            last_value = self.vf( last_ob ).item()
-        
-        if self.gae:
-            self.replay_buffer.generalized_advantage_estimation(last_value, self.discount, self.tau)
-        else:
-            self.replay_buffer.discount_reward(last_value, self.discount)
+        self.process_epoch_samples()
 
         for _ in range( self.opt_epochs ):    
             for batch in self.replay_buffer.one_iteration(self.batch_size, self.sample_key, self.shuffle):
@@ -103,7 +93,6 @@ class PPO(A2C):
 
         info['ratio/max'] = ratio.max().item()
         info['ratio/min'] = ratio.min().item()
-#        print(info["ratio/max"])
         return info
 
     @property
