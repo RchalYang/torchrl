@@ -6,6 +6,8 @@ Environments with continuous & discrete action space are supported.
 
 Environments with 1d & 3d observation space are supported.
 
+Multi-Process data-collector is supported
+
 ## Requirements
 1. General Requirements
 * Pytorch 0.4.1
@@ -31,8 +33,10 @@ use **environment.yml** to create virtual envrionment
 specify parameters for algorithms in config file & specify log directory / seed / device in argument
 
 ```
-    python main.py --config config/sac_halfcheetah.json --seed 0 --device 0
+    python examples/example_para_sac.py --config config/sac_halfcheetah.json --seed 0 --device 0
 ```
+
+Checkout examples folder for detailed informations
 
 ## Currently contains:
 * On-Policy Methods:
@@ -57,6 +61,7 @@ specify parameters for algorithms in config file & specify log directory / seed 
         * TRPO
         * A3C
     * DQN: C51 / IQN
-2. Add multiprocess support for environments
+2. Add multiprocess support for environments - finished
 3. Different experience replay buffer:
     * Priotized experience replay
+    * HER
