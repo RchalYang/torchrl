@@ -9,6 +9,8 @@ from collections import OrderedDict
 import tensorflow as tf
 import argparse
 
+from tensorflow.python.summary.summary_iterator import summary_iterator
+
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
     
@@ -27,6 +29,10 @@ def get_args():
 
     parser.add_argument('--output_dir', type=str, default='./fig',
                         help='directory for plot output (default: ./fig)')
+
+    parser.add_argument('--entry', type=str, default='Running_Average_Rewards',
+                        help='Record Entry')
+
 
     args = parser.parse_args()
 
@@ -66,9 +72,9 @@ for eachcolor, eachlinestyle, exp_name in zip(colors, linestyles_choose, args.id
 
         all_scores[seed] = []
         temp_step_number = []
-        for e in tf.train.summary_iterator( get_name( os.path.join( args.log_dir, exp_name, file_path ) ) ):
+        for e in summary_iterator( get_name( os.path.join( args.log_dir, exp_name, file_path ) ) ):
             for v in e.summary.value:
-                if v.tag == 'Running_Average_Rewards':
+                if v.tag == args.entry:
                     all_scores[seed].append( v.simple_value)
                     temp_step_number.append( e.step )
 
@@ -105,11 +111,11 @@ for eachcolor, eachlinestyle, exp_name in zip(colors, linestyles_choose, args.id
     plt.fill_between(final_step, all_lower, all_upper, facecolor=eachcolor, alpha=0.2)
 
 plt.xlabel('Million Frames', fontsize=20)
-plt.ylabel('Average full episode reward for 10 episodes',fontsize=20)
+plt.ylabel('Average for 10 episodes',fontsize=20)
 plt.legend(loc='lower right', prop={'size': 12})
-plt.title(env_name, fontsize=20)
+plt.title("{} {}".format(env_name, args.entry), fontsize=20)
 if not os.path.exists( args.output_dir ):
     os.mkdir( args.output_dir )
-plt.savefig( os.path.join( args.output_dir , '{}.png'.format(env_name) ) )
+plt.savefig( os.path.join( args.output_dir , '{}_{}.png'.format(env_name, args.entry) ) )
 # plt.show()
 plt.close()
