@@ -1,28 +1,24 @@
+"""
+Legacy. Left for Reference
+"""
+
 import gym
 
 import torch.optim as optim
 
-import networks
-import replay_buffers
-import policies
+import torchrl.networks as networks
+import torchrl.replay_buffers as replay_buffers
+import torchrl.policies as policies
 
-# from .sac import SAC
-# from .ddpg import DDPG
-# from .twin_sac import TwinSAC
-# from .td3 import TD3
-
-# from .dqn import DQN
-# from .bootstrapped_dqn import BootstrappedDQN
-# from .qrdqn import QRDQN
-
-# from .reinforce import Reinforce
-# from .a2c import A2C
-# from .ppo import PPO
-from algo import *
+from torchrl.algo import *
+from torchrl.collector import BaseCollector
 
 def get_agent( params):
 
     env = params['general_setting']['env']
+    # params['general_setting']['collector'] = BaseCollector(
+    #     env
+    # ) 
 
     if len(env.observation_space.shape) == 3:
         params['net']['base_type']=networks.CNNBase

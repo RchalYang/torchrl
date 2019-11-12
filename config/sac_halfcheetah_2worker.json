@@ -16,11 +16,11 @@
     "general_setting": {
         "discount" : 0.99,
         "pretrain_frames" : 10000,
-        "num_epochs" : 3000,
+        "num_epochs" : 1500,
         "epoch_frames" : 1000,
         "max_episode_frames" : 1000,
 
-        "batch_size" : 256,
+        "batch_size" : 128,
         "min_pool" : 10000,
 
         "target_hard_update_period" : 1000,
