@@ -1,5 +1,5 @@
 {
-    "agent":"reinforce",
+    "agent":"PPO",
     "env_name" : "CartPole-v1",
     "env":{
         "reward_scale":1,
@@ -12,7 +12,7 @@
     "policy":{
     },
     "net":{ 
-        "hidden_shapes": [32, 32],
+        "hidden_shapes": [64, 64],
         "append_hidden_shapes":[]        
     },
     "general_setting": {
@@ -26,8 +26,12 @@
 
         "eval_episodes" : 1
     },
-    "reinforce":{
+    "ppo":{
         "plr" : 3e-3,
+        "vlr" : 3e-3,
+        "clip_para" : 0.2,
+        "opt_epochs": 10,
+        "tau": 0.95,
         "entropy_coeff":0.001,
         "shuffle":true
     }
