@@ -77,6 +77,7 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
     def random_batch(self, batch_size, sample_key):
         assert batch_size % self.worker_nums == 0, \
             "batch size should be dividable by worker_nums"
+        batch_size //= self.worker_nums
         size = self.num_steps_can_sample()
         indices = np.random.randint(0, size, batch_size)
         return_dict = {}
