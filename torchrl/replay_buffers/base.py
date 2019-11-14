@@ -7,10 +7,10 @@ class BaseReplayBuffer():
     def __init__(self, 
         max_replay_buffer_size 
     ):
+        self.worker_nums = 1
         self._max_replay_buffer_size = max_replay_buffer_size
         self._top = 0
         self._size = 0
-        self.worker_nums = 0
 
     def add_sample(self, sample_dict, env_rank = 0, **kwargs):
         for key in sample_dict:

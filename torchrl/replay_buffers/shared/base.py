@@ -24,6 +24,10 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
         super().__init__(max_replay_buffer_size)
 
         self.worker_nums = worker_nums
+        assert self._max_replay_buffer_size % self.worker_nums == 0, \
+            "buffer size is not dividable by worker num"
+        self._max_replay_buffer_size //= self.worker_nums
+
         if not hasattr(self, "tag"):
             self.tag = get_random_tag()
 
@@ -71,6 +75,8 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
             self._size[worker_rank] = self._size[worker_rank] + 1
 
     def random_batch(self, batch_size, sample_key):
+        assert batch_size % self.worker_nums == 0, \
+            "batch size should be dividable by worker_nums"
         size = self.num_steps_can_sample()
         indices = np.random.randint(0, size, batch_size)
         return_dict = {}

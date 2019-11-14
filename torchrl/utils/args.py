@@ -9,6 +9,12 @@ def get_args():
     parser.add_argument('--seed', type=int, default=0,
                         help='random seed (default: 1)')
 
+    parser.add_argument('--worker_nums', type=int, default=4,
+                        help='worker nums')
+
+    parser.add_argument('--eval_worker_nums', type=int, default=2,
+                        help='eval worker nums')
+
     parser.add_argument("--config", type=str,   default=None,
                         help="config file", )
 

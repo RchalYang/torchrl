@@ -33,6 +33,8 @@ def get_args():
     parser.add_argument('--entry', type=str, default='Running_Average_Rewards',
                         help='Record Entry')
 
+    parser.add_argument('--add_tag', type=str, default='',
+                        help='added tag')
 
     args = parser.parse_args()
 
@@ -116,6 +118,6 @@ plt.legend(loc='lower right', prop={'size': 12})
 plt.title("{} {}".format(env_name, args.entry), fontsize=20)
 if not os.path.exists( args.output_dir ):
     os.mkdir( args.output_dir )
-plt.savefig( os.path.join( args.output_dir , '{}_{}.png'.format(env_name, args.entry) ) )
+plt.savefig( os.path.join( args.output_dir , '{}_{}{}.png'.format(env_name, args.entry, args.add_tag) ) )
 # plt.show()
 plt.close()
