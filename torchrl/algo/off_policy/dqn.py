@@ -10,7 +10,7 @@ from .off_rl_algo import OffRLAlgo
 
 class DQN(OffRLAlgo):
     def __init__(self, 
-        qf, pf, pretrain_pf,
+        qf, pf,
         qlr,
         optimizer_class=optim.Adam,
         optimizer_info = {},
@@ -19,7 +19,6 @@ class DQN(OffRLAlgo):
         super(DQN, self).__init__(**kwargs)
         
         self.pf = pf
-        self.pretrain_pf = pretrain_pf
         self.qf = qf
         self.target_qf = copy.deepcopy(qf)
         self.qlr = qlr

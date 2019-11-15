@@ -37,6 +37,6 @@
         "qlr" : 3e-4,
         
         "reparameterization": true,
-        "automatic_entropy_tuning": false
+        "automatic_entropy_tuning": true
     }
 }

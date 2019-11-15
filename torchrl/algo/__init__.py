@@ -5,6 +5,7 @@ __all__ = [
     'SAC',
     'DDPG',
     'TwinSAC',
+    'TwinSACQ',
     'TD3',
     'DQN',
     'BootstrappedDQN',

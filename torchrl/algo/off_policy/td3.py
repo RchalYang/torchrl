@@ -11,7 +11,6 @@ from .off_rl_algo import OffRLAlgo
 class TD3(OffRLAlgo):
     def __init__(self,
         pf, qf1, qf2,
-        pretrain_pf,
         plr, qlr,
         optimizer_class = optim.Adam,
 
