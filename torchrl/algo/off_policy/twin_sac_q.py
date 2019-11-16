@@ -17,11 +17,11 @@ class TwinSACQ(OffRLAlgo):
             self,
             pf,
             qf1, qf2,
-            plr,vlr,qlr,
+            plr,qlr,
             optimizer_class=optim.Adam,
             
-            policy_std_reg_weight=1e-3,
-            policy_mean_reg_weight=1e-3,
+            policy_std_reg_weight=0,
+            policy_mean_reg_weight=0,
 
             reparameterization = True,
             automatic_entropy_tuning = True,
@@ -38,7 +38,6 @@ class TwinSACQ(OffRLAlgo):
         self.to(self.device)
 
         self.plr = plr
-        self.vlr = vlr
         self.qlr = qlr
 
         self.qf1_optimizer = optimizer_class(
@@ -76,7 +75,6 @@ class TwinSACQ(OffRLAlgo):
 
         self.reparameterization = reparameterization
 
-
     def update(self, batch):
         self.training_update_num += 1
         obs = batch['obs']
@@ -85,11 +83,11 @@ class TwinSACQ(OffRLAlgo):
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        rewards = torch.Tensor(rewards).to( self.device )
+        rewards   = torch.Tensor(rewards).to( self.device )
         terminals = torch.Tensor(terminals).to( self.device )
-        obs = torch.Tensor(obs).to( self.device )
-        actions = torch.Tensor(actions).to( self.device )
-        next_obs = torch.Tensor(next_obs).to( self.device )
+        obs       = torch.Tensor(obs).to( self.device )
+        actions   = torch.Tensor(actions).to( self.device )
+        next_obs  = torch.Tensor(next_obs).to( self.device )
 
         """
         Policy operations.
@@ -113,7 +111,7 @@ class TwinSACQ(OffRLAlgo):
             self.alpha_optimizer.zero_grad()
             alpha_loss.backward()
             self.alpha_optimizer.step()
-            alpha = self.log_alpha.exp()
+            alpha = self.log_alpha.exp().detach()
         else:
             alpha = 1
             alpha_loss = 0
@@ -121,30 +119,29 @@ class TwinSACQ(OffRLAlgo):
         with torch.no_grad():
             target_sample_info = self.pf.explore(next_obs, return_log_probs=True )
 
-            target_actions = sample_info["action"]
-            target_log_probs   = sample_info["log_prob"]
+            target_actions   = target_sample_info["action"]
+            target_log_probs = target_sample_info["log_prob"]
 
-
-            target_q1_pred = self.qf1([next_obs, target_actions])
-            target_q2_pred = self.qf2([next_obs, target_actions])
+            target_q1_pred = self.target_qf1([next_obs, target_actions])
+            target_q2_pred = self.target_qf2([next_obs, target_actions])
             min_target_q = torch.min(target_q1_pred, target_q2_pred)
             target_v_values = min_target_q - alpha * target_log_probs
         """
         QF Loss
         """
         q_target = rewards + (1. - terminals) * self.discount * target_v_values
-        qf1_loss = self.qf_criterion( q1_pred, q_target.detach())
-        qf2_loss = self.qf_criterion( q2_pred, q_target.detach())
+        qf1_loss = self.qf_criterion(q1_pred, q_target.detach())
+        qf2_loss = self.qf_criterion(q2_pred, q_target.detach())
 
-        q_new_actions = torch.min(self.qf1([obs, new_actions]), self.qf2([obs, new_actions]))
+        # qf1_loss = (0.5 * ( q1_pred - q_target.detach() ) ** 2).mean()
+        # qf2_loss = (0.5 * ( q2_pred - q_target.detach() ) ** 2).mean()
+        q_new_actions = torch.min(
+            self.qf1([obs, new_actions]),
+            self.qf2([obs, new_actions]))
         """
         Policy Loss
         """
         if not self.reparameterization:
-            # log_policy_target = q_new_actions - v_pred
-            # policy_loss = (
-            #     log_probs * ( alpha * log_probs - log_policy_target).detach()
-            # ).mean()
             raise NotImplementedError
         else:
             policy_loss = ( alpha * log_probs - q_new_actions).mean()
@@ -169,6 +166,11 @@ class TwinSACQ(OffRLAlgo):
         self.qf2_optimizer.zero_grad()
         qf2_loss.backward()
         self.qf2_optimizer.step()
+
+        # if self.automatic_entropy_tuning:
+        #     self.alpha_optimizer.zero_grad()
+        #     alpha_loss.backward()
+        #     self.alpha_optimizer.step()
 
         self._update_target_networks()
 
