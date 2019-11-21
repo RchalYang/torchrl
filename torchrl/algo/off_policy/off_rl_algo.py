@@ -12,7 +12,7 @@ class OffRLAlgo(RLAlgo):
     """
     def __init__(self,
 
-        pretrain_frames=0,
+        pretrain_epochs=0,
 
         min_pool = 0,
 
@@ -26,7 +26,7 @@ class OffRLAlgo(RLAlgo):
         super(OffRLAlgo, self).__init__(**kwargs)
 
         # environment relevant information
-        self.pretrain_frames = pretrain_frames
+        self.pretrain_epochs = pretrain_epochs
         
         # target_network update information
         self.target_hard_update_period = target_hard_update_period
@@ -55,10 +55,10 @@ class OffRLAlgo(RLAlgo):
     def pretrain(self):
         total_frames = 0
 
-        pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames / self.collector.worker_nums)
-        self.pretrain_frames = pretrain_epochs * self.collector.worker_nums * self.epoch_frames
+        # pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames / self.collector.worker_nums)
+        self.pretrain_frames = self.pretrain_epochs * self.collector.worker_nums * self.epoch_frames
         
-        for pretrain_epoch in range( pretrain_epochs ):
+        for pretrain_epoch in range( self.pretrain_epochs ):
 
             start = time.time()
 

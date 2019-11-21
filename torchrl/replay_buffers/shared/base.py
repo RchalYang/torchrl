@@ -92,3 +92,13 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
         assert max_size == min_size, \
             "all worker should gather the same amount of samples"
         return min_size
+
+class AsyncSharedReplayBuffer(SharedBaseReplayBuffer):
+    def num_steps_can_sample(self):
+        # Use asynchronized sampling could cause sample collected is 
+        # different across different workers but actually it's find
+        min_size = np.min(self._size)
+        # max_size = np.max(self._size)
+        # assert max_size == min_size, \
+            # "all worker should gather the same amount of samples"
+        return min_size

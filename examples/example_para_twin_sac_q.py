@@ -28,7 +28,9 @@ from torchrl.algo import SAC
 from torchrl.algo import TwinSACQ
 from torchrl.collector import BaseCollector
 from torchrl.collector.para import ParallelCollector
+from torchrl.collector.para import AsyncParallelCollector
 from torchrl.replay_buffers.shared import SharedBaseReplayBuffer
+from torchrl.replay_buffers.shared import AsyncSharedReplayBuffer
 import gym
 
 def experiment(args):
@@ -83,15 +85,19 @@ def experiment(args):
         "rewards": [0],
         "terminals": [False]
     }
-    replay_buffer = SharedBaseReplayBuffer( int(buffer_param['size']),
+    replay_buffer = AsyncSharedReplayBuffer( int(buffer_param['size']),
             1
     )
     replay_buffer.build_by_example(example_dict)
 
     params['general_setting']['replay_buffer'] = replay_buffer
 
-    params['general_setting']['collector'] = ParallelCollector(
-        env, pf, replay_buffer, device=device, worker_nums=1
+    epochs = params['general_setting']['pretrain_epochs'] + \
+        params['general_setting']['num_epochs']
+    print(epochs)
+    params['general_setting']['collector'] = AsyncParallelCollector(
+        env, pf, replay_buffer, device=device, worker_nums=1, train_epochs = epochs,
+        eval_epochs= params['general_setting']['num_epochs']
     )
 
     params['general_setting']['save_dir'] = osp.join(logger.work_dir,"model")

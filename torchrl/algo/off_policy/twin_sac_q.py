@@ -17,11 +17,11 @@ class TwinSACQ(OffRLAlgo):
             self,
             pf,
             qf1, qf2,
-            plr,qlr,
+            plr, qlr,
             optimizer_class=optim.Adam,
             
-            policy_std_reg_weight=0,
-            policy_mean_reg_weight=0,
+            policy_std_reg_weight=1e-3,
+            policy_mean_reg_weight=1e-3,
 
             reparameterization = True,
             automatic_entropy_tuning = True,
@@ -77,10 +77,10 @@ class TwinSACQ(OffRLAlgo):
 
     def update(self, batch):
         self.training_update_num += 1
-        obs = batch['obs']
-        actions = batch['acts']
-        next_obs = batch['next_obs']
-        rewards = batch['rewards']
+        obs       = batch['obs']
+        actions   = batch['acts']
+        next_obs  = batch['next_obs']
+        rewards   = batch['rewards']
         terminals = batch['terminals']
 
         rewards   = torch.Tensor(rewards).to( self.device )
@@ -130,11 +130,13 @@ class TwinSACQ(OffRLAlgo):
         QF Loss
         """
         q_target = rewards + (1. - terminals) * self.discount * target_v_values
-        qf1_loss = self.qf_criterion(q1_pred, q_target.detach())
-        qf2_loss = self.qf_criterion(q2_pred, q_target.detach())
+        # qf1_loss = self.qf_criterion(q1_pred, q_target.detach())
+        # qf2_loss = self.qf_criterion(q2_pred, q_target.detach())
+        assert q1_pred.shape == q_target.shape
+        assert q2_pred.shape == q_target.shape
+        qf1_loss = (0.5 * ( q1_pred - q_target.detach() ) ** 2).mean()
+        qf2_loss = (0.5 * ( q2_pred - q_target.detach() ) ** 2).mean()
 
-        # qf1_loss = (0.5 * ( q1_pred - q_target.detach() ) ** 2).mean()
-        # qf2_loss = (0.5 * ( q2_pred - q_target.detach() ) ** 2).mean()
         q_new_actions = torch.min(
             self.qf1([obs, new_actions]),
             self.qf2([obs, new_actions]))
@@ -144,6 +146,7 @@ class TwinSACQ(OffRLAlgo):
         if not self.reparameterization:
             raise NotImplementedError
         else:
+            assert log_probs.shape == q_new_actions.shape
             policy_loss = ( alpha * log_probs - q_new_actions).mean()
 
         std_reg_loss = self.policy_std_reg_weight * (log_std**2).mean()
