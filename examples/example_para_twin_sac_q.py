@@ -86,7 +86,7 @@ def experiment(args):
         "terminals": [False]
     }
     replay_buffer = AsyncSharedReplayBuffer( int(buffer_param['size']),
-            1
+            args.worker_nums
     )
     replay_buffer.build_by_example(example_dict)
 
@@ -96,7 +96,9 @@ def experiment(args):
         params['general_setting']['num_epochs']
     print(epochs)
     params['general_setting']['collector'] = AsyncParallelCollector(
-        env, pf, replay_buffer, device=device, worker_nums=1, train_epochs = epochs,
+        env, pf, replay_buffer, device=device,
+        worker_nums=args.worker_nums, eval_worker_nums= args.eval_worker_nums,
+        train_epochs = epochs,
         eval_epochs= params['general_setting']['num_epochs']
     )
 
