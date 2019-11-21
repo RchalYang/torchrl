@@ -20,8 +20,8 @@ class TwinSACQ(OffRLAlgo):
             plr, qlr,
             optimizer_class=optim.Adam,
             
-            policy_std_reg_weight=1e-3,
-            policy_mean_reg_weight=1e-3,
+            policy_std_reg_weight=0,
+            policy_mean_reg_weight=0,
 
             reparameterization = True,
             automatic_entropy_tuning = True,
@@ -107,7 +107,7 @@ class TwinSACQ(OffRLAlgo):
             """
             Alpha Loss
             """
-            alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach()).mean()
+            alpha_loss = -(self.log_alpha.exp() * (log_probs + self.target_entropy).detach()).mean()
             self.alpha_optimizer.zero_grad()
             alpha_loss.backward()
             self.alpha_optimizer.step()
