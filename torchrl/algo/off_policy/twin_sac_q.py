@@ -107,7 +107,7 @@ class TwinSACQ(OffRLAlgo):
             """
             Alpha Loss
             """
-            alpha_loss = -(self.log_alpha.exp() * (log_probs + self.target_entropy).detach()).mean()
+            alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach()).mean()
             self.alpha_optimizer.zero_grad()
             alpha_loss.backward()
             self.alpha_optimizer.step()
@@ -130,12 +130,12 @@ class TwinSACQ(OffRLAlgo):
         QF Loss
         """
         q_target = rewards + (1. - terminals) * self.discount * target_v_values
-        # qf1_loss = self.qf_criterion(q1_pred, q_target.detach())
-        # qf2_loss = self.qf_criterion(q2_pred, q_target.detach())
+        qf1_loss = self.qf_criterion(q1_pred, q_target.detach())
+        qf2_loss = self.qf_criterion(q2_pred, q_target.detach())
         assert q1_pred.shape == q_target.shape
         assert q2_pred.shape == q_target.shape
-        qf1_loss = (0.5 * ( q1_pred - q_target.detach() ) ** 2).mean()
-        qf2_loss = (0.5 * ( q2_pred - q_target.detach() ) ** 2).mean()
+        # qf1_loss = (0.5 * ( q1_pred - q_target.detach() ) ** 2).mean()
+        # qf2_loss = (0.5 * ( q2_pred - q_target.detach() ) ** 2).mean()
 
         q_new_actions = torch.min(
             self.qf1([obs, new_actions]),
