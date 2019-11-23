@@ -6,6 +6,7 @@ import numpy as np
 from tabulate import tabulate
 import sys
 import json
+import csv
 
 class Logger():
     def __init__(self, experiment_id, env_name, seed, params, log_dir = "./log"):
@@ -27,6 +28,9 @@ class Logger():
         if os.path.exists( work_dir ):
             shutil.rmtree(work_dir)
         self.tf_writer = tensorboardX.SummaryWriter(work_dir)
+        
+        self.csv_file = open(os.path.join(work_dir, 'log.csv'), "a")
+        self.csv_writer = csv.writer(self.csv_file)
 
         self.update_count = 0
         self.stored_infos = {}
@@ -51,18 +55,27 @@ class Logger():
             
         self.update_count += 1
     
-    def add_epoch_info(self, epoch_num, total_frames, total_time, infos):
+    def add_epoch_info(self, epoch_num, total_frames, total_time, infos, csv_write=True):
+        if csv_write:
+            if epoch_num == 0:
+                csv_titles = ["EPOCH", "Time Consumed", "Total Frames"]
+            csv_values = [epoch_num, total_time, total_frames]
+                
         self.logger.info("EPOCH:{}".format(epoch_num))
         self.logger.info("Time Consumed:{}s".format(total_time))
         self.logger.info("Total Frames:{}s".format(total_frames))
 
         tabulate_list = [["Name", "Value"]]
+        
         for info in infos:
             self.tf_writer.add_scalar( info, infos[info], total_frames )
             tabulate_list.append([ info, "{:.5f}".format( infos[info] ) ])
+            if csv_write:
+                if epoch_num == 0:
+                    csv_titles += [info]
+                csv_values += ["{:.5f}".format(infos[info])]
 
         tabulate_list.append([])
-        
         
         method_list = [ np.mean, np.std, np.max, np.min ]
         name_list = [ "Mean", "Std", "Max", "Min" ]
@@ -76,9 +89,17 @@ class Logger():
                 self.tf_writer.add_scalar( "{}_{}".format( info, name ),
                     processed_info, total_frames )
                 temp_list.append( "{:.5f}".format( processed_info ) )
+                if csv_write:
+                    if epoch_num == 0:
+                        csv_titles += ["{}_{}".format(info, name)]
+                    csv_values += ["{:.5f}".format(processed_info)]
 
             tabulate_list.append( temp_list )
         #clear
         self.stored_infos = {}
+        if csv_write:
+            if epoch_num == 0:
+                self.csv_writer.writerow(csv_titles)
+            self.csv_writer.writerow(csv_values)
 
         print( tabulate(tabulate_list) )

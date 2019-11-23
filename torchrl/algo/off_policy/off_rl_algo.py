@@ -78,6 +78,6 @@ class OffRLAlgo(RLAlgo):
             infos["Running_Training_Average_Rewards"] = np.mean(self.training_episode_rewards)
             infos.update(finish_epoch_info)
             
-            self.logger.add_epoch_info(pretrain_epoch, total_frames, time.time() - start, infos )
+            self.logger.add_epoch_info(pretrain_epoch, total_frames, time.time() - start, infos, csv_write=False )
 
         self.logger.log("Finished Pretrain")

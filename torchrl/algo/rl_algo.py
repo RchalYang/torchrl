@@ -131,6 +131,7 @@ class RLAlgo():
                 self.snapshot(self.save_dir, epoch)
         self.snapshot(self.save_dir, "finish")
         self.collector.terminate()
+        self.logger.csv_file.close()
 
     def update(self, batch):
         raise NotImplementedError
