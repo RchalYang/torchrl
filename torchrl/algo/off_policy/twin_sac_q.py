@@ -216,6 +216,14 @@ class TwinSACQ(OffRLAlgo):
         ]
     
     @property
+    def snapshot_networks(self):
+        return [
+            ["pf", self.pf],
+            ["qf1", self.qf1],
+            ["qf2", self.qf2],
+        ]
+
+    @property
     def target_networks(self):
         return [
             ( self.qf1, self.target_qf1 ),

@@ -201,6 +201,14 @@ class SAC(OffRLAlgo):
         ]
     
     @property
+    def snapshot_networks(self):
+        return [
+            ["pf", self.pf],
+            ["qf", self.qf],
+            ["vf", self.vf]
+        ]
+
+    @property
     def target_networks(self):
         return [
             ( self.vf, self.target_vf )

@@ -71,6 +71,8 @@ class RLAlgo():
         if not osp.exists( self.save_dir ):
             os.mkdir( self.save_dir )
 
+        self.best_eval = None
+
     def start_epoch(self):
         pass
 
@@ -84,9 +86,10 @@ class RLAlgo():
         pass
 
     def snapshot(self, prefix, epoch):
-        model_file_name="model_{}.pth".format(epoch)
-        model_path=osp.join(prefix, model_file_name)
-        torch.save(self.pf.state_dict(), model_path)
+        for name, network in self.snapshot_networks:
+            model_file_name="model_{}_{}.pth".format(name, epoch)
+            model_path=osp.join(prefix, model_file_name)
+            torch.save(self.pf.state_dict(), model_path)
 
     def train(self):
         self.pretrain()
@@ -118,17 +121,27 @@ class RLAlgo():
 
             for reward in eval_infos["eval_rewards"]:
                 self.episode_rewards.append(reward)
+            # del eval_infos["eval_rewards"]
+
+            if self.best_eval is None or \
+                np.mean(eval_infos["eval_rewards"]) > self.best_eval:
+                self.best_eval = np.mean(eval_infos["eval_rewards"])
+                self.snapshot(self.save_dir, 'best')
             del eval_infos["eval_rewards"]
 
             infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
             infos["Train_Epoch_Reward"] = training_epoch_info["train_epoch_reward"]
-            infos["Running_Training_Average_Rewards"] = np.mean(self.training_episode_rewards)
+            infos["Running_Training_Average_Rewards"] = np.mean(
+                self.training_episode_rewards)
             infos.update(eval_infos)
             infos.update(finish_epoch_info)
 
-            self.logger.add_epoch_info(epoch, total_frames, time.time() - start, infos )
+            self.logger.add_epoch_info(epoch, total_frames,
+                time.time() - start, infos )
+
             if epoch % self.save_interval == 0:
                 self.snapshot(self.save_dir, epoch)
+
         self.snapshot(self.save_dir, "finish")
         self.collector.terminate()
         self.logger.csv_file.close()
@@ -149,7 +162,12 @@ class RLAlgo():
     def networks(self):
         return [
         ]
-        
+    
+    @property
+    def snapshot_networks(self):
+        return [
+        ]
+
     @property
     def target_networks(self):
         return [

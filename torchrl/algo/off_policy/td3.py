@@ -24,7 +24,6 @@ class TD3(OffRLAlgo):
 
         self.pf = pf
         self.target_pf = copy.deepcopy(pf)
-        self.pretrain_pf = pretrain_pf
 
         self.qf1 = qf1
         self.target_qf1 = copy.deepcopy(qf1)
@@ -161,10 +160,17 @@ class TD3(OffRLAlgo):
             self.qf2,
             self.target_pf,
             self.target_qf1,
-            self.target_qf2,
-            self.pretrain_pf
+            self.target_qf2
         ]
-    
+
+    @property
+    def snapshot_networks(self):
+        return [
+            ["pf", self.pf],
+            ["qf1", self.qf1],
+            ["qf2", self.qf2]
+        ]
+
     @property
     def target_networks(self):
         return [

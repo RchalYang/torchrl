@@ -215,7 +215,16 @@ class TwinSAC(OffRLAlgo):
             self.vf,
             self.target_vf
         ]
-    
+
+    @property
+    def snapshot_networks(self):
+        return [
+            ["pf", self.pf],
+            ["qf1", self.qf1],
+            ["qf2", self.qf2],
+            ["vf", self.vf]
+        ]
+
     @property
     def target_networks(self):
         return [

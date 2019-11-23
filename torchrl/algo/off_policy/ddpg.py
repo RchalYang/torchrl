@@ -16,7 +16,6 @@ class DDPG(OffRLAlgo):
     def __init__(
             self,
             pf, qf,
-            pretrain_pf,
             plr,qlr,
             norm_std_explore,
             optimizer_class=optim.Adam,
@@ -25,7 +24,6 @@ class DDPG(OffRLAlgo):
         super(DDPG, self).__init__(**kwargs)
         self.pf = pf
         self.target_pf = copy.deepcopy(pf)
-        self.pretrain_pf = pretrain_pf
         self.qf = qf
         self.target_qf = copy.deepcopy(qf)
         self.to(self.device)
@@ -128,10 +126,16 @@ class DDPG(OffRLAlgo):
             self.pf,
             self.qf,
             self.target_pf,
-            self.target_qf,
-            self.pretrain_pf
+            self.target_qf
         ]
     
+    @property
+    def snapshot_networks(self):
+        return [
+            ["pf", self.pf],
+            ["qf", self.qf],
+        ]
+
     @property
     def target_networks(self):
         return [
