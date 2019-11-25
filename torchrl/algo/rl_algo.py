@@ -89,7 +89,7 @@ class RLAlgo():
         for name, network in self.snapshot_networks:
             model_file_name="model_{}_{}.pth".format(name, epoch)
             model_path=osp.join(prefix, model_file_name)
-            torch.save(self.pf.state_dict(), model_path)
+            torch.save(network.state_dict(), model_path)
 
     def train(self):
         self.pretrain()
