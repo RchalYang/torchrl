@@ -27,8 +27,8 @@ class ParallelCollector(BaseCollector):
             env, pf, replay_buffer,
             **kwargs)
 
+        self.pf.cpu()
         self.pf.share_memory()
-        self.pf.to(self.device)
 
         self.env_info.device = 'cpu' # CPU For multiprocess sampling
         assert isinstance(replay_buffer, SharedBaseReplayBuffer), \
@@ -42,6 +42,8 @@ class ParallelCollector(BaseCollector):
         self.train_epochs = train_epochs
         self.eval_epochs = eval_epochs
         self.start_worker()
+
+        self.pf.to(self.device)
 
     @staticmethod
     def train_worker_process(cls, shared_funcs, env_info,
