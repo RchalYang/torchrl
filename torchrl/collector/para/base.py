@@ -27,10 +27,11 @@ class ParallelCollector(BaseCollector):
             env, pf, replay_buffer,
             **kwargs)
 
-        self.pf.cpu()
-        self.pf.share_memory()
-
         self.env_info.device = 'cpu' # CPU For multiprocess sampling
+        self.shared_funcs = copy.deepcopy(self.funcs)
+        for key in self.shared_funcs:
+            self.shared_funcs[key].to(self.env_info.device)
+
         assert isinstance(replay_buffer, SharedBaseReplayBuffer), \
             "Should Use Shared Replay buffer"
         self.replay_buffer = replay_buffer
@@ -42,8 +43,6 @@ class ParallelCollector(BaseCollector):
         self.train_epochs = train_epochs
         self.eval_epochs = eval_epochs
         self.start_worker()
-
-        self.pf.to(self.device)
 
     @staticmethod
     def train_worker_process(cls, shared_funcs, env_info,
@@ -135,7 +134,7 @@ class ParallelCollector(BaseCollector):
             self.env_info.env_rank = i
             p = mp.Process(
                 target=self.__class__.train_worker_process,
-                args=( self.__class__, self.funcs,
+                args=( self.__class__, self.shared_funcs,
                     self.env_info, self.replay_buffer, 
                     self.shared_que, self.start_barrier,
                     self.train_epochs))
@@ -145,7 +144,7 @@ class ParallelCollector(BaseCollector):
         for i in range(self.eval_worker_nums):
             eval_p = mp.Process(
                 target=self.__class__.eval_worker_process,
-                args=(self.pf,
+                args=(self.shared_funcs["pf"],
                     self.env_info, self.eval_shared_que, self.eval_start_barrier,
                     self.eval_epochs))
             eval_p.start()
@@ -165,6 +164,8 @@ class ParallelCollector(BaseCollector):
         train_rews = []
         train_epoch_reward = 0
 
+        for key in self.shared_funcs:
+            self.shared_funcs[key].load_state_dict(self.funcs[key].state_dict())
         for _ in range(self.worker_nums):
             worker_rst = self.shared_que.get()
             train_rews += worker_rst["train_rewards"]
@@ -179,6 +180,8 @@ class ParallelCollector(BaseCollector):
         self.eval_start_barrier.wait()
         eval_rews = []
 
+        # for key in shared_funcs:
+        self.shared_funcs["pf"].load_state_dict(self.funcs["pf"].state_dict())
         for _ in range(self.eval_worker_nums):
             worker_rst = self.eval_shared_que.get()
             eval_rews += worker_rst["eval_rewards"]
@@ -235,6 +238,8 @@ class AsyncParallelCollector(ParallelCollector):
         train_rews = []
         train_epoch_reward = 0
 
+        for key in self.shared_funcs:
+            self.shared_funcs[key].load_state_dict(self.funcs[key].state_dict())
         for _ in range(self.worker_nums):
             worker_rst = self.shared_que.get()
             train_rews += worker_rst["train_rewards"]
@@ -249,6 +254,7 @@ class AsyncParallelCollector(ParallelCollector):
         # self.eval_start_barrier.wait()
         eval_rews = []
 
+        self.shared_funcs["pf"].load_state_dict(self.funcs["pf"].state_dict())
         for _ in range(self.eval_worker_nums):
             worker_rst = self.eval_shared_que.get()
             eval_rews += worker_rst["eval_rewards"]
