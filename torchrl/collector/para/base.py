@@ -30,6 +30,7 @@ class ParallelCollector(BaseCollector):
         self.pf.share_memory()
         self.pf.to(self.device)
 
+        self.env_info.device = 'cpu' # CPU For multiprocess sampling
         assert isinstance(replay_buffer, SharedBaseReplayBuffer), \
             "Should Use Shared Replay buffer"
         self.replay_buffer = replay_buffer
@@ -49,6 +50,8 @@ class ParallelCollector(BaseCollector):
 
         replay_buffer.rebuild_from_tag()
         local_funcs = copy.deepcopy(shared_funcs)
+        for key in local_funcs:
+            local_funcs[key].to(env_info.device)
         c_ob = {
             "ob": env_info.env.reset()
         }
