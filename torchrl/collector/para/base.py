@@ -87,7 +87,7 @@ class ParallelCollector(BaseCollector):
     def eval_worker_process(shared_pf, 
         env_info, shared_que, start_barrier, epochs):
 
-        pf = copy.deepcopy(shared_pf)
+        pf = copy.deepcopy(shared_pf).to(env_info.device)
         env_info.env.eval()
         env_info.env._reward_scale = 1
         current_epoch = 0
