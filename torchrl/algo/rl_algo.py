@@ -104,16 +104,22 @@ class RLAlgo():
             start = time.time()
 
             self.start_epoch()
-
+            
+            explore_start_time = time.time()
             training_epoch_info =  self.collector.train_one_epoch()
             for reward in training_epoch_info["train_rewards"]:
                 self.training_episode_rewards.append(reward)
+            explore_time = time.time() - explore_start_time
 
+            train_start_time = time.time()
             self.update_per_epoch()
+            train_time = time.time() - train_start_time
 
             finish_epoch_info = self.finish_epoch()
 
+            eval_start_time = time.time()
             eval_infos = self.collector.eval_one_epoch()
+            eval_time = time.time() - eval_start_time
 
             total_frames += self.collector.worker_nums * self.epoch_frames
 
@@ -133,6 +139,9 @@ class RLAlgo():
             infos["Train_Epoch_Reward"] = training_epoch_info["train_epoch_reward"]
             infos["Running_Training_Average_Rewards"] = np.mean(
                 self.training_episode_rewards)
+            infos["Explore_Time"] = explore_time
+            infos["Train___Time"] = train_time
+            infos["Eval____Time"] = eval_time
             infos.update(eval_infos)
             infos.update(finish_epoch_info)
 
