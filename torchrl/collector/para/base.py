@@ -201,7 +201,7 @@ class AsyncParallelCollector(ParallelCollector):
                 
         self.eval_workers = []
         self.eval_shared_que = self.manager.Queue(self.eval_worker_nums)
-        self.eval_start_barrier = mp.Barrier(self.eval_worker_nums+1)
+        self.eval_start_barrier = mp.Barrier(self.eval_worker_nums)
 
         for i in range(self.worker_nums):
             self.env_info.env_rank = i
@@ -246,7 +246,7 @@ class AsyncParallelCollector(ParallelCollector):
         }
         
     def eval_one_epoch(self):
-        self.eval_start_barrier.wait()
+        # self.eval_start_barrier.wait()
         eval_rews = []
 
         for _ in range(self.eval_worker_nums):
