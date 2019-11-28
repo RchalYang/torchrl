@@ -28,9 +28,10 @@ class Logger():
         if os.path.exists( work_dir ):
             shutil.rmtree(work_dir)
         self.tf_writer = tensorboardX.SummaryWriter(work_dir)
-        
-        self.csv_file = open(os.path.join(work_dir, 'log.csv'), "a")
-        self.csv_writer = csv.writer(self.csv_file)
+
+        self.csv_file_path = os.path.join(work_dir, 'log.csv')
+        # self.csv_file = open(os.path.join(work_dir, 'log.csv'), "a")
+        # self.csv_writer = csv.writer(self.csv_file)
 
         self.update_count = 0
         self.stored_infos = {}
@@ -98,8 +99,10 @@ class Logger():
         #clear
         self.stored_infos = {}
         if csv_write:
-            if epoch_num == 0:
-                self.csv_writer.writerow(csv_titles)
-            self.csv_writer.writerow(csv_values)
+            with open(self.csv_file_path, 'a') as f:
+                self.csv_writer = csv.writer(f)
+                if epoch_num == 0:
+                    self.csv_writer.writerow(csv_titles)
+                self.csv_writer.writerow(csv_values)
 
         print( tabulate(tabulate_list) )
