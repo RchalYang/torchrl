@@ -227,7 +227,7 @@ class AsyncParallelCollector(ParallelCollector):
             self.eval_workers.append(eval_p)
 
     def terminate(self):
-        self.eval_start_barrier.wait()
+        # self.eval_start_barrier.wait()
         for p in self.workers:
             p.join()
         
