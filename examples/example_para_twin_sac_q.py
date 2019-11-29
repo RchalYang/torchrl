@@ -96,7 +96,11 @@ def experiment(args):
         params['general_setting']['num_epochs']
     print(epochs)
     params['general_setting']['collector'] = AsyncParallelCollector(
-        env, pf, replay_buffer, device=device,
+        env, pf, replay_buffer,
+        get_env, {
+            "env_id": params['env_name'],
+            "env_param": params['env']},
+        device=device,
         worker_nums=args.worker_nums, eval_worker_nums= args.eval_worker_nums,
         train_epochs = epochs,
         eval_epochs= params['general_setting']['num_epochs']

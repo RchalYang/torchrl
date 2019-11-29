@@ -17,6 +17,7 @@ class ParallelCollector(BaseCollector):
 
     def __init__(self, 
             env, pf, replay_buffer,
+            env_cls, env_args,
             train_epochs,
             eval_epochs,
             worker_nums = 4,
@@ -26,6 +27,9 @@ class ParallelCollector(BaseCollector):
         super().__init__(
             env, pf, replay_buffer,
             **kwargs)
+
+        self.env_cls  = env_cls
+        self.env_args = env_args
 
         self.env_info.device = 'cpu' # CPU For multiprocess sampling
         self.shared_funcs = copy.deepcopy(self.funcs)
@@ -53,6 +57,10 @@ class ParallelCollector(BaseCollector):
         local_funcs = copy.deepcopy(shared_funcs)
         for key in local_funcs:
             local_funcs[key].to(env_info.device)
+
+        # Rebuild Env
+        env_info.env = env_info.env_cls(**env_info.env_args)
+
         c_ob = {
             "ob": env_info.env.reset()
         }
@@ -89,9 +97,14 @@ class ParallelCollector(BaseCollector):
         env_info, shared_que, start_barrier, epochs):
 
         pf = copy.deepcopy(shared_pf).to(env_info.device)
+
+        # Rebuild Env
+        env_info.env = env_info.env_cls(**env_info.env_args)
+
         env_info.env.eval()
         env_info.env._reward_scale = 1
         current_epoch = 0
+
         while True:
             start_barrier.wait()
             current_epoch += 1
@@ -129,6 +142,9 @@ class ParallelCollector(BaseCollector):
         self.eval_workers = []
         self.eval_shared_que = self.manager.Queue(self.eval_worker_nums)
         self.eval_start_barrier = mp.Barrier(self.eval_worker_nums+1)
+
+        self.env_info.env_cls  = self.env_cls
+        self.env_info.env_args = self.env_args
 
         for i in range(self.worker_nums):
             self.env_info.env_rank = i
@@ -205,6 +221,9 @@ class AsyncParallelCollector(ParallelCollector):
         self.eval_workers = []
         self.eval_shared_que = self.manager.Queue(self.eval_worker_nums)
         self.eval_start_barrier = mp.Barrier(self.eval_worker_nums)
+
+        self.env_info.env_cls  = self.env_cls
+        self.env_info.env_args = self.env_args
 
         for i in range(self.worker_nums):
             self.env_info.env_rank = i

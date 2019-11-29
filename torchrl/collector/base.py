@@ -29,6 +29,10 @@ class EnvInfo():
         self.continuous = continuous
         self.env_rank = env_rank
 
+        # For Parallel Async
+        self.env_cls = None
+        self.env_args = None
+
     def start_episode(self):
         self.current_step = 0
 
