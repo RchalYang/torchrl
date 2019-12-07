@@ -8,6 +8,10 @@ Environments with 1d & 3d observation space are supported.
 
 Multi-Process data-collector is supported
 
+## Update
+
+asynchronous sampling and evaluation for off-policy methods is supported.
+
 ## Requirements
 1. General Requirements
 * Pytorch 0.4.1
