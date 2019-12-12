@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import sys
 import os
 from collections import OrderedDict
-import tensorflow as tf
 import argparse
 
 # from tensorflow.python.summary.summary_iterator import summary_iterator
