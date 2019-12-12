@@ -32,8 +32,8 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
             self.tag = get_random_tag()
 
     def build_by_example(self, example_dict):
-        self._size  = NpShmemArray(self.worker_nums, np.int32, self.tag+"_size")
-        self._top   = NpShmemArray(self.worker_nums, np.int32, self.tag+"_top")
+        self._size = NpShmemArray(self.worker_nums, np.int32, self.tag+"_size")
+        self._top  = NpShmemArray(self.worker_nums, np.int32, self.tag+"_top")
 
         self.tags = {}
         self.shapes = {}
@@ -98,7 +98,4 @@ class AsyncSharedReplayBuffer(SharedBaseReplayBuffer):
         # Use asynchronized sampling could cause sample collected is 
         # different across different workers but actually it's find
         min_size = np.min(self._size)
-        # max_size = np.max(self._size)
-        # assert max_size == min_size, \
-            # "all worker should gather the same amount of samples"
         return min_size

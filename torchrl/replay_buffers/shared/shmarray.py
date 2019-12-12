@@ -1,5 +1,7 @@
 """
 From rlpyt // Currently not used in RLPYT
+
+Slightly modified by Rchal to support MAC
 """
 #
 # Based on multiprocessing.sharedctypes.RawArray
@@ -58,14 +60,15 @@ class ShmemBufferWrapper:
 
         assert 0 <= size < sys.maxsize  # sys.maxint  (python 3)
         flag = (0, posix_ipc.O_CREX)[create]
-        self._mem = posix_ipc.SharedMemory(tag, flags=flag, size=size)
+        mem_size = (0, self.size)[create]
+
+        self._mem = posix_ipc.SharedMemory(tag, flags=flag, size=mem_size)
         self._map = mmap.mmap(self._mem.fd, self._mem.size)
         self._mem.close_fd()
 
     def get_address(self):
-        # addr, size = address_of_buffer(self._map)
-        # assert size == self.size
-        assert self._map.size() == self.size  # (changed for python 3)
+        # assert self._map.size() == self.size  # (changed for python 3)
+        assert self._map.size() >= self.size # strictly equal might not meet in MAC
         addr = address_of_buffer(self._map)
         return addr
 
