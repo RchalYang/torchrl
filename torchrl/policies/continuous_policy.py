@@ -27,7 +27,7 @@ class DetContPolicy(networks.Net):
     def forward(self, x):
         return torch.tanh(super().forward(x))    
 
-    def eval( self, x ):
+    def eval_act( self, x ):
         with torch.no_grad():
             return self.forward(x).squeeze(0).detach().cpu().numpy()
     
@@ -42,7 +42,7 @@ class FixGuassianContPolicy(networks.Net):
     def forward(self, x):
         return torch.tanh(super().forward(x))    
 
-    def eval( self, x ):
+    def eval_act( self, x ):
         with torch.no_grad():
             return self.forward(x).squeeze(0).detach().cpu().numpy()
     
@@ -67,7 +67,7 @@ class GuassianContPolicy(networks.Net):
         
         return mean, std, log_std
     
-    def eval( self, x ):
+    def eval_act( self, x ):
         with torch.no_grad():
             mean, std, log_std = self.forward(x)
         return torch.tanh(mean.squeeze(0)).detach().cpu().numpy()

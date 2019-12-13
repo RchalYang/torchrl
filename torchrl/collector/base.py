@@ -159,7 +159,7 @@ class BaseCollector:
             eval_ob = self.eval_env.reset()
             rew = 0
             while not done:
-                act = self.pf.eval( torch.Tensor( eval_ob ).to(self.device).unsqueeze(0) )
+                act = self.pf.eval_act( torch.Tensor( eval_ob ).to(self.device).unsqueeze(0) )
                 eval_ob, r, done, _ = self.eval_env.step( act )
                 rew += r
                 if self.eval_render:

@@ -120,7 +120,7 @@ class ParallelCollector(BaseCollector):
                 eval_ob = env_info.env.reset()
                 rew = 0
                 while not done:
-                    act = pf.eval( torch.Tensor( eval_ob ).to(env_info.device).unsqueeze(0))
+                    act = pf.eval_act( torch.Tensor( eval_ob ).to(env_info.device).unsqueeze(0))
                     eval_ob, r, done, _ = env_info.env.step( act )
                     rew += r
                     if env_info.eval_render:

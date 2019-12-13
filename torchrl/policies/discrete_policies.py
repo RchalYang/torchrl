@@ -53,7 +53,7 @@ class EpsilonGreedyDQNDiscretePolicy():
             "action":action
         }
     
-    def eval(self, x):
+    def eval_act(self, x):
         output = self.qf(x)
         action = self.q_to_a(output)
         return action
@@ -91,7 +91,7 @@ class BootstrappedDQNDiscretePolicy():
             "action":action
         }
     
-    def eval(self, x):
+    def eval_act(self, x):
         output = self.qf( x, range(self.head_num) )
         output = torch.mean( torch.cat(output, dim=0 ), dim=0 )
         action = output.max(dim=-1)[1].detach().item()
@@ -126,7 +126,7 @@ class CategoricalDisPolicy(networks.Net):
 
         return out
     
-    def eval(self, x):
+    def eval_act(self, x):
         output = self.forward(x)
         return output.max(dim=-1)[1].detach().item()
 
