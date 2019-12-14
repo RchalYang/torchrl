@@ -5,11 +5,15 @@ import numpy as np
 import torchrl.networks.init as init
 
 class MLPBase(nn.Module):
-    def __init__(self, input_shape, hidden_shapes, activation_func=F.relu, init_func = init.basic_init ):
+    def __init__(self, input_shape, hidden_shapes, activation_func=F.relu, init_func = init.basic_init, last_activation_func = None ):
         super().__init__()
         
         self.activation_func = activation_func
         self.fcs = []
+        if last_activation_func is not None:
+            self.last_activation_func = last_activation_func
+        else:
+            self.last_activation_func = activation_func
         input_shape = np.prod(input_shape)
 
         self.output_shape = input_shape
@@ -26,10 +30,11 @@ class MLPBase(nn.Module):
     def forward(self, x):
 
         out = x
-        for fc in self.fcs:
+        for fc in self.fcs[:-1]:
             out = fc(out)
             out = self.activation_func(out)
-
+        out = self.fcs[-1](out)
+        out = self.last_activation_func(out)
         return out
 
 def calc_next_shape(input_shape, conv_info):
@@ -44,12 +49,16 @@ def calc_next_shape(input_shape, conv_info):
     return (out_channels, h, w )
 
 class CNNBase(nn.Module):
-    def __init__(self, input_shape, hidden_shapes, activation_func=F.relu, init_func = init.basic_init ):
+    def __init__(self, input_shape, hidden_shapes, activation_func=F.relu, init_func = init.basic_init, last_activation_func = None ):
         super().__init__()
         
         current_shape = input_shape
         in_channels = input_shape[0]
         self.activation_func = activation_func
+        if last_activation_func is not None:
+            self.last_activation_func = last_activation_func
+        else:
+            self.last_activation_func = activation_func
         self.convs = []
         self.output_shape = current_shape[0] * current_shape[1] * current_shape[2]
         for i, conv_info in enumerate( hidden_shapes ):
@@ -67,9 +76,12 @@ class CNNBase(nn.Module):
     def forward(self, x):
 
         out = x
-        for conv in self.convs:
+        for conv in self.convs[:-1]:
             out = conv(out)
             out = self.activation_func(out)
-        
+
+        out = self.convs[-1](out)
+        out = self.last_activation_func(out)
+
         batch_size = out.size()[0]
         return out.view(batch_size, -1)
