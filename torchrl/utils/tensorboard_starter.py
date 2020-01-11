@@ -14,18 +14,23 @@ parser = argparse.ArgumentParser(description='RL')
 
 parser.add_argument('--port', type=int, default=6006,
                     help='port to run the server on (default: 8097)')
-
+parser.add_argument( "--id", type=str, nargs='+', default=('origin',),
+                    help="id for tensorboard")
+parser.add_argument('--seed', type=int, nargs='+', default=(0,),
+                    help='random seed (default: (0,))')
 parser.add_argument('--env_name', type=str, default="HalfCheetah-v2")
-parser.add_argument('--seed', type=int, default=0)
+# parser.add_argument('--seed', type=int, default=0)
 parser.add_argument('--base_log_dir', type=str, default="./log")
 
 args = parser.parse_args()
 
 base_command = "tensorboard --logdir="
 
-for d in os.listdir("{}/{}/{}".format(args.base_log_dir,args.env_name, args.seed)):
-    print(d)
-    base_command+="{1}-{2}-{3}:{0}/{1}/{2}/{3},".format(args.base_log_dir, args.env_name, args.seed, d)
+for exp in args.id:
+    for seed in args.seed: 
+        # for d in os.listdir("{}/{}/{}/{}".format(args.base_log_dir, exp, args.env_name, seed)):
+            # print(d)
+        base_command+="{1}-{2}-{3}:{0}/{1}/{2}/{3},".format(args.base_log_dir, exp, args.env_name, seed)
 
 base_command = base_command[:-1]
 base_command = base_command+" --port {}".format(args.port)
