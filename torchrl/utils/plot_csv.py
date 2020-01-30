@@ -100,18 +100,18 @@ for eachcolor, eachlinestyle, exp_name in zip(colors, linestyles_choose, args.id
     step_number = np.array(step_number) / 1e6
     final_step = []
     for i in range(len(step_number)):
-        if step_number[i] <= 30:
-            final_step.append(step_number[i])
-            temp_list = []
-            for key, valueList in all_scores.items():
-                try: 
-                    temp_list.append(valueList[i])
-                except Exception:
-                    print(i)
-                    # exit()
-            all_mean.append(np.mean(temp_list))
-            all_upper.append(np.mean(temp_list) + np.std(temp_list))
-            all_lower.append(np.mean(temp_list) - np.std(temp_list))
+        # if step_number[i] <= 30:
+        final_step.append(step_number[i])
+        temp_list = []
+        for key, valueList in all_scores.items():
+            try: 
+                temp_list.append(valueList[i])
+            except Exception:
+                print(i)
+                # exit()
+        all_mean.append(np.mean(temp_list))
+        all_upper.append(np.mean(temp_list) + np.std(temp_list))
+        all_lower.append(np.mean(temp_list) - np.std(temp_list))
     all_mean = post_process(all_mean)
     all_lower = post_process(all_lower)
     all_upper = post_process(all_upper)
