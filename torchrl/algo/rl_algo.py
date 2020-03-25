@@ -62,8 +62,8 @@ class RLAlgo():
         self.logger = logger
 
         
-        self.episode_rewards = deque(maxlen=10)
-        self.training_episode_rewards = deque(maxlen=10)
+        self.episode_rewards = deque(maxlen=30)
+        self.training_episode_rewards = deque(maxlen=30)
         self.eval_episodes = eval_episodes
 
         self.save_interval = save_interval
@@ -99,8 +99,8 @@ class RLAlgo():
 
         self.start_epoch()
 
-        for epoch in range( self.num_epochs ):
-
+        for epoch in range(self.num_epochs):
+            self.current_epoch = epoch
             start = time.time()
 
             self.start_epoch()

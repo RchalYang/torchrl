@@ -1,4 +1,5 @@
 import numpy as np
+import torch.nn as nn
 
 def _fanin_init(tensor, alpha = 0):
     size = tensor.size()
@@ -27,3 +28,12 @@ def basic_init(layer):
 
 def uniform_init(layer):
     layer_init(layer, weight_init = _uniform_init, bias_init = _uniform_init )
+
+def _orthogonal_init(tensor, gain = np.sqrt(2)):
+    nn.init.orthogonal_(tensor, gain = gain)
+
+def orthogonal_init(layer, scale = np.sqrt(2), constant = 0 ):
+    layer_init(
+        layer,
+        weight_init= lambda x:_orthogonal_init(x, gain=scale),
+        bias_init=lambda x: _constant_bias_init(x, 0))

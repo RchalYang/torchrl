@@ -5,10 +5,12 @@ from .base import BaseCollector
 
 
 class OnPlicyCollectorBase(BaseCollector):
-    def __init__(self, vf, discount = 0.99, **kwargs):
+    def __init__(self, vf, discount=0.99, **kwargs):
         self.vf = vf
         super().__init__(**kwargs)
         self.discount = discount
+        self.env_info.vf = vf
+        self.env_info.discount = discount
 
     @classmethod
     def take_actions(cls, funcs, env_info, ob_info, replay_buffer):
@@ -29,7 +31,7 @@ class OnPlicyCollectorBase(BaseCollector):
 
         if not env_info.continuous:
             act = act[0]
-
+        # print(act)
         if type(act) is not int:
             if np.isnan(act).any():
                 print("NaN detected. BOOM")
@@ -40,34 +42,35 @@ class OnPlicyCollectorBase(BaseCollector):
             env_info.env.render()
         env_info.current_step += 1
 
-        sample_dict = { 
-            "obs":ob,
+        sample_dict = {
+            "obs": ob,
             "next_obs": next_ob,
             "acts": act,
             "values": [value],
             "rewards": [reward],
-            "terminals": [done]
+            "terminals": [done],
+            "time_limits": [True if "time_limit" in info else False]
         }
-            
+
         if done or env_info.current_step >= env_info.max_episode_frames:
             if not done and env_info.current_step >= env_info.max_episode_frames:
-                last_ob = torch.Tensor( next_ob ).to(env_info.device).unsqueeze(0) 
-                last_value = env_info.vf( last_ob ).item()
-                
+                last_ob = torch.Tensor(next_ob).to(env_info.device).unsqueeze(0)
+                last_value = env_info.vf(last_ob).item()
+
                 sample_dict["terminals"] = [True]
-                sample_dict["rewards"] = [ reward + env_info.discount * last_value ]
+                sample_dict["rewards"] = [reward + env_info.discount * last_value]
 
             next_ob = env_info.env.reset()
             env_info.finish_episode()
             env_info.start_episode()
 
-        replay_buffer.add_sample( sample_dict, env_info.env_rank)
+        replay_buffer.add_sample(sample_dict, env_info.env_rank)
 
         return next_ob, done, reward, info
-    
+
     @property
     def funcs(self):
         return {
-            "pf":self.pf,
-            "vf":self.vf
+            "pf": self.pf,
+            "vf": self.vf
         }

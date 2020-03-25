@@ -1,0 +1,43 @@
+{
+    "agent":"PPO",
+    "env_name" : "Swimmer-v2",
+    "env":{
+        "reward_scale":1,
+        "obs_norm": true,
+        "rew_norm": {
+            "discount": 0.99,
+            "epsilon": 1e-4
+        }
+    },
+    "replay_buffer":{
+        "size": 2048,
+        "time_limit_filter": true
+    },
+    "policy":{
+    },
+    "net":{ 
+        "hidden_shapes": [64, 64],
+        "append_hidden_shapes":[]        
+    },
+    "general_setting": {
+        "discount" : 0.99,
+
+        "num_epochs" : 488,
+        "epoch_frames" : 2048,
+        "max_episode_frames" : 2048,
+
+        "batch_size" : 64,
+
+        "eval_episodes" : 3,
+        "gae": true
+    },
+    "ppo":{
+        "plr" : 3e-4,
+        "vlr" : 3e-4,
+        "clip_para" : 0.2,
+        "opt_epochs": 10,
+        "tau": 0.95,
+        "shuffle":true,
+        "entropy_coeff": 0
+    }
+}

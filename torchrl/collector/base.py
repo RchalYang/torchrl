@@ -42,19 +42,21 @@ class EnvInfo():
 
 class BaseCollector:
 
-    def __init__(self, 
-            env, pf, replay_buffer,
-            train_render=False,
-            eval_episodes = 1,
-            eval_render=False,
-            epoch_frames = 1000,
-            device = 'cpu',
-            max_episode_frames = 999):
+    def __init__(
+        self,
+        env, pf, replay_buffer,
+        train_render=False,
+        eval_episodes=1,
+        eval_render=False,
+        epoch_frames=1000,
+        device='cpu',
+        max_episode_frames = 999):
 
         self.pf = pf
         self.replay_buffer = replay_buffer
-        
+
         self.env = env
+        self.env.train()
         continuous = isinstance(self.env.action_space, gym.spaces.Box)
         self.train_render = train_render
 
@@ -112,7 +114,8 @@ class BaseCollector:
             "next_obs": next_ob,
             "acts": act,
             "rewards": [reward],
-            "terminals": [done]
+            "terminals": [done],
+            "time_limits": [True if "time_limit" in info else False]
         }
 
         if done or env_info.current_step >= env_info.max_episode_frames:
@@ -130,9 +133,10 @@ class BaseCollector:
     def train_one_epoch(self):
         train_rews = []
         train_epoch_reward = 0
+        self.env.train()
         for _ in range(self.epoch_frames):
             # Sample actions
-            next_ob, done, reward, _ = self.__class__.take_actions( self.funcs,
+            next_ob, done, reward, _ = self.__class__.take_actions(self.funcs,
                 self.env_info, self.c_ob, self.replay_buffer )
             self.c_ob["ob"] = next_ob
             # print(self.c_ob)
@@ -154,22 +158,32 @@ class BaseCollector:
         eval_rews = []
 
         done = False
+
+        self.eval_env = copy.copy(self.env)
+        self.eval_env.eval()
+        # print(self.eval_env._obs_mean)
+        traj_lens = []
         for _ in range(self.eval_episodes):
 
             eval_ob = self.eval_env.reset()
             rew = 0
+            traj_len = 0
             while not done:
-                act = self.pf.eval_act( torch.Tensor( eval_ob ).to(self.device).unsqueeze(0) )
-                eval_ob, r, done, _ = self.eval_env.step( act )
+                act = self.pf.eval_act(torch.Tensor(eval_ob).to(
+                    self.device).unsqueeze(0))
+                eval_ob, r, done, _ = self.eval_env.step(act)
                 rew += r
+                traj_len += 1
                 if self.eval_render:
                     self.eval_env.render()
 
             eval_rews.append(rew)
+            traj_lens.append(traj_len)
 
             done = False
         
         eval_infos["eval_rewards"] = eval_rews
+        eval_infos["eval_traj_length"] = np.mean(traj_lens)
         return eval_infos
 
     def to(self, device):

@@ -26,7 +26,7 @@ class MLPBase(nn.Module):
 
             input_shape = next_shape
             self.output_shape = next_shape
-    
+
     def forward(self, x):
 
         out = x

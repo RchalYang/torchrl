@@ -12,11 +12,11 @@ class A2C(OnRLAlgo):
     """
     def __init__(
         self,
-        pf, vf, 
-        plr = 3e-4,
-        vlr = 3e-4,
+        pf, vf,
+        plr=3e-4,
+        vlr=3e-4,
         optimizer_class=optim.Adam,
-        entropy_coeff = 0.001,
+        entropy_coeff=0.001,
         **kwargs
     ):
         super(A2C, self).__init__(**kwargs)
@@ -30,19 +30,21 @@ class A2C(OnRLAlgo):
         self.pf_optimizer = optimizer_class(
             self.pf.parameters(),
             lr=self.plr,
-            weight_decay=0.002
+            eps=1e-5,
+            # weight_decay=0.002
         )
 
         self.vf_optimizer = optimizer_class(
             self.vf.parameters(),
             lr=self.vlr,
-            weight_decay=0.002
+            eps=1e-5,
+            # weight_decay=0.002
         )
 
         self.entropy_coeff = entropy_coeff
-        
+
         self.vf_criterion = nn.MSELoss()
-    
+
     def update(self, batch):
         self.training_update_num += 1
 
@@ -71,7 +73,7 @@ class A2C(OnRLAlgo):
         policy_loss = policy_loss.mean() - self.entropy_coeff * ent.mean()
 
         values = self.vf(obs)
-        vf_loss = self.vf_criterion( values, est_rets )
+        vf_loss = self.vf_criterion(values, est_rets)
 
         self.pf_optimizer.zero_grad()
         policy_loss.backward()
@@ -86,7 +88,6 @@ class A2C(OnRLAlgo):
         info['Traning/policy_loss'] = policy_loss.item()
         info['Traning/vf_loss'] = vf_loss.item()
 
-        
         info['v_pred/mean'] = values.mean().item()
         info['v_pred/std'] = values.std().item()
         info['v_pred/max'] = values.max().item()
