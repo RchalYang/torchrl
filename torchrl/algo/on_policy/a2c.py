@@ -27,6 +27,7 @@ class A2C(OnRLAlgo):
         self.plr = plr
         self.vlr = vlr
 
+        self.optimizer_class = optimizer_class
         self.pf_optimizer = optimizer_class(
             self.pf.parameters(),
             lr=self.plr,
