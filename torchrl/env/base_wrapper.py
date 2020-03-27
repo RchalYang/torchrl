@@ -18,6 +18,10 @@ class BaseWrapper(gym.Wrapper):
             self._wrapped_env.eval()
         self.training = False
 
+    def __getattr__(self, attr):
+        if attr == '_wrapped_env':
+            raise AttributeError()
+        return getattr(self._wrapped_env, attr)
 
 class RewardShift(gym.RewardWrapper, BaseWrapper):
     def __init__(self, env, reward_scale = 1):
