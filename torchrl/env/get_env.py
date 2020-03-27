@@ -15,14 +15,9 @@ def wrap_deepmind(env, frame_stack=False, scale=False, clip_rewards=False):
     if clip_rewards:
         env = ClipRewardEnv(env)
     if frame_stack:
-        env = FrameStack(env, 4)    
+        env = FrameStack(env, 4)
     return env
 
-# def wrap_continuous_env(env, obs_norm, obs_alpha, reward_scale ):
-#     env = RewardShift(env, reward_scale)
-#     if obs_norm:
-#         return NormObs(env, obs_alpha=obs_alpha) 
-#     return env
 
 def wrap_continuous_env(env, obs_norm, reward_scale):
     env = RewardShift(env, reward_scale)
@@ -30,9 +25,12 @@ def wrap_continuous_env(env, obs_norm, reward_scale):
         return NormObs(env)
     return env
 
-def get_env( env_id, env_param ):
 
-    env = BaseWrapper(gym.make(env_id))
+def get_env(env_id, env_param):
+    env = gym.make(env_id)
+    if str(env.__class__.__name__).find('TimeLimit') >= 0:
+        env = TimeLimitAugment(env)
+    env = BaseWrapper(env)
     if "rew_norm" in env_param:
         env = NormRet(env, **env_param["rew_norm"])
         del env_param["rew_norm"]
@@ -43,8 +41,6 @@ def get_env( env_id, env_param ):
     else:
         env = wrap_continuous_env(env, **env_param)
 
-    if str(env.__class__.__name__).find('TimeLimit') >= 0:
-        env = TimeLimitAugment(env)
 
     # act_space = env.action_space
     # if isinstance(act_space, gym.spaces.Box):
