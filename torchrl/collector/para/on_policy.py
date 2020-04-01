@@ -48,7 +48,7 @@ class ParallelOnPlicyCollector(ParallelCollector):
             "rewards": [reward],
             "terminals": [done]
         }
-            
+
         if done or env_info.current_step >= env_info.max_episode_frames:
             if not done and env_info.current_step >= env_info.max_episode_frames:
                 last_ob = torch.Tensor( next_ob ).to(env_info.device).unsqueeze(0) 

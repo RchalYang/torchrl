@@ -14,16 +14,16 @@ from torchrl.replay_buffers.shared import SharedBaseReplayBuffer
 TIMEOUT_CHILD = 200
 
 class ParallelCollector(BaseCollector):
-
-    def __init__(self, 
-            env, pf, replay_buffer,
-            env_cls, env_args,
-            train_epochs,
-            eval_epochs,
-            worker_nums = 4,
-            eval_worker_nums = 1,
+    def __init__(
+        self,
+        env, pf, replay_buffer,
+        env_cls, env_args,
+        train_epochs,
+        eval_epochs,
+        worker_nums=4,
+        eval_worker_nums=1,
             **kwargs):
-        
+
         super().__init__(
             env, pf, replay_buffer,
             **kwargs)
@@ -165,13 +165,13 @@ class ParallelCollector(BaseCollector):
                     self.eval_epochs))
             eval_p.start()
             self.eval_workers.append(eval_p)
-    
+
     def terminate(self):
         self.start_barrier.wait()
         self.eval_start_barrier.wait()
         for p in self.workers:
             p.join()
-        
+
         for p in self.eval_workers:
             p.join()
 
@@ -186,10 +186,10 @@ class ParallelCollector(BaseCollector):
             worker_rst = self.shared_que.get()
             train_rews += worker_rst["train_rewards"]
             train_epoch_reward += worker_rst["train_epoch_reward"]
-        
+
         return {
-            'train_rewards':train_rews,
-            'train_epoch_reward':train_epoch_reward
+            'train_rewards': train_rews,
+            'train_epoch_reward': train_epoch_reward
         }
         
     def eval_one_epoch(self):

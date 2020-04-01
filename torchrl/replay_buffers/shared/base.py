@@ -49,8 +49,7 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
                 self.__setattr__(current_tag, np_array )
 
     def rebuild_from_tag(self):
-
-        self._size  = NpShmemArray(self.worker_nums, np.int32, 
+        self._size  = NpShmemArray(self.worker_nums, np.int32,
             self.tag+"_size", create=False)
         self._top   = NpShmemArray(self.worker_nums, np.int32,
             self.tag+"_top", create=False)

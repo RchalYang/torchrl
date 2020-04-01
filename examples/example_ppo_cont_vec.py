@@ -16,6 +16,7 @@ from torchrl.env import get_env
 
 # from torchrl.replay_buffers.on_policy import SharedOnPolicyReplayBuffer
 from torchrl.replay_buffers.on_policy import OnPolicyReplayBuffer
+from torchrl.replay_buffers.on_policy import VecOnPolicyReplayBuffer
 from torchrl.utils import Logger
 
 args = get_args()
@@ -28,9 +29,12 @@ from torchrl.algo import PPO
 
 from torchrl.collector.para import ParallelOnPlicyCollector
 from torchrl.collector.on_policy import OnPlicyCollectorBase
+from torchrl.collector.on_policy import VecOnPlicyCollector
 import gym
 import random
 import torchrl.networks.init as init
+
+from torchrl.env import VecEnv
 
 def experiment(args):
 
@@ -39,7 +43,8 @@ def experiment(args):
 
     device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
 
-    env = get_env(params['env_name'], params['env'])
+    # env = get_env(params['env_name'], params['env'])
+    env =  VecEnv(4, get_env,[params['env_name'], params['env']])
 
     env.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -74,7 +79,9 @@ def experiment(args):
     # )
     # replay_buffer.build_by_example(example_dict)
 
-    replay_buffer = OnPolicyReplayBuffer(int(buffer_param['size']),
+    replay_buffer = VecOnPolicyReplayBuffer(
+        env_nums=2,
+        max_replay_buffer_size=int(buffer_param['size']),
         time_limit_filter=buffer_param['time_limit_filter']
     )
     params['general_setting']['replay_buffer'] = replay_buffer
@@ -107,11 +114,14 @@ def experiment(args):
         ),
         **params['net']
     )
-    params['general_setting']['collector'] = OnPlicyCollectorBase(
+    # params['general_setting']['collector'] = OnPlicyCollectorBase(
+    #     vf, env=env, pf=pf, replay_buffer=replay_buffer, device=device,
+    #     train_render=False
+    # )
+    params['general_setting']['collector'] = VecOnPlicyCollector(
         vf, env=env, pf=pf, replay_buffer=replay_buffer, device=device,
-        train_render=False, epoch_frames=params["general_setting"]["epoch_frames"]
+        train_render=False, epoch_frames=params["general_setting"]["epoch_frames"] // 2
     )
-
     params['general_setting']['save_dir'] = osp.join(logger.work_dir,"model")
     agent = PPO(
             pf=pf,
@@ -119,8 +129,6 @@ def experiment(args):
             **params["ppo"],
             **params["general_setting"]
         )
-    print(params["general_setting"])
-    print(agent.epoch_frames)
     agent.train()
 
 if __name__ == "__main__":

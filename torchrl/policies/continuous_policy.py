@@ -143,7 +143,7 @@ class GuassianContPolicy(networks.Net):
 
         dis = Normal(mean, std)
 
-        ent = dis.entropy().sum(1, keepdim=True) 
+        ent = dis.entropy().sum(-1, keepdim=True) 
         
         dic = {
             "mean": mean,
@@ -154,7 +154,7 @@ class GuassianContPolicy(networks.Net):
         if return_log_probs:
             action = dis.sample()
             log_prob = dis.log_prob(action)
-            log_prob = log_prob.sum(dim=1, keepdim=True)
+            log_prob = log_prob.sum(dim=-1, keepdim=True)
             # dic["pre_tanh"] = z.squeeze(0)
             dic["log_prob"] = log_prob
         else:
@@ -170,8 +170,8 @@ class GuassianContPolicy(networks.Net):
         mean, std, log_std = self.forward(obs)
         dis = Normal(mean, std)
 
-        log_prob = dis.log_prob(actions).sum(1, keepdim=True)
-        ent = dis.entropy().sum(1, keepdim=True) 
+        log_prob = dis.log_prob(actions).sum(-1, keepdim=True)
+        ent = dis.entropy().sum(-1, keepdim=True)
         
         out = {
             "mean": mean,
@@ -201,14 +201,14 @@ class GuassianContPolicyBasicBias(networks.Net):
         # return torch.tanh(mean.squeeze(0)).detach().cpu().numpy()
         return mean.squeeze(0).detach().cpu().numpy()
     
-    def explore(self, x, return_log_probs = False, return_pre_tanh = False):
+    def explore(self, x, return_log_probs=False, return_pre_tanh=False):
 
         mean, std, log_std = self.forward(x)
 
         dis = Normal(mean, std)
         # dis = TanhNormal(mean, std)
 
-        ent = dis.entropy().sum(1, keepdim=True) 
+        ent = dis.entropy().sum(-1, keepdim=True) 
         
         dic = {
             "mean": mean,
@@ -219,7 +219,7 @@ class GuassianContPolicyBasicBias(networks.Net):
         if return_log_probs:
             action = dis.sample()
             log_prob = dis.log_prob(action)
-            log_prob = log_prob.sum(dim=1, keepdim=True)
+            log_prob = log_prob.sum(dim=-1, keepdim=True)
             # dic["pre_tanh"] = z.squeeze(0)
             dic["log_prob"] = log_prob
         else:
@@ -255,8 +255,8 @@ class GuassianContPolicyBasicBias(networks.Net):
         dis = Normal(mean, std)
         # dis = TanhNormal(mean, std)
 
-        log_prob = dis.log_prob(actions).sum(1, keepdim=True)
-        ent = dis.entropy().sum(1, keepdim=True) 
+        log_prob = dis.log_prob(actions).sum(-1, keepdim=True)
+        ent = dis.entropy().sum(-1, keepdim=True) 
         
         out = {
             "mean": mean,

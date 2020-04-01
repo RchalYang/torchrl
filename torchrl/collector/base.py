@@ -5,8 +5,10 @@ import copy
 import numpy as np
 import gym
 
+
 class EnvInfo():
-    def __init__(self, 
+    def __init__(
+            self,
             env,
             device,
             train_render,
@@ -43,14 +45,14 @@ class EnvInfo():
 class BaseCollector:
 
     def __init__(
-        self,
-        env, pf, replay_buffer,
-        train_render=False,
-        eval_episodes=1,
-        eval_render=False,
-        epoch_frames=1000,
-        device='cpu',
-        max_episode_frames = 999):
+            self,
+            env, pf, replay_buffer,
+            epoch_frames,
+            train_render=False,
+            eval_episodes=1,
+            eval_render=False,
+            device='cpu',
+            max_episode_frames=999):
 
         self.pf = pf
         self.replay_buffer = replay_buffer
@@ -76,7 +78,7 @@ class BaseCollector:
 
         self.train_rew = 0
         self.training_episode_rewards = deque(maxlen=20)
-        
+
         # device specification
         self.device = device
 
@@ -109,8 +111,8 @@ class BaseCollector:
             env_info.env.render()
         env_info.current_step += 1
 
-        sample_dict = { 
-            "obs":ob,
+        sample_dict = {
+            "obs": ob,
             "next_obs": next_ob,
             "acts": act,
             "rewards": [reward],
@@ -134,12 +136,13 @@ class BaseCollector:
         train_rews = []
         train_epoch_reward = 0
         self.env.train()
+
         for _ in range(self.epoch_frames):
             # Sample actions
             next_ob, done, reward, _ = self.__class__.take_actions(self.funcs,
                 self.env_info, self.c_ob, self.replay_buffer )
             self.c_ob["ob"] = next_ob
-            # print(self.c_ob)
+
             self.train_rew += reward
             train_epoch_reward += reward
             if done:
@@ -181,7 +184,7 @@ class BaseCollector:
             traj_lens.append(traj_len)
 
             done = False
-        
+
         eval_infos["eval_rewards"] = eval_rews
         eval_infos["eval_traj_length"] = np.mean(traj_lens)
         return eval_infos

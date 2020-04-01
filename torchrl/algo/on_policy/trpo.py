@@ -9,9 +9,10 @@ from torch.distributions import Normal
 from torch.nn.utils.convert_parameters import vector_to_parameters, parameters_to_vector
 import numpy as np
 
-from utils.torch_utils import device,Tensor, Tensor_zeros_like
-import utils.math_utils as math_utils
-from .a2c_agent import A2CAgent
+# from utils.torch_utils import device,Tensor, Tensor_zeros_like
+# import utils.math_utils as math_utils
+# from .a2c_agent import A2CAgent
+from .a2c import A2C
 
 # #From Pytorch Official Github Repo
 # def _check_param_device(param, old_param_device):

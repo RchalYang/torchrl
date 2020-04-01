@@ -53,24 +53,24 @@ class Logger():
             if info not in self.stored_infos :
                 self.stored_infos[info] = []
             self.stored_infos[info].append( infos[info] )
-            
+
         self.update_count += 1
-    
+
     def add_epoch_info(self, epoch_num, total_frames, total_time, infos, csv_write=True):
         if csv_write:
             if epoch_num == 0:
                 csv_titles = ["EPOCH", "Time Consumed", "Total Frames"]
             csv_values = [epoch_num, total_time, total_frames]
-                
+
         self.logger.info("EPOCH:{}".format(epoch_num))
         self.logger.info("Time Consumed:{}s".format(total_time))
         self.logger.info("Total Frames:{}s".format(total_frames))
 
         tabulate_list = [["Name", "Value"]]
-        
+
         for info in infos:
-            self.tf_writer.add_scalar( info, infos[info], total_frames )
-            tabulate_list.append([ info, "{:.5f}".format( infos[info] ) ])
+            self.tf_writer.add_scalar(info, infos[info], total_frames)
+            tabulate_list.append([info, "{:.5f}".format( infos[info]) ])
             if csv_write:
                 if epoch_num == 0:
                     csv_titles += [info]

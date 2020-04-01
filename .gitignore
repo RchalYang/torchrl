@@ -1,3 +1,11 @@
+# OSX wired DS_Store
+.DS_Store
+*/.DS_Store
+
+# Ignore output files
+outputs/
+view_result/
+
 # VSCODE CONFIGS
 .vscode
 # Byte-compiled / optimized / DLL files

@@ -73,14 +73,15 @@ class PPO(A2C):
         log_probs = out['log_prob']
         log_stds = out['log_std']
         ent = out['ent']
-
+        # print(obs.shape)
+        # print(log_probs.shape)
         target_out = self.target_pf.update(obs, actions)
         target_log_probs = target_out['log_prob']
 
         ratio = torch.exp(log_probs - target_log_probs.detach())
-        # print(ratio.max().item(),ratio.min().item())
         # print(ratio.shape)
         # print(advs.shape)
+        assert ratio.shape == advs.shape, print(ratio.shape, advs.shape)
         surrogate_loss_pre_clip = ratio * advs
         surrogate_loss_clip = torch.clamp(ratio,
                                           1.0 - self.clip_para,
@@ -94,6 +95,7 @@ class PPO(A2C):
         # print(estimate_returns.shape)
         # print(values.shape)
         # vf_loss = self.vf_criterion(values, estimate_returns)
+        assert values.shape == estimate_returns.shape, print(values.shape, estimate_returns.shape)
         if self.clipped_value_loss:
             values_clipped = old_values + \
                 (values - old_values).clamp(-self.clip_para, self.clip_para)
