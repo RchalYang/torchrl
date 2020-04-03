@@ -1,0 +1,42 @@
+{
+    "agent":"reinforce",
+    "env_name" : "HalfCheetah-v2",
+    "env":{
+        "reward_scale":1,
+        "obs_norm": true
+    },
+    "replay_buffer":{
+        "size": 2000,
+        "time_limit_filter": false
+    },
+    "policy":{
+    },
+    "net":{ 
+        "hidden_shapes": [64, 64],
+        "append_hidden_shapes":[]        
+    },
+    "general_setting": {
+        "discount" : 0.99,
+
+        "num_epochs" : 3000,
+        "epoch_frames" : 2000,
+        "max_episode_frames" : 999,
+
+        "batch_size" : 64,
+
+        "eval_episodes" : 1,
+        "gae": false
+    },
+    "trpo":{
+        "plr" : 3e-4,
+        "vlr" : 3e-4,
+
+        "max_kl": 0.01,
+        "cg_damping": 0.1,
+        "cg_iters": 10,
+        "residual_tol": 1e-10,
+        "entropy_coeff":0.01,
+        "shuffle":true,
+        "v_opt_times": 5
+    }
+}

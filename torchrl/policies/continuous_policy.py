@@ -123,32 +123,33 @@ class GuassianContPolicy(networks.Net):
 
     def forward(self, x):
         x = super().forward(x)
-        
+
         mean, log_std = x.chunk(2, dim=-1)
 
         log_std = torch.clamp(log_std, LOG_SIG_MIN, LOG_SIG_MAX)
         std = torch.exp(log_std)
-        
+
         return mean, std, log_std
-    
+
     def eval_act( self, x ):
         with torch.no_grad():
             mean, std, log_std = self.forward(x)
         # return torch.tanh(mean.squeeze(0)).detach().cpu().numpy()
         return mean.squeeze(0).detach().cpu().numpy()
-    
-    def explore( self, x, return_log_probs = False, return_pre_tanh = False ):
-        
+
+    def explore(self, x, return_log_probs=False, return_pre_tanh = False):
+
         mean, std, log_std = self.forward(x)
 
         dis = Normal(mean, std)
 
         ent = dis.entropy().sum(-1, keepdim=True) 
-        
+
         dic = {
             "mean": mean,
             "log_std": log_std,
-            "ent":ent
+            "ent": ent,
+            "std": std
         }
 
         if return_log_probs:
@@ -172,7 +173,7 @@ class GuassianContPolicy(networks.Net):
 
         log_prob = dis.log_prob(actions).sum(-1, keepdim=True)
         ent = dis.entropy().sum(-1, keepdim=True)
-        
+
         out = {
             "mean": mean,
             "log_std": log_std,
@@ -180,6 +181,7 @@ class GuassianContPolicy(networks.Net):
             "ent": ent
         }
         return out
+
 
 class GuassianContPolicyBasicBias(networks.Net):
 
@@ -194,13 +196,13 @@ class GuassianContPolicyBasicBias(networks.Net):
         std = torch.exp(logstd)
         std = std.unsqueeze(0).expand_as(mean)
         return mean, std, logstd
-    
-    def eval_act( self, x ):
+
+    def eval_act(self, x):
         with torch.no_grad():
             mean, std, log_std = self.forward(x)
         # return torch.tanh(mean.squeeze(0)).detach().cpu().numpy()
         return mean.squeeze(0).detach().cpu().numpy()
-    
+
     def explore(self, x, return_log_probs=False, return_pre_tanh=False):
 
         mean, std, log_std = self.forward(x)
@@ -208,11 +210,12 @@ class GuassianContPolicyBasicBias(networks.Net):
         dis = Normal(mean, std)
         # dis = TanhNormal(mean, std)
 
-        ent = dis.entropy().sum(-1, keepdim=True) 
-        
+        ent = dis.entropy().sum(-1, keepdim=True)
+
         dic = {
             "mean": mean,
             "log_std": log_std,
+            "std": std,
             "ent": ent
         }
 
@@ -256,11 +259,12 @@ class GuassianContPolicyBasicBias(networks.Net):
         # dis = TanhNormal(mean, std)
 
         log_prob = dis.log_prob(actions).sum(-1, keepdim=True)
-        ent = dis.entropy().sum(-1, keepdim=True) 
-        
+        ent = dis.entropy().sum(-1, keepdim=True)
+
         out = {
             "mean": mean,
             "log_std": log_std,
+            "std": std,
             "log_prob": log_prob,
             "ent": ent
         }

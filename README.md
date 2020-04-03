@@ -14,7 +14,7 @@ asynchronous sampling and evaluation for off-policy methods is supported.
 
 ## Requirements
 1. General Requirements
-* Pytorch 0.4.1
+* Pytorch 1.4
 * Gym(0.10.9)
 * Mujoco(1.50.1)
 * tabulate (for log)
@@ -47,6 +47,7 @@ Checkout examples folder for detailed informations
     * Reinforce
     * A2C(Actor Critic)
     * PPO(Proximal Policy Optimization)
+    * TRPO
 * Off-Policy Methods:
     * Soft Actor Critic: SAC(TwinSAC)
     * Deep Deterministic Policy Gradient :DDPG
@@ -62,7 +63,6 @@ Checkout examples folder for detailed informations
 ## TODO:
 1. Add More Algorithm
     * On-Policy Methods:
-        * TRPO
         * A3C
     * DQN: C51 / IQN
 2. Add multiprocess support for environments - finished

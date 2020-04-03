@@ -105,7 +105,6 @@ class CategoricalDisPolicy(networks.Net):
         super( CategoricalDisPolicy, self).__init__( output_shape = output_shape, **kwargs )
         self.action_shape = output_shape
 
-
     def forward(self, x):
         logits = super().forward(x)
         return torch.softmax(logits, dim=1)
@@ -115,32 +114,31 @@ class CategoricalDisPolicy(networks.Net):
         output = self.forward(x)
         dis = Categorical(output)
         action = dis.sample()
-        
+
         out = {
             "dis": output,
-            "action":action
+            "action": action
         }
 
         if return_log_probs:
             out['log_prob'] = dis.log_prob(action)
 
         return out
-    
+
     def eval_act(self, x):
         output = self.forward(x)
         return output.max(dim=-1)[1].detach().item()
 
     def update(self, obs, actions):
-        output = self.forward( obs )
+        output = self.forward(obs)
         dis = Categorical(output)
 
         log_prob = dis.log_prob(actions).unsqueeze(1)
         ent = dis.entropy()
 
         out = {
-            "dis":output,
+            "dis": output,
             "log_prob": log_prob,
             "ent": ent
         }
         return out
-        

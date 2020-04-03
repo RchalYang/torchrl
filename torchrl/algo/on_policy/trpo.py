@@ -1,4 +1,3 @@
-import collections
 import copy
 import torch
 import torch.nn.functional as F
@@ -13,6 +12,7 @@ import numpy as np
 # import utils.math_utils as math_utils
 # from .a2c_agent import A2CAgent
 from .a2c import A2C
+import torchrl.algo.utils as atu
 
 # #From Pytorch Official Github Repo
 # def _check_param_device(param, old_param_device):
@@ -122,20 +122,26 @@ from .a2c import A2C
 #             # print(grad)
 #     # print(grads)
 
-class TRPOAgent(A2CAgent):
+class TRPO(A2C):
+    """
+    TRPO
+    """
     # def __init__(self,args,env_wrapper, continuous):
-    def __init__(self, args, model, optim, env, data_generator, memory, continuous):
+    def __init__(
+            self, max_kl, cg_damping, v_opt_times,
+            cg_iters, residual_tol, **kwargs):
         """
         Instantiate a TRPO agent
         """
-        super(TRPOAgent, self).__init__(args, model, optim, env, data_generator, memory, continuous)
+        super().__init__(**kwargs)
                                         
-        self.max_kl = args.max_kl
-        self.cg_damping = args.cg_damping
-        self.cg_iters = args.cg_iters
-        self.residual_tol = args.residual_tol
-
+        self.max_kl = max_kl
+        self.cg_damping = cg_damping
+        self.cg_iters = cg_iters
+        self.residual_tol = residual_tol
+        self.v_opt_times = v_opt_times
         self.algo="trpo"
+        # self.sample_key = ["obs", "acts", "advs", "estimate_returns", "values"]
 
     def mean_kl_divergence(self, model):
         """
@@ -150,26 +156,35 @@ class TRPOAgent(A2CAgent):
                                         / (2.0 * std_new * std_new) \
                                         - 0.5), 1))
 
+        output_new = model.update(self.obs, self.acts)
+        output_old = self.pf.update(self.obs, self.acts)
+
         if self.continuous:
-            mean_new, std_new, _ = model( self.obs )
-            mean_old, std_old, _ = self.model( self.obs )
+            # mean_new, std_new, _ = model(self.obs)
+            # mean_old, std_old, _ = self.model(self.obs)
+            mean_new, std_new = output_new["mean"], output_new["std"]
+            mean_old, std_old = output_old["mean"], output_old["std"]
 
             mean_new = mean_new.detach()
             std_new = std_new.detach()
 
-            kl = normal_distribution_kl_divergence( mean_old, std_old, mean_new, std_new )
+            kl = normal_distribution_kl_divergence(
+                mean_old, std_old, mean_new, std_new)
 
         else:
-
-            probs_new, _ = model(self.obs)
-            probs_old, _ = self.model(self.obs)
+            probs_new = output_new["dis"]
+            probs_old = output_old["dis"]
+            # probs_new, _ = model(self.obs)
+            # probs_old, _ = self.model(self.obs)
 
             probs_new = probs_new.detach()
 
-            probs_new = F.softmax( probs_new, dim = 1 )
-            probs_old = F.softmax( probs_old, dim = 1 )
+            # probs_new = F.softmax(probs_new, dim= -1)
+            # probs_old = F.softmax(probs_old, dim= -1)
 
-            kl = torch.sum(probs_old * torch.log( probs_old / (probs_new + 1e-8 ) ), 1).mean()
+            kl = torch.sum(
+                    probs_old * torch.log(
+                    probs_old / (probs_new + 1e-8)), 1).mean()
 
         return kl
 
@@ -177,18 +192,22 @@ class TRPOAgent(A2CAgent):
         """
         Returns the product of the Hessian of the KL divergence and the given vector
         """
-        self.model.zero_grad()
-        mean_kl_div = self.mean_kl_divergence(self.model)
-        
+        self.pf.zero_grad()
+        mean_kl_div = self.mean_kl_divergence(self.pf)
+
         # mean_kl_div.backward( retain_graph=True, create_graph=True )
-        kl_grad_vector = torch.autograd.grad(mean_kl_div, self.model.policy_parameters(), create_graph=True )
-        
-        kl_grad_vector = torch.cat([grad.view(-1) for grad in kl_grad_vector])
+        kl_grad_vector = torch.autograd.grad(
+            mean_kl_div, self.pf.parameters(), create_graph=True)
+
+        kl_grad_vector = torch.cat(
+            [grad.view(-1) for grad in kl_grad_vector])
         grad_vector_product = torch.sum(kl_grad_vector * vector)
 
-        second_order_grad = torch.autograd.grad(grad_vector_product, self.model.policy_parameters())
-        
-        fisher_vector_product = torch.cat([grad.contiguous().view(-1) for grad in second_order_grad])
+        second_order_grad = torch.autograd.grad(
+            grad_vector_product, self.pf.parameters())
+
+        fisher_vector_product = torch.cat(
+            [grad.contiguous().view(-1) for grad in second_order_grad])
 
         return fisher_vector_product + self.cg_damping * vector.detach()
 
@@ -198,9 +217,10 @@ class TRPOAgent(A2CAgent):
         """
         p = b.clone()
         r = b.clone()
-        x = Tensor_zeros_like(p)
+        # x = Tensor_zeros_like(p)
+        x = torch.zeros_like(p).to(self.device)
         rdotr = r.double().dot(r.double())
-            
+
         for _ in range(self.cg_iters):
             z = self.hessian_vector_product(p).squeeze(0)
             v = (rdotr / p.double().dot(z.double())).float()
@@ -210,7 +230,7 @@ class TRPOAgent(A2CAgent):
 
             newrdotr = r.double().dot(r.double())
             mu = newrdotr / rdotr
-            
+
             p = r + mu.float() * p
             rdotr = newrdotr
             if rdotr < self.residual_tol:
@@ -222,36 +242,20 @@ class TRPOAgent(A2CAgent):
         Returns the surrogate loss w.r.t. the given parameter vector theta
         """
         theta = theta.detach()
-        new_model = copy.deepcopy(self.model)
+        new_model = copy.deepcopy(self.pf)
         # for param in new_model.parameters():
         #     print(param)
-        vector_to_parameters(theta, new_model.policy_parameters())
+        vector_to_parameters(theta, new_model.parameters())
 
-        if self.continuous:
-            mean_new, std_new, _ = new_model( self.obs )
-            mean_old, std_old, _ = self.model( self.obs )
-                
-            dis_new = Normal( mean_new, std_new )
-            dis_old = Normal( mean_old, std_old )
-            
-            log_prob_new = dis_new.log_prob( self.acts ).sum( -1, keepdim=True )
-            log_prob_old = dis_old.log_prob( self.acts ).sum( -1, keepdim=True )
+        output_new = new_model.update(self.obs, self.acts)
+        output_old = self.pf.update(self.obs, self.acts)
 
-            ratio = torch.exp( log_prob_new - log_prob_old ).detach()
-        else:
+        log_probs_new = output_new["log_prob"].detach()
+        log_probs_old = output_old["log_prob"]
 
-            probs_new, _ = new_model(self.obs)
-            probs_old, _ = self.model(self.obs)
+        ratio = torch.exp(log_probs_new - log_probs_old).detach()
 
-            dis_new = F.softmax( probs_new, dim = 1 )
-            dis_old = F.softmax( probs_old, dim = 1 )
-
-            probs_new = dis_new.gather( 1, self.acts ).detach()
-            probs_old = dis_old.gather( 1, self.acts ).detach() + 1e-8
-
-            ratio = probs_new / probs_old
-
-        return -torch.mean( ratio * self.advs )
+        return -torch.mean(ratio * self.advs)
 
     def linesearch(self, x, fullstep, expected_improve_rate):
         """
@@ -268,64 +272,62 @@ class TRPOAgent(A2CAgent):
             actual_improve = fval - newfval
 
             expected_improve = expected_improve_rate * stepfrac
-            
+
             ratio = actual_improve / expected_improve
-            
+
             if ratio > accept_ratio and actual_improve > 0:
                 return xnew
         return x.detach()
 
-    def _optimize(self, obs, acts, advs, est_rs):
-        
-        self.obs, self.acts, self.advs, self.est_rs = obs, acts, advs, est_rs
+    # def _optimize(self, obs, acts, advs, est_rs):
+    def update(self, batch):
+        self.training_update_num += 1
 
-        self.obs  = Tensor( self.obs )
-        self.acts = Tensor( self.acts )
-        self.advs = Tensor( self.advs ).unsqueeze(1)
-        self.est_rs = Tensor( self.est_rs ).unsqueeze(1)
+        info = {}
 
+        self.obs = batch['obs']
+        self.acts = batch['acts']
+        self.advs = batch['advs']
+        self.estimate_returns = batch['estimate_returns']
+
+        # self.obs, self.acts, self.advs, self.est_rs = obs, acts, advs, est_rs
+
+        self.obs = torch.Tensor(self.obs).to(self.device)
+        self.acts = torch.Tensor(self.acts).to(self.device)
+        self.advs = torch.Tensor(self.advs).to(self.device)
+        self.estimate_returns = torch.Tensor(self.estimate_returns).to(self.device)
+
+        info['advs/mean'] = self.advs.mean().item()
+        info['advs/std'] = self.advs.std().item()
+        info['advs/max'] = self.advs.max().item()
+        info['advs/min'] = self.advs.min().item()
         # Calculate Advantage & Normalize it
-        self.advs = (self.advs - self.advs.mean()) / (self.advs.std() + 1e-8)
+        self.advs = (self.advs - self.advs.mean()) / (self.advs.std() + 1e-4)
 
         # Surrogate loss with Entropy
 
-        if self.continuous:
-            mean, std, values = self.model( self.obs )
+        out = self.pf.update(self.obs, self.acts)
 
-            dis = Normal(mean, std)
-            
-            log_prob = dis.log_prob( self.acts ).sum( -1, keepdim=True )
+        log_probs = out['log_prob']
+        log_stds = out['log_std']
+        ent = out['ent']
 
-            ent = dis.entropy().sum( -1, keepdim=True )
-
-            probs_new = torch.exp( log_prob )
-            probs_old = probs_new.detach() + 1e-8
-
-        else:
-
-            probs, values = self.model( self.obs)
-
-            dis = F.softmax( probs, dim = 1 )
-
-            self.acts = self.acts.long()
-
-            probs_new = dis.gather( 1, self.acts )
-            probs_old = probs_new + 1e-8 
-
-            ent = -( dis.log() * dis ).sum(-1)
-
+        probs_new = torch.exp(log_probs)
+        probs_old = probs_new.detach() + 1e-8
 
         ratio = probs_new / probs_old
 
-        surrogate_loss = - torch.mean( ratio * self.advs ) - self.entropy_para * ent.mean()
+        surrogate_loss = - torch.mean( ratio * self.advs ) - \
+            self.entropy_coeff * ent.mean()
 
         # criterion = torch.nn.MSELoss()
         # empty_value_loss = criterion( values, values.detach() )
 
         # Calculate the gradient of the surrogate loss
-        self.model.zero_grad()
+        self.pf.zero_grad()
         surrogate_loss.backward()
-        policy_gradient = parameters_to_vector([p.grad for p in self.model.policy_parameters()]).squeeze(0).detach()
+        policy_gradient = parameters_to_vector(
+            [p.grad for p in self.pf.parameters()]).squeeze(0).detach()
         
         # ensure gradient is not zero
         if policy_gradient.nonzero().size()[0]:
@@ -333,40 +335,119 @@ class TRPOAgent(A2CAgent):
             step_direction = self.conjugate_gradient(-policy_gradient)
             # line search for step 
             shs = .5 * step_direction.dot(self.hessian_vector_product(step_direction))
-            
+
             lm = torch.sqrt(shs / self.max_kl)
             fullstep = step_direction / lm
 
             gdotstepdir = -policy_gradient.dot(step_direction)
-            theta = self.linesearch(parameters_to_vector(self.model.policy_parameters()).detach(), fullstep, gdotstepdir / lm)
+            theta = self.linesearch(parameters_to_vector(
+                    self.pf.parameters()).detach(),
+                    fullstep, gdotstepdir / lm)
             # Update parameters of policy model
-            old_model = copy.deepcopy(self.model)
-            old_model.load_state_dict(self.model.state_dict())
+            old_model = copy.deepcopy(self.pf)
+            old_model.load_state_dict(self.pf.state_dict())
 
             if any(np.isnan(theta.cpu().detach().numpy())):
                 print("NaN detected. Skipping update...")
             else:
                 # for param in self.model.policy_parameters():
                 #     print(param)
-                vector_to_parameters(theta, self.model.policy_parameters())
+                vector_to_parameters(theta, self.pf.parameters())
 
             kl_old_new = self.mean_kl_divergence(old_model)
             print( 'KL:{:10} , Entropy:{:10}'.format(kl_old_new.item(), ent.mean().item()))
-
         else:
             print("Policy gradient is 0. Skipping update...")
             print(policy_gradient.shape)
 
+        self.pf.zero_grad()
 
-        self.model.zero_grad()
+        # if self.continuous:
+        #     _, _, values = self.model( self.obs )
+        # else:
+        #     _, values = self.model( self.obs)
 
-        if self.continuous:
-            _, _, values = self.model( self.obs )
-        else:
-            _, values = self.model( self.obs)
+        # values = self.vf(self.obs)
+        # vf_loss = 0.5 * (values - self.estimate_returns).pow(2).mean()
+        # # criterion = torch.nn.MSELoss()
+        # # critic_loss = self.value_loss_coeff * criterion(values, self.est_rs )
+        # vf_loss.backward()
+        # vf_grad_norm = torch.nn.utils.clip_grad_norm_(self.vf.parameters(), 0.5)
+        # self.vf_optimizer.step()
+        # print("MSELoss for Value Net:{}".format(critic_loss.item()))
 
-        criterion = torch.nn.MSELoss()
-        critic_loss = self.value_loss_coeff * criterion(values, self.est_rs )
-        critic_loss.backward()
-        self.optim.step()
-        print("MSELoss for Value Net:{}".format(critic_loss.item()))
+        # info = {}
+        info['Traning/policy_loss'] = surrogate_loss.item()
+
+        info['logprob/mean'] = log_probs.mean().item()
+        info['logprob/std'] = log_probs.std().item()
+        info['logprob/max'] = log_probs.max().item()
+        info['logprob/min'] = log_probs.min().item()
+
+        info['logstd/mean'] = log_stds.mean().item()
+        info['logstd/std'] = log_stds.std().item()
+        info['logstd/max'] = log_stds.max().item()
+        info['logstd/min'] = log_stds.min().item()
+
+        info['ratio/max'] = ratio.max().item()
+        info['ratio/min'] = ratio.min().item()
+
+        # info['grad_norm/pf'] = pf_grad_norm
+        # info['grad_norm/vf'] = vf_grad_norm
+
+        return info
+
+    def update_vf(self, batch):
+        self.training_update_num += 1
+
+        obs = batch['obs']
+        estimate_returns = batch['estimate_returns']
+
+        # self.obs, self.acts, self.advs, self.est_rs = obs, acts, advs, est_rs
+
+        obs = torch.Tensor(obs).to(self.device)
+        estimate_returns = torch.Tensor(estimate_returns).to(self.device)
+
+        values = self.vf(self.obs)
+        vf_loss = 0.5 * (values - self.estimate_returns).pow(2).mean()
+        vf_loss.backward()
+        vf_grad_norm = torch.nn.utils.clip_grad_norm_(self.vf.parameters(), 0.5)
+        self.vf_optimizer.step()
+
+        info = {}
+        info['Traning/vf_loss'] = vf_loss.item()
+        info['grad_norm/vf'] = vf_grad_norm
+
+        return info
+
+    def update_per_epoch(self):
+        self.process_epoch_samples()
+        # print(self.current_epoch, self.num_epochs)
+        atu.update_linear_schedule(
+            self.pf_optimizer, self.current_epoch, self.num_epochs, self.plr)
+        atu.update_linear_schedule(
+            self.vf_optimizer, self.current_epoch, self.num_epochs, self.vlr)
+        # self.num_epochs
+        whole_batch = {
+            "obs": self.replay_buffer._obs.copy(),
+            "acts": self.replay_buffer._acts.copy(),
+            "advs": self.replay_buffer._advs.copy(),
+            "estimate_returns": self.replay_buffer._estimate_returns.copy()
+        }
+        infos = self.update(whole_batch)
+        self.logger.add_update_info(infos)
+
+        for _ in range(self.v_opt_times):
+            for batch in self.replay_buffer.one_iteration(self.batch_size,
+                                                          self.sample_key,
+                                                          self.shuffle):
+                infos = self.update_vf(batch)
+                self.logger.add_update_info(infos)
+
+    @property
+    def networks(self):
+        return [
+            self.pf,
+            self.vf,
+            # self.target_pf
+        ]

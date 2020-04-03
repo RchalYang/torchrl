@@ -16,23 +16,24 @@ class RLAlgo():
     """
     Base RL Algorithm Framework
     """
-    def __init__(self,
-        env = None,
-        replay_buffer = None,
-        collector = None,
-        logger = None,
-        continuous = None,
+    def __init__(
+        self,
+        env=None,
+        replay_buffer=None,
+        collector=None,
+        logger=None,
+        continuous=None,
         discount=0.99,
-        num_epochs = 3000,
-        epoch_frames = 1000,
-        max_episode_frames = 999,
-        batch_size = 128,
-        device = 'cpu',
-        train_render = False,
-        eval_episodes = 1,
-        eval_render = False,
-        save_interval = 100,
-        save_dir = None
+        num_epochs=3000,
+        epoch_frames=1000,
+        max_episode_frames=999,
+        batch_size=128,
+        device='cpu',
+        train_render=False,
+        eval_episodes=1,
+        eval_render=False,
+        save_interval=100,
+        save_dir=None
     ):
 
         self.env = env
@@ -61,15 +62,14 @@ class RLAlgo():
         # Logger & relevant setting
         self.logger = logger
 
-        
         self.episode_rewards = deque(maxlen=30)
         self.training_episode_rewards = deque(maxlen=30)
         self.eval_episodes = eval_episodes
 
         self.save_interval = save_interval
         self.save_dir = save_dir
-        if not osp.exists( self.save_dir ):
-            os.mkdir( self.save_dir )
+        if not osp.exists(self.save_dir):
+            os.mkdir(self.save_dir)
 
         self.best_eval = None
 
