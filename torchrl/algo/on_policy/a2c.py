@@ -1,10 +1,9 @@
 import numpy as np
-
 import torch
 import torch.optim as optim
 import torch.nn as nn
-
 from .on_rl_algo import OnRLAlgo
+
 
 class A2C(OnRLAlgo):
     """
@@ -32,14 +31,12 @@ class A2C(OnRLAlgo):
             self.pf.parameters(),
             lr=self.plr,
             eps=1e-5,
-            # weight_decay=0.002
         )
 
         self.vf_optimizer = optimizer_class(
             self.vf.parameters(),
             lr=self.vlr,
             eps=1e-5,
-            # weight_decay=0.002
         )
 
         self.entropy_coeff = entropy_coeff
@@ -55,18 +52,18 @@ class A2C(OnRLAlgo):
         acts = batch['acts']
         advs = batch['advs']
         est_rets = batch['estimate_returns']
-        
-        assert len(advs.shape) == 2
-        assert len(est_rets.shape) == 2
 
-        obs = torch.Tensor(obs).to( self.device )
-        acts = torch.Tensor(acts).to( self.device )
-        advs = torch.Tensor(advs).to( self.device )
-        est_rets = torch.Tensor(est_rets).to( self.device )
+        obs = torch.Tensor(obs).to(self.device)
+        acts = torch.Tensor(acts).to(self.device)
+        advs = torch.Tensor(advs).to(self.device)
+        est_rets = torch.Tensor(est_rets).to(self.device)
 
-        out = self.pf.update( obs, acts )
+        out = self.pf.update(obs, acts)
         log_probs = out['log_prob']
         ent = out['ent']
+
+        # Normalize the advantage
+        advs = (advs - advs.mean()) / (advs.std() + 1e-5)
 
         assert log_probs.shape == advs.shape
 
@@ -74,7 +71,7 @@ class A2C(OnRLAlgo):
         policy_loss = policy_loss.mean() - self.entropy_coeff * ent.mean()
 
         values = self.vf(obs)
-        vf_loss = self.vf_criterion(values, est_rets)
+        vf_loss = 0.5 * (values - est_rets).pow(2).mean()
 
         self.pf_optimizer.zero_grad()
         policy_loss.backward()

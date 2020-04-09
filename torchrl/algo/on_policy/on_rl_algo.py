@@ -1,8 +1,7 @@
 import numpy as np
-
 import torch
-
 from torchrl.algo.rl_algo import RLAlgo
+
 
 class OnRLAlgo(RLAlgo):
     """
@@ -10,7 +9,6 @@ class OnRLAlgo(RLAlgo):
     """
     def __init__(
         self,
-        # continuous,
         shuffle=True,
         tau=None,
         gae=True,
@@ -19,14 +17,12 @@ class OnRLAlgo(RLAlgo):
         super(OnRLAlgo, self).__init__(**kwargs)
         self.sample_key = ["obs", "acts", "advs", "estimate_returns"]
         self.shuffle = shuffle
-        # self.continuous = continuous
         self.tau = tau
         self.gae = gae
-    
+
     def process_epoch_samples(self):
         sample = self.replay_buffer.last_sample(
             ['next_obs', 'terminals', "time_limits"])
-
         last_ob = torch.Tensor(sample['next_obs']).to(self.device)
         last_value = self.vf(last_ob).detach().cpu().numpy()
         last_value = last_value * (1 - sample["terminals"] *
@@ -37,11 +33,6 @@ class OnRLAlgo(RLAlgo):
                                                                 self.tau)
         else:
             self.replay_buffer.discount_reward(last_value, self.discount)
-
-        # self.replay_buffer._advs = (self.replay_buffer._advs -
-        #                             self.replay_buffer._advs.mean()) / \
-        #     (self.replay_buffer._advs.std() + 1e-5)
-        # print(self.replay_buffer._advs.mean(), self.replay_buffer._advs.std())
 
     def update_per_epoch(self):
         self.process_epoch_samples()

@@ -12,5 +12,6 @@ __all__ = [
     'QRDQN',
     'Reinforce',
     'A2C',
-    'PPO'
+    'PPO',
+    'TRPO'
 ]
