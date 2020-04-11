@@ -231,9 +231,6 @@ class TRPO(A2C):
         info['logprob/max'] = log_probs.max().item()
         info['logprob/min'] = log_probs.min().item()
 
-        info['ratio/max'] = ratio.max().item()
-        info['ratio/min'] = ratio.min().item()
-
         return info
 
     def update_vf(self, batch):
@@ -245,8 +242,11 @@ class TRPO(A2C):
         obs = torch.Tensor(obs).to(self.device)
         est_rets = torch.Tensor(est_rets).to(self.device)
 
-        values = self.vf(self.obs)
+        values = self.vf(obs)
+        assert values.shape == est_rets.shape, print(values.shape, est_rets.shape)
         vf_loss = 0.5 * (values - est_rets).pow(2).mean()
+
+        self.vf_optimizer.zero_grad()
         vf_loss.backward()
         vf_grad_norm = torch.nn.utils.clip_grad_norm_(
             self.vf.parameters(), 0.5)
