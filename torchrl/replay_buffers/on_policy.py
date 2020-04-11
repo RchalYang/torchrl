@@ -3,6 +3,7 @@ from .base import BaseReplayBuffer
 from .shared.base import SharedBaseReplayBuffer
 from .vec import VecReplayBuffer
 
+
 class OnPolicyReplayBufferBase:
     """
     Replay Buffer for On Policy algorithms
@@ -17,15 +18,11 @@ class OnPolicyReplayBufferBase:
     def generalized_advantage_estimation(self, last_value, gamma, tau):
         """
         use GAE to process rewards
-        P.S: only one round no need to process done info
         """
         A = 0
         advs = []
         estimate_returns = []
-        # values=np.concatenate([self._values, np.array([last_value])], 0)
-        # print(self._values.shape)
-        # print(last_value.shape)
-        values=np.concatenate([self._values, np.array([last_value])], 0)
+        values = np.concatenate([self._values, np.array([last_value])], 0)
         if self.time_limit_filter:
             for t in reversed(range(len(self._rewards))):
                 delta = self._rewards[t] + \
@@ -42,7 +39,7 @@ class OnPolicyReplayBufferBase:
                     values[t]
                 A = delta + (1 - self._terminals[t]) * gamma * tau * A
                 advs.insert(0, A)
-                estimate_returns.insert( 0, A + values[t])
+                estimate_returns.insert(0, A + values[t])
 
         self._advs = np.array(advs)
         self._estimate_returns = np.array(estimate_returns)
@@ -83,7 +80,8 @@ class OnPolicyReplayBufferBase:
         while pos < self._max_replay_buffer_size:
             return_dict = {}
             for key in sample_key:
-                return_dict[key] = self.__getattribute__("_"+key)[indices[pos: pos+batch_size]]
+                return_dict[key] = self.__getattribute__("_"+key)[
+                    indices[pos: pos+batch_size]]
                 data_shape = (-1, ) + return_dict[key].shape[2:]
                 return_dict[key] = return_dict[key].reshape(data_shape)
 
@@ -97,6 +95,7 @@ class OnPolicyReplayBuffer(OnPolicyReplayBufferBase, BaseReplayBuffer):
 
 class SharedOnPolicyReplayBuffer(SharedBaseReplayBuffer, OnPolicyReplayBufferBase):
     pass
+
 
 class VecOnPolicyReplayBuffer(OnPolicyReplayBufferBase, VecReplayBuffer):
     def one_iteration(self, batch_size, sample_key, shuffle):
@@ -113,7 +112,8 @@ class VecOnPolicyReplayBuffer(OnPolicyReplayBufferBase, VecReplayBuffer):
             return_dict = {}
             # print(pos)
             for key in sample_key:
-                return_dict[key] = self.__getattribute__("_"+key)[indices[pos: pos+batch_size]]
+                return_dict[key] = self.__getattribute__("_"+key)[
+                    indices[pos: pos+batch_size]]
                 data_shape = (-1, ) + return_dict[key].shape[2:]
                 return_dict[key] = return_dict[key].reshape(data_shape)
 

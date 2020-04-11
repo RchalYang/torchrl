@@ -114,8 +114,8 @@ class PPO(A2C):
             self.vf.parameters(), 0.5)
         self.vf_optimizer.step()
 
-        info['Traning/policy_loss'] = policy_loss.item()
-        info['Traning/vf_loss'] = vf_loss.item()
+        info['Training/policy_loss'] = policy_loss.item()
+        info['Training/vf_loss'] = vf_loss.item()
 
         info['logprob/mean'] = log_probs.mean().item()
         info['logprob/std'] = log_probs.std().item()

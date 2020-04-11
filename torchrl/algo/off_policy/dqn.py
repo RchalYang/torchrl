@@ -74,7 +74,7 @@ class DQN(OffRLAlgo):
         # Information For Logger
         info = {}
         info['Reward_Mean'] = rewards.mean().item()
-        info['Traning/qf_loss'] = qf_loss.item()
+        info['Training/qf_loss'] = qf_loss.item()
         info['epsilon']= self.pf.epsilon
         info['q_s_a'] = q_s_a.mean().item()
         return info

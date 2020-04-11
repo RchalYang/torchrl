@@ -110,8 +110,8 @@ class DDPG(OffRLAlgo):
         # Information For Logger
         info = {}
         info['Reward_Mean'] = rewards.mean().item()
-        info['Traning/policy_loss'] = policy_loss.item()
-        info['Traning/qf_loss'] = qf_loss.item()
+        info['Training/policy_loss'] = policy_loss.item()
+        info['Training/qf_loss'] = qf_loss.item()
 
         info['new_actions/mean'] = new_actions.mean().item()
         info['new_actions/std'] = new_actions.std().item()

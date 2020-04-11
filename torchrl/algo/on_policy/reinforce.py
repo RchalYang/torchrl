@@ -65,7 +65,7 @@ class Reinforce(OnRLAlgo):
         torch.nn.utils.clip_grad_norm_(self.pf.parameters(), 0.5)
         self.pf_optimizer.step()
 
-        info['Traning/policy_loss'] = policy_loss.item()
+        info['Training/policy_loss'] = policy_loss.item()
 
         info['ent'] = ent.mean().item()
         info['logprob/mean'] = log_probs.mean().item()

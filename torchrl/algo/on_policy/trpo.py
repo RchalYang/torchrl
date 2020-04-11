@@ -175,9 +175,7 @@ class TRPO(A2C):
         self.advs = (self.advs - self.advs.mean()) / (self.advs.std() + 1e-4)
 
         out = self.pf.update(self.obs, self.acts)
-
         log_probs = out['log_prob']
-        log_stds = out['log_std']
         ent = out['ent']
 
         probs_new = torch.exp(log_probs)
@@ -226,17 +224,12 @@ class TRPO(A2C):
 
         self.pf.zero_grad()
 
-        info['Traning/policy_loss'] = surrogate_loss.item()
+        info['Training/policy_loss'] = surrogate_loss.item()
 
         info['logprob/mean'] = log_probs.mean().item()
         info['logprob/std'] = log_probs.std().item()
         info['logprob/max'] = log_probs.max().item()
         info['logprob/min'] = log_probs.min().item()
-
-        info['logstd/mean'] = log_stds.mean().item()
-        info['logstd/std'] = log_stds.std().item()
-        info['logstd/max'] = log_stds.max().item()
-        info['logstd/min'] = log_stds.min().item()
 
         info['ratio/max'] = ratio.max().item()
         info['ratio/min'] = ratio.min().item()
@@ -260,7 +253,7 @@ class TRPO(A2C):
         self.vf_optimizer.step()
 
         info = {}
-        info['Traning/vf_loss'] = vf_loss.item()
+        info['Training/vf_loss'] = vf_loss.item()
         info['grad_norm/vf'] = vf_grad_norm
 
         return info

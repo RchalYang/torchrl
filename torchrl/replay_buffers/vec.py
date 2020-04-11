@@ -12,7 +12,6 @@ class VecReplayBuffer(BaseReplayBuffer):
         self._max_replay_buffer_size = self._max_replay_buffer_size // \
             self.env_nums
 
-    # def random_batch(self, batch_size, sample_key):
     def random_batch(self, batch_size, sample_key):
         assert batch_size % self.env_nums == 0, \
             "batch size should be dividable by worker_nums"

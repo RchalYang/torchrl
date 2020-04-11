@@ -170,9 +170,9 @@ class SAC(OffRLAlgo):
         if self.automatic_entropy_tuning:
             info["Alpha"] = alpha.item()
             info["Alpha_loss"] = alpha_loss.item()
-        info['Traning/policy_loss'] = policy_loss.item()
-        info['Traning/vf_loss'] = vf_loss.item()
-        info['Traning/qf_loss'] = qf_loss.item()
+        info['Training/policy_loss'] = policy_loss.item()
+        info['Training/vf_loss'] = vf_loss.item()
+        info['Training/qf_loss'] = qf_loss.item()
 
         info['log_std/mean'] = log_std.mean().item()
         info['log_std/std'] = log_std.std().item()

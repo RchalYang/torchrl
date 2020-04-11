@@ -83,8 +83,8 @@ class A2C(OnRLAlgo):
         torch.nn.utils.clip_grad_norm_(self.vf.parameters(), 0.5)
         self.vf_optimizer.step()
 
-        info['Traning/policy_loss'] = policy_loss.item()
-        info['Traning/vf_loss'] = vf_loss.item()
+        info['Training/policy_loss'] = policy_loss.item()
+        info['Training/vf_loss'] = vf_loss.item()
 
         info['v_pred/mean'] = values.mean().item()
         info['v_pred/std'] = values.std().item()

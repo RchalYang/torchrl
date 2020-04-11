@@ -121,8 +121,8 @@ class TD3(OffRLAlgo):
 
         info['Reward_Mean'] = rewards.mean().item()
 
-        info['Traning/qf1_loss'] = qf1_loss.item()
-        info['Traning/qf2_loss'] = qf2_loss.item()
+        info['Training/qf1_loss'] = qf1_loss.item()
+        info['Training/qf2_loss'] = qf2_loss.item()
 
         if self.training_update_num % self.policy_update_delay:
             """
@@ -143,7 +143,7 @@ class TD3(OffRLAlgo):
 
             self._update_target_networks()
 
-            info['Traning/policy_loss'] = policy_loss.item()
+            info['Training/policy_loss'] = policy_loss.item()
 
             info['new_actions/mean'] = new_actions.mean().item()
             info['new_actions/std'] = new_actions.std().item()
