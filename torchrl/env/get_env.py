@@ -2,6 +2,7 @@ from .atari_wrapper import *
 from .continuous_wrapper import *
 from .base_wrapper import *
 
+
 def wrap_deepmind(env, frame_stack=False, scale=False, clip_rewards=False):
     assert 'NoFrameskip' in env.spec.id
     env = EpisodicLifeEnv(env)
@@ -41,8 +42,6 @@ def get_env(env_id, env_param):
     else:
         env = wrap_continuous_env(env, **env_param)
 
-
-    # act_space = env.action_space
-    # if isinstance(act_space, gym.spaces.Box):
-    #     return NormAct(env)
+    if isinstance(env.action_space, gym.spaces.Box):
+        return NormAct(env)
     return env

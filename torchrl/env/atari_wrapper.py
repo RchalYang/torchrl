@@ -9,7 +9,8 @@ from .base_wrapper import BaseWrapper
 Basically from OpenAI Baseline
 """
 
-class NoopResetEnv( BaseWrapper):
+
+class NoopResetEnv(BaseWrapper):
     def __init__(self, env, noop_max=30):
         """Sample initial states by taking random number of no-ops on reset.
         No-op is assumed to be action 0.
@@ -38,9 +39,10 @@ class NoopResetEnv( BaseWrapper):
     def step(self, ac):
         return self.env.step(ac)
 
-class FireResetEnv( BaseWrapper ):
+
+class FireResetEnv(BaseWrapper):
     def __init__(self, env):
-        """Take action on reset for environments that are fixed until firing."""
+        """Take action on reset for environments that are fixed until firing"""
         super().__init__(env)
         assert env.unwrapped.get_action_meanings()[1] == 'FIRE'
         assert len(env.unwrapped.get_action_meanings()) >= 3
@@ -58,14 +60,15 @@ class FireResetEnv( BaseWrapper ):
     def step(self, ac):
         return self.env.step(ac)
 
-class EpisodicLifeEnv( BaseWrapper):
+
+class EpisodicLifeEnv(BaseWrapper):
     def __init__(self, env):
         """Make end-of-life == end-of-episode, but only reset on true game over.
         Done by DeepMind for the DQN and co. since it helps value estimation.
         """
-        super().__init__( env )
+        super().__init__(env)
         self.lives = 0
-        self.was_real_done  = True
+        self.was_real_done = True
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
@@ -94,13 +97,15 @@ class EpisodicLifeEnv( BaseWrapper):
         self.lives = self.env.unwrapped.ale.lives()
         return obs
 
-class MaxAndSkipEnv( BaseWrapper):
+
+class MaxAndSkipEnv(BaseWrapper):
     def __init__(self, env, skip=4):
         """Return only every `skip`-th frame"""
-        super().__init__( env)
+        super().__init__(env)
         # most recent raw observations (for max pooling across time steps)
-        self._obs_buffer = np.zeros((2,)+env.observation_space.shape, dtype=np.uint8)
-        self._skip       = skip
+        self._obs_buffer = np.zeros(
+            (2,)+env.observation_space.shape, dtype=np.uint8)
+        self._skip = skip
 
     def step(self, action):
         """Repeat action, sum reward, and max over last observations."""
@@ -108,8 +113,10 @@ class MaxAndSkipEnv( BaseWrapper):
         done = None
         for i in range(self._skip):
             obs, reward, done, info = self.env.step(action)
-            if i == self._skip - 2: self._obs_buffer[0] = obs
-            if i == self._skip - 1: self._obs_buffer[1] = obs
+            if i == self._skip - 2:
+                self._obs_buffer[0] = obs
+            if i == self._skip - 1:
+                self._obs_buffer[1] = obs
             total_reward += reward
             if done:
                 break
@@ -122,13 +129,15 @@ class MaxAndSkipEnv( BaseWrapper):
     def reset(self, **kwargs):
         return self.env.reset(**kwargs)
 
-class ClipRewardEnv( gym.RewardWrapper, BaseWrapper ):
+
+class ClipRewardEnv(gym.RewardWrapper, BaseWrapper):
     def __init__(self, env):
         super().__init__(env)
 
     def reward(self, reward):
         """Bin reward to {+1, 0, -1} by its sign."""
         return np.sign(reward)
+
 
 class LazyFrames(object):
     def __init__(self, frames):
@@ -157,7 +166,8 @@ class LazyFrames(object):
 
     def __getitem__(self, i):
         return self._force()[i]
-   
+
+
 class WarpFrame(gym.ObservationWrapper, BaseWrapper):
     """Warp frames to 84x84 as done in the Nature paper and later work."""
     def __init__(self, env, width=84, height=84, grayscale=True):
@@ -166,22 +176,26 @@ class WarpFrame(gym.ObservationWrapper, BaseWrapper):
         self.height = height
         self.grayscale = grayscale
         if self.grayscale:
-            self.observation_space = gym.spaces.Box(low=0, high=255,
-                shape=(1, self.height, self.width), dtype=np.uint8)
+            self.observation_space = gym.spaces.Box(
+                low=0, high=255, shape=(1, self.height, self.width),
+                dtype=np.uint8)
         else:
-            self.observation_space = gym.spaces.Box(low=0, high=255,
-                shape=(3, self.height, self.width), dtype=np.uint8)
+            self.observation_space = gym.spaces.Box(
+                low=0, high=255, shape=(3, self.height, self.width),
+                dtype=np.uint8)
 
     def observation(self, frame):
         if self.grayscale:
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
+        frame = cv2.resize(
+            frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
         if self.grayscale:
             frame = np.expand_dims(frame, -1)
-        frame = np.transpose(frame, (2,0,1) )
+        frame = np.transpose(frame, (2, 0, 1))
         return frame
 
-class FrameStack( BaseWrapper):
+
+class FrameStack(BaseWrapper):
     def __init__(self, env, k):
         """Stack k last frames.
         Returns lazy array, which is much more memory efficient.
@@ -193,7 +207,9 @@ class FrameStack( BaseWrapper):
         self.k = k
         self.frames = deque([], maxlen=k)
         shp = env.observation_space.shape
-        self.observation_space = gym.spaces.Box(low=0, high=255, shape=( (shp[0] * k,) + shp[1:] ), dtype=env.observation_space.dtype)
+        self.observation_space = gym.spaces.Box(
+            low=0, high=255, shape=((shp[0] * k,) + shp[1:]),
+            dtype=env.observation_space.dtype)
 
     def reset(self):
         ob = self.env.reset()
@@ -210,10 +226,13 @@ class FrameStack( BaseWrapper):
         assert len(self.frames) == self.k
         return LazyFrames(list(self.frames))
 
+
 class ScaledFloatFrame(gym.ObservationWrapper, BaseWrapper):
     def __init__(self, env):
         super().__init__(env)
-        self.observation_space = gym.spaces.Box(low=-0.5, high=0.5, shape=env.observation_space.shape, dtype=np.float32)
+        self.observation_space = gym.spaces.Box(
+            low=-0.5, high=0.5, shape=env.observation_space.shape,
+            dtype=np.float32)
 
     def observation(self, observation):
         # careful! This undoes the memory optimization, use

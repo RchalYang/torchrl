@@ -23,6 +23,7 @@ class BaseWrapper(gym.Wrapper):
             raise AttributeError()
         return getattr(self._wrapped_env, attr)
 
+
 class RewardShift(gym.RewardWrapper, BaseWrapper):
     def __init__(self, env, reward_scale = 1):
         super(RewardShift, self).__init__(env)
@@ -34,7 +35,10 @@ class RewardShift(gym.RewardWrapper, BaseWrapper):
         else:
             return reward
 
-def update_mean_var_count_from_moments(mean, var, count, batch_mean, batch_var, batch_count):
+
+def update_mean_var_count(
+        mean, var, count,
+        batch_mean, batch_var, batch_count):
     """
     Imported From OpenAI Baseline
     """
@@ -63,22 +67,23 @@ class NormObs(gym.ObservationWrapper, BaseWrapper):
         self._obs_var = np.ones(env.observation_space.shape[0])
 
     def _update_obs_estimate(self, obs):
-    # def update_from_moments(self, batch_mean, batch_var, batch_count):
-        self._obs_mean, self._obs_var, self.count = update_mean_var_count_from_moments(
-            self._obs_mean, self._obs_var, self.count, obs, np.zeros_like(obs), 1)
+        self._obs_mean, self._obs_var, self.count = update_mean_var_count(
+            self._obs_mean, self._obs_var,
+            self.count, obs, np.zeros_like(obs), 1)
 
     def _apply_normalize_obs(self, raw_obs):
         if self.training:
             self._update_obs_estimate(raw_obs)
         return np.clip(
-                (raw_obs - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8),
-                -self.clipob, self.clipob)
+            (raw_obs - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8),
+            -self.clipob, self.clipob)
 
     def observation(self, observation):
         return self._apply_normalize_obs(observation)
 
+
 class NormRet(BaseWrapper):
-    def __init__(self, env, discount = 0.99, epsilon = 1e-4):
+    def __init__(self, env, discount=0.99, epsilon=1e-4):
         super(NormRet, self).__init__(env)
         self._ret = 0
         self.count = 1e-4
@@ -92,7 +97,7 @@ class NormRet(BaseWrapper):
         if self.training:
             self.ret = self.ret * self.discount + rews
             # if self.ret_rms:
-            self.ret_mean, self.ret_var, self.count = update_mean_var_count_from_moments(
+            self.ret_mean, self.ret_var, self.count = update_mean_var_count(
                 self.ret_mean, self.ret_var, self.count, self.ret, 0, 1)
             rews = rews / np.sqrt(self.ret_var + self.epsilon)
             self.ret *= (1-done)
@@ -102,4 +107,16 @@ class NormRet(BaseWrapper):
 
     def reset(self, **kwargs):
         self.ret = 0
+        return self.env.reset(**kwargs)
+
+
+# Check Trajectory is ended by time limit or not
+class TimeLimitAugment(gym.Wrapper):
+    def step(self, action):
+        obs, rew, done, info = self.env.step(action)
+        if done and self.env._max_episode_steps == self.env._elapsed_steps:
+            info['time_limit'] = True
+        return obs, rew, done, info
+
+    def reset(self, **kwargs):
         return self.env.reset(**kwargs)

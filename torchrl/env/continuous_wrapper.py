@@ -4,18 +4,6 @@ import numpy as np
 from .base_wrapper import BaseWrapper
 
 
-# Check Trajectory is ended by time limit or not
-class TimeLimitAugment(gym.Wrapper):
-    def step(self, action):
-        obs, rew, done, info = self.env.step(action)
-        if done and self.env._max_episode_steps == self.env._elapsed_steps:
-            info['time_limit'] = True
-        return obs, rew, done, info
-
-    def reset(self, **kwargs):
-        return self.env.reset(**kwargs)
-
-
 class NormAct(gym.ActionWrapper, BaseWrapper):
     """
     Normalized Action      => [ -1, 1 ]
