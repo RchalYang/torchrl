@@ -1,9 +1,7 @@
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.distributions import Normal
-
-import numpy as np
-
 import torchrl.networks as networks
 from .distribution import TanhNormal
 
