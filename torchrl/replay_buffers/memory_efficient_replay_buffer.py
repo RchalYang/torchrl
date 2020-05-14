@@ -1,6 +1,7 @@
 import numpy as np
 from .base import BaseReplayBuffer
 
+
 class MemoryEfficientReplayBuffer(BaseReplayBuffer):
     """
     Use list to store LazyFrame object

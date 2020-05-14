@@ -68,7 +68,8 @@ class ShmemBufferWrapper:
 
     def get_address(self):
         # assert self._map.size() == self.size  # (changed for python 3)
-        assert self._map.size() >= self.size # strictly equal might not meet in MAC
+        # strictly equal might not meet on MAC
+        assert self._map.size() >= self.size
         addr = address_of_buffer(self._map)
         return addr
 

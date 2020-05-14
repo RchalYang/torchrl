@@ -1,26 +1,19 @@
 # Since we could ensure that multi-proces would write into the different parts
 # For efficiency, we use Multiprocess.RawArray
-
 from torch.multiprocessing import RawArray
 from multiprocessing.managers import BaseProxy
 import numpy as np
-
 from torchrl.replay_buffers.base import BaseReplayBuffer
-
 from .shmarray import NpShmemArray
-
 from .shmarray import get_random_tag
+
 
 class SharedBaseReplayBuffer(BaseReplayBuffer):
     """
     Basic Replay Buffer
     """
-    def __init__(self, 
-        max_replay_buffer_size,
-        worker_nums
-        # example_dict,
-        # tag
-    ):
+    def __init__(
+            self, max_replay_buffer_size, worker_nums):
         super().__init__(max_replay_buffer_size)
 
         self.worker_nums = worker_nums
@@ -33,35 +26,41 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
 
     def build_by_example(self, example_dict):
         self._size = NpShmemArray(self.worker_nums, np.int32, self.tag+"_size")
-        self._top  = NpShmemArray(self.worker_nums, np.int32, self.tag+"_top")
+        self._top = NpShmemArray(self.worker_nums, np.int32, self.tag+"_top")
 
         self.tags = {}
         self.shapes = {}
         for key in example_dict:
-            if not hasattr( self, "_" + key ):
+            if not hasattr(self, "_" + key):
                 current_tag = "_"+key
                 self.tags[current_tag] = self.tag+current_tag
                 shape = (self._max_replay_buffer_size, self.worker_nums) + \
                     np.shape(example_dict[key])
                 self.shapes[current_tag] = shape
-                
-                np_array = NpShmemArray(shape, np.float32, self.tag+current_tag)
-                self.__setattr__(current_tag, np_array )
+
+                np_array = NpShmemArray(
+                    shape, np.float32, self.tag+current_tag)
+                self.__setattr__(current_tag, np_array)
 
     def rebuild_from_tag(self):
-        self._size  = NpShmemArray(self.worker_nums, np.int32,
+        self._size = NpShmemArray(
+            self.worker_nums, np.int32,
             self.tag+"_size", create=False)
-        self._top   = NpShmemArray(self.worker_nums, np.int32,
+        self._top = NpShmemArray(
+            self.worker_nums, np.int32,
             self.tag+"_top", create=False)
 
         for key in self.tags:
-            np_array = NpShmemArray(self.shapes[key], np.float32,
+            np_array = NpShmemArray(
+                self.shapes[key], np.float32,
                 self.tags[key], create=False)
-            self.__setattr__(key, np_array )
+            self.__setattr__(key, np_array)
 
     def add_sample(self, sample_dict, worker_rank, **kwargs):
         for key in sample_dict:
-            self.__getattribute__( "_" + key )[self._top[worker_rank], worker_rank] = sample_dict[key]
+            self.__getattribute__("_" + key)[
+                self._top[worker_rank], worker_rank] = \
+                    sample_dict[key]
         self._advance(worker_rank)
 
     def terminate_episode(self):
@@ -82,7 +81,7 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
         return_dict = {}
         for key in sample_key:
             return_dict[key] = self.__getattribute__("_"+key)[indices].reshape(
-                ( batch_size * self.worker_nums,-1))
+                (batch_size * self.worker_nums, -1))
         return return_dict
 
     def num_steps_can_sample(self):
@@ -92,9 +91,10 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
             "all worker should gather the same amount of samples"
         return min_size
 
+
 class AsyncSharedReplayBuffer(SharedBaseReplayBuffer):
     def num_steps_can_sample(self):
-        # Use asynchronized sampling could cause sample collected is 
+        # Use asynchronized sampling could cause sample collected is
         # different across different workers but actually it's find
         min_size = np.min(self._size)
         return min_size
