@@ -76,6 +76,7 @@ class BootstrappedNet(nn.Module):
                 fc = nn.Linear(append_input_shape, next_shape)
                 append_hidden_init_func(fc)
                 append_fcs.append(fc)
+                append_fcs.append(self.activation_func())
                 # set attr for pytorch to track parameters( device )
                 append_input_shape = next_shape
 
