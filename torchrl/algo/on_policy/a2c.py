@@ -10,14 +10,13 @@ class A2C(OnRLAlgo):
     Actor Critic
     """
     def __init__(
-        self,
-        pf, vf,
-        plr=3e-4,
-        vlr=3e-4,
-        optimizer_class=optim.Adam,
-        entropy_coeff=0.001,
-        **kwargs
-    ):
+            self,
+            pf, vf,
+            plr=3e-4,
+            vlr=3e-4,
+            optimizer_class=optim.Adam,
+            entropy_coeff=0.001,
+            **kwargs):
         super(A2C, self).__init__(**kwargs)
         self.pf = pf
         self.vf = vf

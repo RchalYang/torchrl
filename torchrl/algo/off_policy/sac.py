@@ -1,12 +1,11 @@
 import time
 import numpy as np
 import copy
-
 import torch
 import torch.optim as optim
 from torch import nn as nn
-
 from .off_rl_algo import OffRLAlgo
+
 
 class SAC(OffRLAlgo):
     """
@@ -15,17 +14,16 @@ class SAC(OffRLAlgo):
     def __init__(
             self,
             pf, vf, qf,
-            plr,vlr,qlr,
+            plr, vlr, qlr,
             optimizer_class=optim.Adam,
-            
+
             policy_std_reg_weight=1e-3,
             policy_mean_reg_weight=1e-3,
 
-            reparameterization = True,
-            automatic_entropy_tuning = True,
-            target_entropy = None,
-            **kwargs
-    ):
+            reparameterization=True,
+            automatic_entropy_tuning=True,
+            target_entropy=None,
+            **kwargs):
         super(SAC, self).__init__(**kwargs)
         self.pf = pf
         self.qf = qf
@@ -51,7 +49,7 @@ class SAC(OffRLAlgo):
             self.pf.parameters(),
             lr=self.plr,
         )
-        
+
         self.automatic_entropy_tuning = automatic_entropy_tuning
         if self.automatic_entropy_tuning:
             if target_entropy:
@@ -75,29 +73,29 @@ class SAC(OffRLAlgo):
 
     def update(self, batch):
         self.training_update_num += 1
-        
+
         obs = batch['obs']
         actions = batch['acts']
         next_obs = batch['next_obs']
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        rewards = torch.Tensor(rewards).to( self.device )
-        terminals = torch.Tensor(terminals).to( self.device )
-        obs = torch.Tensor(obs).to( self.device )
-        actions = torch.Tensor(actions).to( self.device )
-        next_obs = torch.Tensor(next_obs).to( self.device )
+        rewards = torch.Tensor(rewards).to(self.device)
+        terminals = torch.Tensor(terminals).to(self.device)
+        obs = torch.Tensor(obs).to(self.device)
+        actions = torch.Tensor(actions).to(self.device)
+        next_obs = torch.Tensor(next_obs).to(self.device)
 
         """
         Policy operations.
         """
-        sample_info = self.pf.explore(obs, return_log_probs=True )
+        sample_info = self.pf.explore(obs, return_log_probs=True)
 
-        mean        = sample_info["mean"]
-        log_std     = sample_info["log_std"]
+        mean = sample_info["mean"]
+        log_std = sample_info["log_std"]
         new_actions = sample_info["action"]
-        log_probs   = sample_info["log_prob"]
-        ent         = sample_info["ent"]
+        log_probs = sample_info["log_prob"]
+        # ent = sample_info["ent"]
 
         q_pred = self.qf([obs, actions])
         v_pred = self.vf(obs)
@@ -106,7 +104,8 @@ class SAC(OffRLAlgo):
             """
             Alpha Loss
             """
-            alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach()).mean()
+            alpha_loss = -(self.log_alpha *
+                           (log_probs + self.target_entropy).detach()).mean()
             self.alpha_optimizer.zero_grad()
             alpha_loss.backward()
             self.alpha_optimizer.step()
@@ -120,14 +119,14 @@ class SAC(OffRLAlgo):
         """
         target_v_values = self.target_vf(next_obs)
         q_target = rewards + (1. - terminals) * self.discount * target_v_values
-        qf_loss = self.qf_criterion( q_pred, q_target.detach())
+        qf_loss = self.qf_criterion(q_pred, q_target.detach())
 
         """
         VF Loss
         """
         q_new_actions = self.qf([obs, new_actions])
         v_target = q_new_actions - alpha * log_probs
-        vf_loss = self.vf_criterion( v_pred, v_target.detach())
+        vf_loss = self.vf_criterion(v_pred, v_target.detach())
 
         """
         Policy Loss
@@ -135,16 +134,16 @@ class SAC(OffRLAlgo):
         if not self.reparameterization:
             log_policy_target = q_new_actions - v_pred
             policy_loss = (
-                log_probs * ( alpha * log_probs - log_policy_target).detach()
+                log_probs * (alpha * log_probs - log_policy_target).detach()
             ).mean()
         else:
-            policy_loss = ( alpha * log_probs - q_new_actions).mean()
+            policy_loss = (alpha * log_probs - q_new_actions).mean()
 
         std_reg_loss = self.policy_std_reg_weight * (log_std**2).mean()
         mean_reg_loss = self.policy_mean_reg_weight * (mean**2).mean()
 
         policy_loss += std_reg_loss + mean_reg_loss
-        
+
         """
         Update Networks
         """
@@ -199,7 +198,7 @@ class SAC(OffRLAlgo):
             self.vf,
             self.target_vf
         ]
-    
+
     @property
     def snapshot_networks(self):
         return [
@@ -211,5 +210,5 @@ class SAC(OffRLAlgo):
     @property
     def target_networks(self):
         return [
-            ( self.vf, self.target_vf )
+            (self.vf, self.target_vf)
         ]

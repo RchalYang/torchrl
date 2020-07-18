@@ -2,33 +2,30 @@ import copy
 import time
 from collections import deque
 import numpy as np
-
 import torch
-
 import torchrl.algo.utils as atu
-
 import gym
-
 import os
 import os.path as osp
+import pathlib
+
 
 class RLAlgo():
     """
     Base RL Algorithm Framework
     """
     def __init__(
-        self,
-        env=None,
-        replay_buffer=None,
-        collector=None,
-        logger=None,
-        discount=0.99,
-        num_epochs=3000,
-        batch_size=128,
-        device='cpu',
-        save_interval=100,
-        save_dir=None
-    ):
+            self,
+            env=None,
+            replay_buffer=None,
+            collector=None,
+            logger=None,
+            discount=0.99,
+            num_epochs=3000,
+            batch_size=128,
+            device='cpu',
+            save_interval=100,
+            save_dir=None):
 
         self.env = env
 
@@ -57,8 +54,8 @@ class RLAlgo():
 
         self.save_interval = save_interval
         self.save_dir = save_dir
-        if not osp.exists(self.save_dir):
-            os.mkdir(self.save_dir)
+
+        pathlib.Path(self.save_dir).mkdir(parents=True, exist_ok=True)
 
         self.best_eval = None
 
@@ -135,7 +132,7 @@ class RLAlgo():
             infos.update(finish_epoch_info)
 
             self.logger.add_epoch_info(
-                epoch, total_frames, time.time() - start, infos )
+                epoch, total_frames, time.time() - start, infos)
 
             if epoch % self.save_interval == 0:
                 self.snapshot(self.save_dir, epoch)

@@ -1,12 +1,11 @@
 import time
 import numpy as np
 import copy
-
 import torch
 import torch.optim as optim
 from torch import nn as nn
-
 from .off_rl_algo import OffRLAlgo
+
 
 class TwinSACQ(OffRLAlgo):
     """
@@ -19,15 +18,14 @@ class TwinSACQ(OffRLAlgo):
             qf1, qf2,
             plr, qlr,
             optimizer_class=optim.Adam,
-            
+
             policy_std_reg_weight=0,
             policy_mean_reg_weight=0,
 
-            reparameterization = True,
-            automatic_entropy_tuning = True,
-            target_entropy = None,
-            **kwargs
-    ):
+            reparameterization=True,
+            automatic_entropy_tuning=True,
+            target_entropy=None,
+            **kwargs):
         super(TwinSACQ, self).__init__(**kwargs)
         self.pf = pf
         self.qf1 = qf1
@@ -54,13 +52,14 @@ class TwinSACQ(OffRLAlgo):
             self.pf.parameters(),
             lr=self.plr,
         )
-        
+
         self.automatic_entropy_tuning = automatic_entropy_tuning
         if self.automatic_entropy_tuning:
             if target_entropy:
                 self.target_entropy = target_entropy
             else:
-                self.target_entropy = -np.prod(self.env.action_space.shape).item()  # from rlkit
+                self.target_entropy = -np.prod(
+                    self.env.action_space.shape).item()  # from rlkit
             self.log_alpha = torch.zeros(1).to(self.device)
             self.log_alpha.requires_grad_()
             self.alpha_optimizer = optimizer_class(
@@ -77,27 +76,27 @@ class TwinSACQ(OffRLAlgo):
 
     def update(self, batch):
         self.training_update_num += 1
-        obs       = batch['obs']
-        actions   = batch['acts']
-        next_obs  = batch['next_obs']
-        rewards   = batch['rewards']
+        obs = batch['obs']
+        actions = batch['acts']
+        next_obs = batch['next_obs']
+        rewards = batch['rewards']
         terminals = batch['terminals']
 
-        rewards   = torch.Tensor(rewards).to( self.device )
-        terminals = torch.Tensor(terminals).to( self.device )
-        obs       = torch.Tensor(obs).to( self.device )
-        actions   = torch.Tensor(actions).to( self.device )
-        next_obs  = torch.Tensor(next_obs).to( self.device )
+        rewards = torch.Tensor(rewards).to(self.device)
+        terminals = torch.Tensor(terminals).to(self.device)
+        obs = torch.Tensor(obs).to(self.device)
+        actions = torch.Tensor(actions).to(self.device)
+        next_obs = torch.Tensor(next_obs).to(self.device)
 
         """
         Policy operations.
         """
-        sample_info = self.pf.explore(obs, return_log_probs=True )
+        sample_info = self.pf.explore(obs, return_log_probs=True)
 
-        mean        = sample_info["mean"]
-        log_std     = sample_info["log_std"]
+        mean = sample_info["mean"]
+        log_std = sample_info["log_std"]
         new_actions = sample_info["action"]
-        log_probs   = sample_info["log_prob"]
+        log_probs = sample_info["log_prob"]
 
         q1_pred = self.qf1([obs, actions])
         q2_pred = self.qf2([obs, actions])
@@ -107,7 +106,8 @@ class TwinSACQ(OffRLAlgo):
             """
             Alpha Loss
             """
-            alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach()).mean()
+            alpha_loss = -(self.log_alpha * (
+                log_probs + self.target_entropy).detach()).mean()
             self.alpha_optimizer.zero_grad()
             alpha_loss.backward()
             self.alpha_optimizer.step()
@@ -117,9 +117,9 @@ class TwinSACQ(OffRLAlgo):
             alpha_loss = 0
 
         with torch.no_grad():
-            target_sample_info = self.pf.explore(next_obs, return_log_probs=True )
+            target_sample_info = self.pf.explore(next_obs, return_log_probs=True)
 
-            target_actions   = target_sample_info["action"]
+            target_actions = target_sample_info["action"]
             target_log_probs = target_sample_info["log_prob"]
 
             target_q1_pred = self.target_qf1([next_obs, target_actions])
@@ -130,12 +130,10 @@ class TwinSACQ(OffRLAlgo):
         QF Loss
         """
         q_target = rewards + (1. - terminals) * self.discount * target_v_values
-        qf1_loss = self.qf_criterion(q1_pred, q_target.detach())
-        qf2_loss = self.qf_criterion(q2_pred, q_target.detach())
         assert q1_pred.shape == q_target.shape
         assert q2_pred.shape == q_target.shape
-        # qf1_loss = (0.5 * ( q1_pred - q_target.detach() ) ** 2).mean()
-        # qf2_loss = (0.5 * ( q2_pred - q_target.detach() ) ** 2).mean()
+        qf1_loss = self.qf_criterion(q1_pred, q_target.detach())
+        qf2_loss = self.qf_criterion(q2_pred, q_target.detach())
 
         q_new_actions = torch.min(
             self.qf1([obs, new_actions]),
@@ -147,13 +145,13 @@ class TwinSACQ(OffRLAlgo):
             raise NotImplementedError
         else:
             assert log_probs.shape == q_new_actions.shape
-            policy_loss = ( alpha * log_probs - q_new_actions).mean()
+            policy_loss = (alpha * log_probs - q_new_actions).mean()
 
         std_reg_loss = self.policy_std_reg_weight * (log_std**2).mean()
         mean_reg_loss = self.policy_mean_reg_weight * (mean**2).mean()
 
         policy_loss += std_reg_loss + mean_reg_loss
-        
+
         """
         Update Networks
         """
@@ -169,11 +167,6 @@ class TwinSACQ(OffRLAlgo):
         self.qf2_optimizer.zero_grad()
         qf2_loss.backward()
         self.qf2_optimizer.step()
-
-        # if self.automatic_entropy_tuning:
-        #     self.alpha_optimizer.zero_grad()
-        #     alpha_loss.backward()
-        #     self.alpha_optimizer.step()
 
         self._update_target_networks()
 
@@ -214,7 +207,7 @@ class TwinSACQ(OffRLAlgo):
             self.target_qf1,
             self.target_qf2
         ]
-    
+
     @property
     def snapshot_networks(self):
         return [
@@ -226,6 +219,6 @@ class TwinSACQ(OffRLAlgo):
     @property
     def target_networks(self):
         return [
-            ( self.qf1, self.target_qf1 ),
-            ( self.qf2, self.target_qf2 )
+            (self.qf1, self.target_qf1),
+            (self.qf2, self.target_qf2)
         ]

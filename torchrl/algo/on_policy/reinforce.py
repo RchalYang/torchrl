@@ -1,21 +1,20 @@
 import torch
 import torch.optim as optim
-
 from .on_rl_algo import OnRLAlgo
 from torchrl.networks.nets import ZeroNet
+
 
 class Reinforce(OnRLAlgo):
     """
     Reinforce
     """
     def __init__(
-        self,
-        pf,
-        plr,
-        optimizer_class=optim.Adam,
-        entropy_coeff=0.001,
-        **kwargs
-    ):
+            self,
+            pf,
+            plr,
+            optimizer_class=optim.Adam,
+            entropy_coeff=0.001,
+            **kwargs):
         super(Reinforce, self).__init__(**kwargs)
         self.pf = pf
         # Use a vacant value network to simplify the code structure

@@ -1,25 +1,23 @@
 import numpy as np
 import copy
-
 import torch
 import torch.optim as optim
 from torch import nn as nn
 from torch.distributions import  Normal
-
 from .off_rl_algo import OffRLAlgo
 
-class TD3(OffRLAlgo):
-    def __init__(self,
-        pf, qf1, qf2,
-        plr, qlr,
-        optimizer_class = optim.Adam,
 
-        policy_update_delay = 2,
-        norm_std_explore = 0.1,
-        norm_std_policy = 0.2,
-        noise_clip = 0.5,
-        **kwargs
-    ):
+class TD3(OffRLAlgo):
+    def __init__(
+            self,
+            pf, qf1, qf2,
+            plr, qlr,
+            optimizer_class=optim.Adam,
+
+            policy_update_delay=2,
+            norm_std_policy=0.2,
+            noise_clip=0.5,
+            **kwargs):
         super(TD3, self).__init__(**kwargs)
 
         self.pf = pf
@@ -53,7 +51,6 @@ class TD3(OffRLAlgo):
 
         self.policy_update_delay = policy_update_delay
 
-        self.norm_std_explore = norm_std_explore
         self.norm_std_policy = norm_std_policy
         self.noise_clip = noise_clip
 
@@ -65,48 +62,36 @@ class TD3(OffRLAlgo):
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        rewards = torch.Tensor(rewards).to( self.device )
-        terminals = torch.Tensor(terminals).to( self.device )
-        obs = torch.Tensor(obs).to( self.device )
-        actions = torch.Tensor(actions).to( self.device )
-        next_obs = torch.Tensor(next_obs).to( self.device )
-
+        rewards = torch.Tensor(rewards).to(self.device)
+        terminals = torch.Tensor(terminals).to(self.device)
+        obs = torch.Tensor(obs).to(self.device)
+        actions = torch.Tensor(actions).to(self.device)
+        next_obs = torch.Tensor(next_obs).to(self.device)
 
         """
         QF Loss
         """
-        sample_info = self.target_pf.explore(next_obs )
+        sample_info = self.target_pf.explore(next_obs)
         target_actions = sample_info["action"]
 
         noise = Normal(
-                 torch.zeros( target_actions.size()),
-                 self.norm_std_policy * torch.ones( target_actions.size())
+                 torch.zeros(target_actions.size()),
+                 self.norm_std_policy * torch.ones(target_actions.size())
         ).sample().to(target_actions.device)
-        noise = torch.clamp(
-            noise,
-            -self.noise_clip,
-            self.noise_clip
-        )
+        noise = torch.clamp(noise, -self.noise_clip, self.noise_clip)
         target_actions += noise
-        target_actions = torch.clamp(
-            target_actions,
-            -1,
-            1
-        )
+        target_actions = torch.clamp(target_actions, -1, 1)
 
-        target_q_values = torch.min( 
-                self.target_qf1([next_obs, target_actions]) ,
-                self.target_qf2([next_obs, target_actions])
-        )
-                        
+        target_q_values = torch.min(
+                self.target_qf1([next_obs, target_actions]),
+                self.target_qf2([next_obs, target_actions]))
 
         q_target = rewards + (1. - terminals) * self.discount * target_q_values
         q1_pred = self.qf1([obs, actions])
         q2_pred = self.qf2([obs, actions])
 
-        qf1_loss = self.qf_criterion( q1_pred, q_target.detach())
-        qf2_loss = self.qf_criterion( q2_pred, q_target.detach())
-
+        qf1_loss = self.qf_criterion(q1_pred, q_target.detach())
+        qf2_loss = self.qf_criterion(q2_pred, q_target.detach())
 
         self.qf1_optimizer.zero_grad()
         qf1_loss.backward()
@@ -115,7 +100,7 @@ class TD3(OffRLAlgo):
         self.qf2_optimizer.zero_grad()
         qf2_loss.backward()
         self.qf2_optimizer.step()
-        
+
         # Information For Logger
         info = {}
 
@@ -130,7 +115,6 @@ class TD3(OffRLAlgo):
             """
             new_actions = self.pf(obs)
             new_q_pred_1 = self.qf1([obs, new_actions])
-            
             policy_loss = -new_q_pred_1.mean()
 
             """
@@ -174,7 +158,7 @@ class TD3(OffRLAlgo):
     @property
     def target_networks(self):
         return [
-            ( self.pf, self.target_pf ),
-            ( self.qf1, self.target_qf1 ),
-            ( self.qf2, self.target_qf2 ),
+            (self.pf, self.target_pf),
+            (self.qf1, self.target_qf1),
+            (self.qf2, self.target_qf2),
         ]

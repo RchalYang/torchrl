@@ -8,12 +8,11 @@ class OnRLAlgo(RLAlgo):
     Base RL Algorithm Framework
     """
     def __init__(
-        self,
-        shuffle=True,
-        tau=None,
-        gae=True,
-        **kwargs
-    ):
+            self,
+            shuffle=True,
+            tau=None,
+            gae=True,
+            **kwargs):
         super(OnRLAlgo, self).__init__(**kwargs)
         self.sample_key = ["obs", "acts", "advs", "estimate_returns"]
         self.shuffle = shuffle

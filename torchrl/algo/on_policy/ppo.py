@@ -1,25 +1,22 @@
 import numpy as np
 import copy
-
 import torch
 import torch.optim as optim
 import torch.nn as nn
-
 from .a2c import A2C
 import torchrl.algo.utils as atu
+
 
 class PPO(A2C):
     """
     Actor Critic
     """
     def __init__(
-        self,
-        pf,
-        clip_para=0.2,
-        opt_epochs=10,
-        clipped_value_loss=False,
-        **kwargs
-    ):
+            self, pf,
+            clip_para=0.2,
+            opt_epochs=10,
+            clipped_value_loss=False,
+            **kwargs):
         self.target_pf = copy.deepcopy(pf)
         super(PPO, self).__init__(pf=pf, **kwargs)
 
@@ -99,8 +96,7 @@ class PPO(A2C):
             vf_loss = 0.5 * torch.max(vf_loss,
                                       vf_loss_clipped).mean()
         else:
-            vf_loss = 0.5 * (values - est_rets).pow(2).mean()
-            # vf_loss = self.vf_criterion(values, estimate_returns)
+            vf_loss = self.vf_criterion(values, est_rets)
 
         self.pf_optimizer.zero_grad()
         policy_loss.backward()

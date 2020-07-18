@@ -17,9 +17,6 @@ class TRPO(A2C):
     def __init__(
             self, max_kl, cg_damping, v_opt_times,
             cg_iters, residual_tol, **kwargs):
-        """
-        Instantiate a TRPO agent
-        """
         super().__init__(**kwargs)
 
         self.max_kl = max_kl
@@ -27,7 +24,6 @@ class TRPO(A2C):
         self.cg_iters = cg_iters
         self.residual_tol = residual_tol
         self.v_opt_times = v_opt_times
-        self.algo="trpo"
         self.vf_sample_key = ["obs", "estimate_returns"]
 
     def mean_kl_divergence(self, model):
@@ -197,7 +193,8 @@ class TRPO(A2C):
             # Use Conjugate gradient to calculate step direction
             step_direction = self.conjugate_gradient(-policy_gradient)
             # line search for step
-            shs = .5 * step_direction.dot(self.hessian_vector_product(step_direction))
+            shs = .5 * step_direction.dot(
+                self.hessian_vector_product(step_direction))
 
             lm = torch.sqrt(shs / self.max_kl)
             fullstep = step_direction / lm
@@ -243,7 +240,8 @@ class TRPO(A2C):
         est_rets = torch.Tensor(est_rets).to(self.device)
 
         values = self.vf(obs)
-        assert values.shape == est_rets.shape, print(values.shape, est_rets.shape)
+        assert values.shape == est_rets.shape, \
+            print(values.shape, est_rets.shape)
         vf_loss = 0.5 * (values - est_rets).pow(2).mean()
 
         self.vf_optimizer.zero_grad()

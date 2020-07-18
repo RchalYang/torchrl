@@ -1,26 +1,23 @@
 import numpy as np
 import copy
-
 import torch
 import torch.optim as optim
 from torch import nn as nn
 from torch.distributions import Normal
-
 from .off_rl_algo import OffRLAlgo
+
 
 class DDPG(OffRLAlgo):
     """
     DDPG
     """
-
     def __init__(
             self,
             pf, qf,
-            plr,qlr,
+            plr, qlr,
             norm_std_explore,
             optimizer_class=optim.Adam,
-            **kwargs
-    ):
+            **kwargs):
         super(DDPG, self).__init__(**kwargs)
         self.pf = pf
         self.target_pf = copy.deepcopy(pf)
@@ -45,42 +42,28 @@ class DDPG(OffRLAlgo):
 
         self.qf_criterion = nn.MSELoss()
 
-    # def get_actions(self, ob):
-    #     out = self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )
-    #     action = out["action"]
-    #     action = action.detach().cpu()
-        
-    #     action += Normal(
-    #              torch.zeros( action.size()),
-    #              self.norm_std_explore * torch.ones( action.size())
-    #     ).sample()
-
-    #     action = action.numpy()
-
-    #     return action
-
     def update(self, batch):
         self.training_update_num += 1
-        
+
         obs = batch['obs']
         actions = batch['acts']
         next_obs = batch['next_obs']
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        rewards = torch.Tensor(rewards).to( self.device )
-        terminals = torch.Tensor(terminals).to( self.device )
-        obs = torch.Tensor(obs).to( self.device )
-        actions = torch.Tensor(actions).to( self.device )
-        next_obs = torch.Tensor(next_obs).to( self.device )
+        rewards = torch.Tensor(rewards).to(self.device)
+        terminals = torch.Tensor(terminals).to(self.device)
+        obs = torch.Tensor(obs).to(self.device)
+        actions = torch.Tensor(actions).to(self.device)
+        next_obs = torch.Tensor(next_obs).to(self.device)
 
         """
         Policy Loss.
         """
-        
+
         new_actions = self.pf(obs)
         new_q_pred = self.qf([obs, new_actions])
-        
+
         policy_loss = -new_q_pred.mean()
 
         """
@@ -128,7 +111,7 @@ class DDPG(OffRLAlgo):
             self.target_pf,
             self.target_qf
         ]
-    
+
     @property
     def snapshot_networks(self):
         return [
@@ -139,6 +122,6 @@ class DDPG(OffRLAlgo):
     @property
     def target_networks(self):
         return [
-            ( self.pf, self.target_pf ),
-            ( self.qf, self.target_qf )
+            (self.pf, self.target_pf),
+            (self.qf, self.target_qf)
         ]
