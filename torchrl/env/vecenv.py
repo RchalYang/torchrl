@@ -1,8 +1,15 @@
 import numpy as np
 from .base_wrapper import BaseWrapper
+from toolz.dicttoolz import merge_with
 
 
 class VecEnv(BaseWrapper):
+    """
+    Vector Env
+        Each env should have
+        1. same observation space shape
+        2. same action space shape
+    """
     def __init__(self, env_nums, env_funcs, env_args):
         self.env_nums = env_nums
         self.env_funcs = env_funcs
@@ -38,13 +45,13 @@ class VecEnv(BaseWrapper):
 
     def step(self, actions):
         actions = np.split(actions, self.env_nums)
-        result = [env.step(action) for env, action in
+        result = [env.step(np.squeeze(action)) for env, action in
                   zip(self.envs, actions)]
         obs, rews, dones, infos = zip(*result)
         self._obs = np.stack(obs)
-        return self._obs, np.stack(rews), \
-            np.stack(dones), np.stack(infos)
-        # return self._obs, self._rew, self._done, self._info
+        infos = merge_with(np.array, *infos)
+        return self._obs, np.stack(rews)[:, np.newaxis], \
+            np.stack(dones)[:, np.newaxis], infos
 
     def seed(self, seed):
         for env in self.envs:

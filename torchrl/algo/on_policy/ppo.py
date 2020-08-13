@@ -19,7 +19,6 @@ class PPO(A2C):
             **kwargs):
         self.target_pf = copy.deepcopy(pf)
         super(PPO, self).__init__(pf=pf, **kwargs)
-
         self.clip_para = clip_para
         self.opt_epochs = opt_epochs
         self.clipped_value_loss = clipped_value_loss

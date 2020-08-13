@@ -107,7 +107,7 @@ class RLAlgo():
             eval_infos = self.collector.eval_one_epoch()
             eval_time = time.time() - eval_start_time
 
-            total_frames += self.collector.worker_nums * self.epoch_frames
+            total_frames += self.epoch_frames
 
             infos = {}
 

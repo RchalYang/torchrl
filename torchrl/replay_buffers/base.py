@@ -6,23 +6,26 @@ class BaseReplayBuffer():
     Basic Replay Buffer
     """
     def __init__(
-        self, max_replay_buffer_size, time_limit_filter=False,
-    ):
-        self.worker_nums = 1
-        self.num_envs = 1
-        self._max_replay_buffer_size = max_replay_buffer_size
+            self,
+            max_replay_buffer_size,
+            env_nums=1,
+            time_limit_filter=False):
+        self.env_nums = env_nums
+        self._max_replay_buffer_size = max_replay_buffer_size // self.env_nums
         self._top = 0
         self._size = 0
         self.time_limit_filter = time_limit_filter
 
-    def add_sample(self, sample_dict, env_rank=0, **kwargs):
+    def add_sample(self, sample_dict, **kwargs):
         for key in sample_dict:
             if not hasattr(self, "_" + key):
+                # do not add env_nums dimension here,
+                # since it's included in data itself
                 self.__setattr__(
                     "_" + key,
-                    np.zeros((self._max_replay_buffer_size, 1,) +
+                    np.zeros((self._max_replay_buffer_size,) +
                              np.shape(sample_dict[key])))
-            self.__getattribute__("_" + key)[self._top, 0] = sample_dict[key]
+            self.__getattribute__("_" + key)[self._top, ...] = sample_dict[key]
         self._advance()
 
     def terminate_episode(self):
@@ -34,11 +37,15 @@ class BaseReplayBuffer():
             self._size += 1
 
     def random_batch(self, batch_size, sample_key):
-        indices = np.random.randint(0, self._size, batch_size)
+        assert batch_size % self.env_nums == 0, \
+            "batch size should be dividable by env_nums"
+        batch_size //= self.env_nums
+        size = self.num_steps_can_sample()
+        indices = np.random.randint(0, size, batch_size)
         return_dict = {}
         for key in sample_key:
-            return_dict[key] = np.squeeze(
-                self.__getattribute__("_"+key)[indices], axis=1)
+            return_dict[key] = self.__getattribute__("_"+key)[indices].reshape(
+                (batch_size * self.env_nums, -1))
         return return_dict
 
     def num_steps_can_sample(self):

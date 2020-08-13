@@ -24,8 +24,7 @@ class OnRLAlgo(RLAlgo):
             ['next_obs', 'terminals', "time_limits"])
         last_ob = torch.Tensor(sample['next_obs']).to(self.device)
         last_value = self.vf(last_ob).detach().cpu().numpy()
-        last_value = last_value * (1 - sample["terminals"] *
-                                   (1 - sample["time_limits"]))
+        last_value = last_value * (1 - sample["terminals"])
         if self.gae:
             self.replay_buffer.generalized_advantage_estimation(last_value,
                                                                 self.discount,

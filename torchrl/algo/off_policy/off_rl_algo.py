@@ -54,7 +54,7 @@ class OffRLAlgo(RLAlgo):
         total_frames = 0
 
         # pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames / self.collector.worker_nums)
-        self.pretrain_frames = self.pretrain_epochs * self.collector.worker_nums * self.epoch_frames
+        self.pretrain_frames = self.pretrain_epochs * self.epoch_frames
 
         for pretrain_epoch in range(self.pretrain_epochs):
 
@@ -68,7 +68,7 @@ class OffRLAlgo(RLAlgo):
 
             finish_epoch_info = self.finish_epoch()
 
-            total_frames += self.collector.worker_nums * self.epoch_frames
+            total_frames += self.epoch_frames
 
             infos = {}
 

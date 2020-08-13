@@ -32,10 +32,10 @@ class Net(nn.Module):
             self.append_fcs.append(self.activation_func())
             append_input_shape = next_shape
 
-        self.last = nn.Linear(append_input_shape, output_shape)
-        net_last_init_func(self.last)
+        last = nn.Linear(append_input_shape, output_shape)
+        net_last_init_func(last)
 
-        self.append_fcs.append(self.last)
+        self.append_fcs.append(last)
         self.seq_append_fcs = nn.Sequential(*self.append_fcs)
 
     def forward(self, x):

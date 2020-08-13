@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+import copy
 
 
 class BaseWrapper(gym.Wrapper):
@@ -23,9 +24,12 @@ class BaseWrapper(gym.Wrapper):
             raise AttributeError()
         return getattr(self._wrapped_env, attr)
 
+    def copy_state(self, source_env):
+        pass
+
 
 class RewardShift(gym.RewardWrapper, BaseWrapper):
-    def __init__(self, env, reward_scale = 1):
+    def __init__(self, env, reward_scale=1):
         super(RewardShift, self).__init__(env)
         self._reward_scale = reward_scale
 
@@ -67,16 +71,34 @@ class NormObs(gym.ObservationWrapper, BaseWrapper):
         self._obs_var = np.ones(env.observation_space.shape[0])
 
     def _update_obs_estimate(self, obs):
-        self._obs_mean, self._obs_var, self.count = update_mean_var_count(
-            self._obs_mean, self._obs_var,
-            self.count, obs, np.zeros_like(obs), 1)
+        if len(obs.shape) == 1:
+            self._obs_mean, self._obs_var, self.count = update_mean_var_count(
+                self._obs_mean, self._obs_var,
+                self.count, obs, np.zeros_like(obs), 1)
+        elif len(obs.shape) == 2:
+            self._obs_mean, self._obs_var, self.count = update_mean_var_count(
+                self._obs_mean, self._obs_var,
+                self.count, np.mean(obs, axis=0),
+                np.var(obs, axis=0), obs.shape[0])
+        else:
+            raise ValueError("Wrong shape for obs")
+
+    def copy_state(self, source_env):
+        self._obs_mean = copy.deepcopy(source_env._obs_mean)
+        self._obs_var = copy.deepcopy(source_env._obs_var)
 
     def _apply_normalize_obs(self, raw_obs):
         if self.training:
             self._update_obs_estimate(raw_obs)
-        return np.clip(
-            (raw_obs - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8),
-            -self.clipob, self.clipob)
+        if len(raw_obs.shape) == 1:
+            return np.clip(
+                (raw_obs - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8),
+                -self.clipob, self.clipob)
+        elif len(raw_obs.shape) == 2:
+            return np.clip(
+                (raw_obs - self._obs_mean[np.newaxis, ...]) / (
+                    np.sqrt(self._obs_var[np.newaxis, ...]) + 1e-8),
+                -self.clipob, self.clipob)
 
     def observation(self, observation):
         return self._apply_normalize_obs(observation)
@@ -101,8 +123,6 @@ class NormRet(BaseWrapper):
                 self.ret_mean, self.ret_var, self.count, self.ret, 0, 1)
             rews = rews / np.sqrt(self.ret_var + self.epsilon)
             self.ret *= (1-done)
-            # print(self.count, self.ret_mean, self.ret_var)
-        # print(self.training, rews)
         return obs, rews, done, infos
 
     def reset(self, **kwargs):
@@ -111,11 +131,11 @@ class NormRet(BaseWrapper):
 
 
 # Check Trajectory is ended by time limit or not
-class TimeLimitAugment(gym.Wrapper):
+class TimeLimitAugment(BaseWrapper):
     def step(self, action):
         obs, rew, done, info = self.env.step(action)
-        if done and self.env._max_episode_steps == self.env._elapsed_steps:
-            info['time_limit'] = True
+        info['time_limit'] = done \
+            and self.env._max_episode_steps == self.env._elapsed_steps
         return obs, rew, done, info
 
     def reset(self, **kwargs):
