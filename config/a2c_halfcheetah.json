@@ -1,0 +1,38 @@
+{
+    "agent":"A2C",
+    "env_name" : "HalfCheetah-v2",
+    "env":{
+        "reward_scale":1,
+        "obs_norm": true
+    },
+    "replay_buffer":{
+        "size": 2048,
+        "time_limit_filter": true
+    },
+    "policy":{
+        "tanh_action": true
+    },
+    "net":{ 
+        "hidden_shapes": [64, 64],
+        "append_hidden_shapes":[]
+    },
+    "collector":{
+        "epoch_frames": 2048,
+        "max_episode_frames" : 2048,
+        "eval_episodes" : 1
+    },
+    "general_setting": {
+        "discount" : 0.99,
+        "num_epochs" : 488,
+        "batch_size" : 64,
+        "gae": true
+    },
+    "a2c":{
+        "plr" : 1e-4,
+        "vlr" : 1e-4,
+
+        "tau": 0.95,
+        "shuffle":true,
+        "entropy_coeff": 0
+    }
+}

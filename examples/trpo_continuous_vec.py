@@ -1,22 +1,21 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import torch
+import os
 import time
+import sys
 import os.path as osp
 import numpy as np
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from torchrl.utils import get_args
 from torchrl.utils import get_params
-from torchrl.env import get_env
 from torchrl.replay_buffers.on_policy import OnPolicyReplayBuffer
 from torchrl.utils import Logger
 import torchrl.policies as policies
 import torchrl.networks as networks
-from torchrl.algo import PPO
-from torchrl.collector.on_policy import OnPlicyCollectorBase
+from torchrl.algo import TRPO
+from torchrl.collector.on_policy import VecOnPlicyCollector
 import gym
 import random
-import torchrl.networks.init as init
+from torchrl.env import get_vec_env
 
 
 args = get_args()
@@ -28,7 +27,11 @@ def experiment(args):
     device = torch.device(
         "cuda:{}".format(args.device) if args.cuda else "cpu")
 
-    env = get_env(params['env_name'], params['env'])
+    env = get_vec_env(
+        params["env_name"],
+        params["env"],
+        args.vec_env_nums
+    )
 
     env.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -41,14 +44,17 @@ def experiment(args):
 
     buffer_param = params['replay_buffer']
 
-    experiment_name = os.path.split(os.path.splitext(args.config)[0])[-1] if args.id is None \
+    experiment_name = os.path.split(
+        os.path.splitext(args.config)[0])[-1] if args.id is None \
         else args.id
-    logger = Logger(experiment_name , params['env_name'], args.seed, params, args.log_dir)
+    logger = Logger(
+        experiment_name, params['env_name'], args.seed, params, args.log_dir)
 
     params['general_setting']['env'] = env
 
     replay_buffer = OnPolicyReplayBuffer(
-        int(buffer_param['size']),
+        env_nums=4,
+        max_replay_buffer_size=int(buffer_param['size']),
         time_limit_filter=buffer_param['time_limit_filter']
     )
     params['general_setting']['replay_buffer'] = replay_buffer
@@ -69,18 +75,20 @@ def experiment(args):
         output_shape=1,
         **params['net']
     )
-    params['general_setting']['collector'] = OnPlicyCollectorBase(
-        vf, env=env, pf=pf, replay_buffer=replay_buffer, device=device,
+    print(pf)
+    print(vf)
+    params['general_setting']['collector'] = VecOnPlicyCollector(
+        vf, env=env, pf=pf,
+        replay_buffer=replay_buffer, device=device,
         train_render=False,
         **params["collector"]
     )
-    print(pf)
-    print(vf)
-    params['general_setting']['save_dir'] = osp.join(logger.work_dir, "model")
-    agent = PPO(
+    params['general_setting']['save_dir'] = osp.join(
+        logger.work_dir, "model")
+    agent = TRPO(
             pf=pf,
             vf=vf,
-            **params["ppo"],
+            **params["trpo"],
             **params["general_setting"]
         )
     agent.train()

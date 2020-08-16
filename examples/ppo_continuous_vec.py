@@ -63,7 +63,7 @@ def experiment(args):
     params['general_setting']['device'] = device
 
     params['net']['base_type'] = networks.MLPBase
-    params['net']['activation_func'] = torch.nn.ReLU
+    params['net']['activation_func'] = torch.nn.Tanh
     pf = policies.GuassianContPolicyBasicBias(
         input_shape=env.observation_space.shape[0],
         output_shape=env.action_space.shape[0],

@@ -252,7 +252,7 @@ class TRPO(A2C):
 
         info = {}
         info['Training/vf_loss'] = vf_loss.item()
-        info['grad_norm/vf'] = vf_grad_norm
+        info['grad_norm/vf'] = vf_grad_norm.item()
 
         return info
 

@@ -137,11 +137,17 @@ class BaseCollector:
                 act = self.pf.eval_act(torch.Tensor(eval_ob).to(
                     self.device).unsqueeze(0))
 
-                eval_ob, r, done, _ = self.eval_env.step(act)
-                rew += r
-                traj_len += 1
-                if self.eval_render:
-                    self.eval_env.render()
+                if self.continuous and np.isnan(act).any():
+                    print("NaN detected. BOOM")
+                    exit()
+                try:
+                    eval_ob, r, done, _ = self.eval_env.step(act)
+                    rew += r
+                    traj_len += 1
+                    if self.eval_render:
+                        self.eval_env.render()
+                except:
+                    print(act)
 
             eval_rews.append(rew)
             traj_lens.append(traj_len)
@@ -240,19 +246,26 @@ class VecCollector(BaseCollector):
                 act = self.pf.eval_act(
                     torch.Tensor(eval_obs).to(self.device)
                 )
-                eval_obs, r, done, _ = self.eval_env.step(act)
+                if self.continuous and np.isnan(act).any():
+                    print("NaN detected. BOOM")
+                    print(self.pf.forward(torch.Tensor(eval_obs).to(self.device)))
+                    exit()
+                try:
+                    eval_obs, r, done, _ = self.eval_env.step(act)
 
-                rews = rews + ((1-epi_done) * r)
-                traj_len = traj_len + (1 - epi_done)
+                    rews = rews + ((1-epi_done) * r)
+                    traj_len = traj_len + (1 - epi_done)
 
-                epi_done = epi_done | done
-                if np.any(done):
-                    eval_obs = self.eval_env.partial_reset(
-                        np.squeeze(done, axis=-1)
-                    )
+                    epi_done = epi_done | done
+                    if np.any(done):
+                        eval_obs = self.eval_env.partial_reset(
+                            np.squeeze(done, axis=-1)
+                        )
 
-                if self.eval_render:
-                    self.eval_env.render()
+                    if self.eval_render:
+                        self.eval_env.render()
+                except:
+                    print(act)
 
             eval_rews += list(rews)
             traj_lens += list(traj_len)

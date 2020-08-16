@@ -59,18 +59,18 @@ class A2C(OnRLAlgo):
 
         out = self.pf.update(obs, acts)
         log_probs = out['log_prob']
+        std = out["std"]
         ent = out['ent']
 
         # Normalize the advantage
         advs = (advs - advs.mean()) / (advs.std() + 1e-5)
-
         assert log_probs.shape == advs.shape
 
         policy_loss = -log_probs * advs
         policy_loss = policy_loss.mean() - self.entropy_coeff * ent.mean()
 
         values = self.vf(obs)
-        vf_loss = 0.5 * (values - est_rets).pow(2).mean()
+        vf_loss = self.vf_criterion(values, est_rets)
 
         self.pf_optimizer.zero_grad()
         policy_loss.backward()
@@ -89,6 +89,11 @@ class A2C(OnRLAlgo):
         info['v_pred/std'] = values.std().item()
         info['v_pred/max'] = values.max().item()
         info['v_pred/min'] = values.min().item()
+
+        info['std/mean'] = std.mean().item()
+        info['std/std'] = std.std().item()
+        info['std/max'] = std.max().item()
+        info['std/min'] = std.min().item()
 
         info['ent'] = ent.mean().item()
         info['log_prob'] = log_probs.mean().item()

@@ -158,7 +158,8 @@ class GuassianContPolicyBasicBias(networks.Net, GuassianContPolicyBase):
     def forward(self, x):
         mean = super().forward(x)
 
-        logstd = torch.clamp(self.logstd, LOG_SIG_MIN, LOG_SIG_MAX)
+        # logstd = torch.clamp(self.logstd, LOG_SIG_MIN, LOG_SIG_MAX)
+        logstd = self.logstd
         std = torch.exp(logstd)
         std = std.unsqueeze(0).expand_as(mean)
         return mean, std, logstd
