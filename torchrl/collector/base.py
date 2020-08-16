@@ -206,7 +206,7 @@ class VecCollector(BaseCollector):
         }
 
         self.train_rew += reward
-        if done or \
+        if np.any(done) or \
            np.any(self.current_step >= self.max_episode_frames):
             next_ob = self.env.partial_reset(np.squeeze(done, axis=-1))
             self.current_step[done] = 0
