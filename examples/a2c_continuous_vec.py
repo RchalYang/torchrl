@@ -53,7 +53,7 @@ def experiment(args):
     params['general_setting']['env'] = env
 
     replay_buffer = OnPolicyReplayBuffer(
-        env_nums=4,
+        env_nums=args.vec_env_nums,
         max_replay_buffer_size=int(buffer_param['size']),
         time_limit_filter=buffer_param['time_limit_filter']
     )
