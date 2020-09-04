@@ -19,8 +19,8 @@ class TwinSACQ(OffRLAlgo):
             plr, qlr,
             optimizer_class=optim.Adam,
 
-            policy_std_reg_weight=0,
-            policy_mean_reg_weight=0,
+            policy_std_reg_weight=1e-3,
+            policy_mean_reg_weight=1e-3,
 
             reparameterization=True,
             automatic_entropy_tuning=True,
@@ -100,7 +100,6 @@ class TwinSACQ(OffRLAlgo):
 
         q1_pred = self.qf1([obs, actions])
         q2_pred = self.qf2([obs, actions])
-        # v_pred = self.vf(obs)
 
         if self.automatic_entropy_tuning:
             """
@@ -117,7 +116,8 @@ class TwinSACQ(OffRLAlgo):
             alpha_loss = 0
 
         with torch.no_grad():
-            target_sample_info = self.pf.explore(next_obs, return_log_probs=True)
+            target_sample_info = self.pf.explore(
+                next_obs, return_log_probs=True)
 
             target_actions = target_sample_info["action"]
             target_log_probs = target_sample_info["log_prob"]
@@ -158,14 +158,23 @@ class TwinSACQ(OffRLAlgo):
 
         self.pf_optimizer.zero_grad()
         policy_loss.backward()
+        if self.grad_clip:
+            pf_grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.pf.parameters(), self.grad_clip)
         self.pf_optimizer.step()
 
         self.qf1_optimizer.zero_grad()
         qf1_loss.backward()
+        if self.grad_clip:
+            qf1_grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.qf1.parameters(), self.grad_clip)
         self.qf1_optimizer.step()
 
         self.qf2_optimizer.zero_grad()
         qf2_loss.backward()
+        if self.grad_clip:
+            qf2_grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.qf2.parameters(), self.grad_clip)
         self.qf2_optimizer.step()
 
         self._update_target_networks()
@@ -180,6 +189,10 @@ class TwinSACQ(OffRLAlgo):
         info['Training/policy_loss'] = policy_loss.item()
         info['Training/qf1_loss'] = qf1_loss.item()
         info['Training/qf2_loss'] = qf2_loss.item()
+        if self.grad_clip is not None:
+            info['Training/pf_grad_norm'] = pf_grad_norm.item()
+            info['Training/qf1_grad_norm'] = qf1_grad_norm.item()
+            info['Training/qf2_grad_norm'] = qf2_grad_norm.item()
 
         info['log_std/mean'] = log_std.mean().item()
         info['log_std/std'] = log_std.std().item()

@@ -74,7 +74,7 @@ class DDPG(OffRLAlgo):
 
         q_target = rewards + (1. - terminals) * self.discount * target_q_values
         q_pred = self.qf([obs, actions])
-        qf_loss = self.qf_criterion( q_pred, q_target.detach())
+        qf_loss = self.qf_criterion(q_pred, q_target.detach())
 
         """
         Update Networks
@@ -82,10 +82,16 @@ class DDPG(OffRLAlgo):
 
         self.pf_optimizer.zero_grad()
         policy_loss.backward()
+        if self.grad_clip:
+            pf_grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.pf.parameters(), self.grad_clip)
         self.pf_optimizer.step()
 
         self.qf_optimizer.zero_grad()
         qf_loss.backward()
+        if self.grad_clip:
+            qf_grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.qf.parameters(), self.grad_clip)
         self.qf_optimizer.step()
 
         self._update_target_networks()
@@ -95,6 +101,11 @@ class DDPG(OffRLAlgo):
         info['Reward_Mean'] = rewards.mean().item()
         info['Training/policy_loss'] = policy_loss.item()
         info['Training/qf_loss'] = qf_loss.item()
+        if self.grad_clip is not None:
+            info['Training/pf_grad_norm'] = pf_grad_norm.item()
+            info['Training/qf1_grad_norm'] = qf1_grad_norm.item()
+            info['Training/qf2_grad_norm'] = qf2_grad_norm.item()
+            info['Training/vf_grad_norm'] = vf_grad_norm.item()
 
         info['new_actions/mean'] = new_actions.mean().item()
         info['new_actions/std'] = new_actions.std().item()

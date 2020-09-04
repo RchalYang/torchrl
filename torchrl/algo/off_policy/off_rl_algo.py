@@ -53,7 +53,8 @@ class OffRLAlgo(RLAlgo):
     def pretrain(self):
         total_frames = 0
 
-        # pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames / self.collector.worker_nums)
+        # pretrain_epochs = math.ceil( self.pretrain_frames /
+        #  self.epoch_frames / self.collector.worker_nums)
         self.pretrain_frames = self.pretrain_epochs * self.epoch_frames
 
         for pretrain_epoch in range(self.pretrain_epochs):
@@ -72,8 +73,10 @@ class OffRLAlgo(RLAlgo):
 
             infos = {}
 
-            infos["Train_Epoch_Reward"] = training_epoch_info["train_epoch_reward"]
-            infos["Running_Training_Average_Rewards"] = np.mean(self.training_episode_rewards)
+            infos["Train_Epoch_Reward"] = \
+                training_epoch_info["train_epoch_reward"]
+            infos["Running_Training_Average_Rewards"] = np.mean(
+                self.training_episode_rewards)
             infos.update(finish_epoch_info)
 
             self.logger.add_epoch_info(

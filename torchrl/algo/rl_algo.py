@@ -20,6 +20,7 @@ class RLAlgo():
             replay_buffer=None,
             collector=None,
             logger=None,
+            grad_clip=None,
             discount=0.99,
             num_epochs=3000,
             batch_size=128,
@@ -45,6 +46,7 @@ class RLAlgo():
         self.batch_size = batch_size
         self.training_update_num = 0
         self.sample_key = None
+        self.grad_clip = grad_clip
 
         # Logger & relevant setting
         self.logger = logger

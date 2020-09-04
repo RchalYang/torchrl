@@ -119,6 +119,7 @@ class SAC(OffRLAlgo):
         """
         target_v_values = self.target_vf(next_obs)
         q_target = rewards + (1. - terminals) * self.discount * target_v_values
+        assert q_pred.shape == q_target.shape
         qf_loss = self.qf_criterion(q_pred, q_target.detach())
 
         """
@@ -126,6 +127,7 @@ class SAC(OffRLAlgo):
         """
         q_new_actions = self.qf([obs, new_actions])
         v_target = q_new_actions - alpha * log_probs
+        assert v_target == v_pred
         vf_loss = self.vf_criterion(v_pred, v_target.detach())
 
         """
@@ -133,10 +135,12 @@ class SAC(OffRLAlgo):
         """
         if not self.reparameterization:
             log_policy_target = q_new_actions - v_pred
+            assert log_probs.shape == log_policy_target.shape
             policy_loss = (
                 log_probs * (alpha * log_probs - log_policy_target).detach()
             ).mean()
         else:
+            assert log_probs.shape == q_new_actions.shape
             policy_loss = (alpha * log_probs - q_new_actions).mean()
 
         std_reg_loss = self.policy_std_reg_weight * (log_std**2).mean()
@@ -150,14 +154,23 @@ class SAC(OffRLAlgo):
 
         self.pf_optimizer.zero_grad()
         policy_loss.backward()
+        if self.grad_clip:
+            pf_grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.pf.parameters(), self.grad_clip)
         self.pf_optimizer.step()
 
         self.qf_optimizer.zero_grad()
         qf_loss.backward()
+        if self.grad_clip:
+            qf_grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.qf.parameters(), self.grad_clip)
         self.qf_optimizer.step()
 
         self.vf_optimizer.zero_grad()
         vf_loss.backward()
+        if self.grad_clip:
+            vf_grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.vf.parameters(), self.grad_clip)
         self.vf_optimizer.step()
 
         self._update_target_networks()
@@ -172,6 +185,10 @@ class SAC(OffRLAlgo):
         info['Training/policy_loss'] = policy_loss.item()
         info['Training/vf_loss'] = vf_loss.item()
         info['Training/qf_loss'] = qf_loss.item()
+        if self.grad_clip is not None:
+            info['Training/pf_grad_norm'] = pf_grad_norm.item()
+            info['Training/qf_grad_norm'] = qf_grad_norm.item()
+            info['Training/vf_grad_norm'] = vf_grad_norm.item()
 
         info['log_std/mean'] = log_std.mean().item()
         info['log_std/std'] = log_std.std().item()
