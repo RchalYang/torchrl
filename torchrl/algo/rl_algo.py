@@ -26,6 +26,7 @@ class RLAlgo():
             batch_size=128,
             device='cpu',
             save_interval=100,
+            eval_interval=1,
             save_dir=None):
 
         self.env = env
@@ -60,6 +61,11 @@ class RLAlgo():
         pathlib.Path(self.save_dir).mkdir(parents=True, exist_ok=True)
 
         self.best_eval = None
+        self.eval_interval = eval_interval
+
+        self.explore_time = 0
+        self.train_time = 0
+        self.start = time.time()
 
     def start_epoch(self):
         pass
@@ -97,44 +103,50 @@ class RLAlgo():
             training_epoch_info = self.collector.train_one_epoch()
             for reward in training_epoch_info["train_rewards"]:
                 self.training_episode_rewards.append(reward)
-            explore_time = time.time() - explore_start_time
+
+            self.explore_time += time.time() - explore_start_time
 
             train_start_time = time.time()
             self.update_per_epoch()
-            train_time = time.time() - train_start_time
+            self.train_time += time.time() - train_start_time
 
             finish_epoch_info = self.finish_epoch()
 
-            eval_start_time = time.time()
-            eval_infos = self.collector.eval_one_epoch()
-            eval_time = time.time() - eval_start_time
-
             total_frames += self.epoch_frames
 
-            infos = {}
+            if epoch % self.eval_interval == 0:
+                eval_start_time = time.time()
+                eval_infos = self.collector.eval_one_epoch()
+                eval_time = time.time() - eval_start_time
 
-            for reward in eval_infos["eval_rewards"]:
-                self.episode_rewards.append(reward)
+                infos = {}
 
-            if self.best_eval is None or \
-               (np.mean(eval_infos["eval_rewards"]) > self.best_eval):
-                self.best_eval = np.mean(eval_infos["eval_rewards"])
-                self.snapshot(self.save_dir, 'best')
-            del eval_infos["eval_rewards"]
+                for reward in eval_infos["eval_rewards"]:
+                    self.episode_rewards.append(reward)
 
-            infos["Running_Average_Rewards"] = np.mean(self.episode_rewards)
-            infos["Train_Epoch_Reward"] = \
-                training_epoch_info["train_epoch_reward"]
-            infos["Running_Training_Average_Rewards"] = np.mean(
-                self.training_episode_rewards)
-            infos["Explore_Time"] = explore_time
-            infos["Train___Time"] = train_time
-            infos["Eval____Time"] = eval_time
-            infos.update(eval_infos)
-            infos.update(finish_epoch_info)
+                if self.best_eval is None or \
+                    (np.mean(eval_infos["eval_rewards"]) > self.best_eval):
+                    self.best_eval = np.mean(eval_infos["eval_rewards"])
+                    self.snapshot(self.save_dir, 'best')
+                del eval_infos["eval_rewards"]
 
-            self.logger.add_epoch_info(
-                epoch, total_frames, time.time() - start, infos)
+                infos["Running_Average_Rewards"] = np.mean(
+                    self.episode_rewards)
+                infos["Train_Epoch_Reward"] = \
+                    training_epoch_info["train_epoch_reward"]
+                infos["Running_Training_Average_Rewards"] = np.mean(
+                    self.training_episode_rewards)
+                infos["Explore_Time"] = self.explore_time
+                infos["Train___Time"] = self.train_time
+                infos["Eval____Time"] = eval_time
+                self.explore_time = 0
+                self.train_time = 0
+                infos.update(eval_infos)
+                infos.update(finish_epoch_info)
+
+                self.logger.add_epoch_info(
+                    epoch, total_frames, time.time() - self.start, infos)
+                self.start = time.time()
 
             if epoch % self.save_interval == 0:
                 self.snapshot(self.save_dir, epoch)

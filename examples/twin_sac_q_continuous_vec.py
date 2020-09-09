@@ -4,6 +4,8 @@ import time
 import sys
 import os.path as osp
 import numpy as np
+import gym
+import random
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from torchrl.utils import get_args
 from torchrl.utils import get_params
@@ -13,8 +15,6 @@ import torchrl.policies as policies
 import torchrl.networks as networks
 from torchrl.algo import TwinSACQ
 from torchrl.collector.base import VecCollector
-import gym
-import random
 from torchrl.env import get_vec_env
 
 
@@ -63,22 +63,26 @@ def experiment(args):
     params['general_setting']['device'] = device
 
     params['net']['base_type'] = networks.MLPBase
-    params['net']['activation_func'] = torch.nn.Tanh
+    params['net']['activation_func'] = torch.nn.ReLU
 
-    pf = policies.GuassianContPolicy (
-        input_shape = env.observation_space.shape[0], 
-        output_shape = 2 * env.action_space.shape[0],
+    obs_normalizer = env._obs_normalizer if hasattr(env, "_obs_normalizer") \
+        else None
+    params['net']['normalizer'] = obs_normalizer
+
+    pf = policies.GuassianContPolicy(
+        input_shape=env.observation_space.shape[0],
+        output_shape=2 * env.action_space.shape[0],
         **params['net'],
-        **params['policy'] )
-    qf1 = networks.FlattenNet( 
-        input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
-        output_shape = 1,
-        **params['net'] )
+        **params['policy'])
+    qf1 = networks.QNet(
+        input_shape=env.observation_space.shape[0] + env.action_space.shape[0],
+        output_shape=1,
+        **params['net'])
 
-    qf2 = networks.FlattenNet( 
-        input_shape = env.observation_space.shape[0] + env.action_space.shape[0],
-        output_shape = 1,
-        **params['net'] )
+    qf2 = networks.QNet(
+        input_shape=env.observation_space.shape[0] + env.action_space.shape[0],
+        output_shape=1,
+        **params['net'])
 
     print(pf)
     print(qf1)

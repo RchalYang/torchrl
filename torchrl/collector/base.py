@@ -34,7 +34,7 @@ class BaseCollector:
         self.current_ob = self.env.reset()
 
         self.train_rew = 0
-        self.training_episode_rewards = deque(maxlen=20)
+        # self.training_episode_rewards = deque(maxlen=20)
 
         # device specification
         self.device = device
@@ -87,7 +87,7 @@ class BaseCollector:
             # reset current_step
             self.current_step = 0
 
-            self.training_episode_rewards.append(self.train_rew)
+            # self.training_episode_rewards.append(self.train_rew)
             self.train_rews.append(self.train_rew)
             self.train_rew = 0
 
@@ -146,7 +146,7 @@ class BaseCollector:
                     traj_len += 1
                     if self.eval_render:
                         self.eval_env.render()
-                except:
+                except Exception:
                     print(act)
 
             eval_rews.append(rew)
@@ -206,16 +206,15 @@ class VecCollector(BaseCollector):
         }
 
         self.train_rew += reward
+        if np.any(done):
+            self.train_rews.append(list(self.train_rew[done]))
+            self.train_rew[done] = 0
+
         if np.any(done) or \
            np.any(self.current_step >= self.max_episode_frames):
-            next_ob = self.env.partial_reset(np.squeeze(done, axis=-1))
-            self.current_step[done] = 0
-
-            self.training_episode_rewards.append(
-                self.train_rew
-            )
-            self.train_rews.append(self.train_rew[done])
-            self.train_rew[done] = 0
+            flag = (self.current_step >= self.max_episode_frames) | done
+            next_ob = self.env.partial_reset(np.squeeze(flag, axis=-1))
+            self.current_step[flag] = 0
 
         self.replay_buffer.add_sample(sample_dict)
 
@@ -252,7 +251,6 @@ class VecCollector(BaseCollector):
                     exit()
                 try:
                     eval_obs, r, done, _ = self.eval_env.step(act)
-
                     rews = rews + ((1-epi_done) * r)
                     traj_len = traj_len + (1 - epi_done)
 
@@ -264,13 +262,10 @@ class VecCollector(BaseCollector):
 
                     if self.eval_render:
                         self.eval_env.render()
-                except:
+                except Exception:
                     print(act)
-
             eval_rews += list(rews)
             traj_lens += list(traj_len)
-
-            done = False
 
         eval_infos["eval_rewards"] = eval_rews
         eval_infos["eval_traj_length"] = np.mean(traj_lens)

@@ -7,10 +7,10 @@
     },
     "replay_buffer":{
         "size": 1e6,
-        "time_limit_filter": true
+        "time_limit_filter": false
     },
     "net":{ 
-        "hidden_shapes": [400,300],
+        "hidden_shapes": [256,256],
         "append_hidden_shapes":[]        
     },
     "policy":{
@@ -18,12 +18,12 @@
     },
     "collector":{
         "epoch_frames": 1000,
-        "max_episode_frames": 1000,
+        "max_episode_frames": 999,
         "eval_episodes": 1
     },
     "general_setting": {
         "discount" : 0.99,
-        "pretrain_epochs" : 2,
+        "pretrain_epochs" : 1,
         "num_epochs" : 3000,
 
         "batch_size" : 256,
@@ -37,6 +37,8 @@
         "plr" : 3e-4,
         "qlr" : 3e-4,
 
+        "policy_std_reg_weight": 0,
+        "policy_mean_reg_weight": 0,
         "reparameterization": true,
         "automatic_entropy_tuning": true
     }

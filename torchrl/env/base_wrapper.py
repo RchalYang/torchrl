@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 import copy
+import torch
 
 
 class BaseWrapper(gym.Wrapper):
@@ -59,6 +60,46 @@ def update_mean_var_count(
     return new_mean, new_var, new_count
 
 
+class Normalizer():
+    def __init__(self, shape, clip=10.):
+        self.shape = shape
+        self._mean = np.zeros(shape)
+        self._var = np.ones(shape)
+        self._count = 1e-4
+        self.clip = clip
+        self.should_estimate = True
+
+    def stop_update_estimate(self):
+        self.should_estimate = False
+
+    def update_estimate(self, data):
+        if not self.should_estimate:
+            return
+        if len(data.shape) == self.shape:
+            data = data[np.newaxis, :]
+        self._mean, self._var, self._count = update_mean_var_count(
+            self._mean, self._var, self._count,
+            np.mean(data, axis=0), np.var(data, axis=0), data.shape[0])
+
+    def inverse(self, raw):
+        return raw * np.sqrt(self._var) + self._mean
+
+    def inverse_torch(self, raw):
+        return raw * torch.Tensor(np.sqrt(self._var)).to(raw.device) \
+            + torch.Tensor(self._mean).to(raw.device)
+
+    def filt(self, raw):
+        return np.clip(
+            (raw - self._mean) / (np.sqrt(self._var) + 1e-4)
+            -self.clip, self.clip)
+
+    def filt_torch(self, raw):
+        return torch.clamp(
+            (raw - torch.Tensor(self._mean).to(raw.device)) / \
+            (torch.Tensor(np.sqrt(self._var) + 1e-4).to(raw.device)),
+            -self.clip, self.clip)
+
+
 class NormObs(gym.ObservationWrapper, BaseWrapper):
     """
     Normalized Observation => Optional, Use Momentum
@@ -67,41 +108,17 @@ class NormObs(gym.ObservationWrapper, BaseWrapper):
         super(NormObs, self).__init__(env)
         self.count = epsilon
         self.clipob = clipob
-        self._obs_mean = np.zeros(env.observation_space.shape[0])
-        self._obs_var = np.ones(env.observation_space.shape[0])
-
-    def _update_obs_estimate(self, obs):
-        if len(obs.shape) == 1:
-            self._obs_mean, self._obs_var, self.count = update_mean_var_count(
-                self._obs_mean, self._obs_var,
-                self.count, obs, np.zeros_like(obs), 1)
-        elif len(obs.shape) == 2:
-            self._obs_mean, self._obs_var, self.count = update_mean_var_count(
-                self._obs_mean, self._obs_var,
-                self.count, np.mean(obs, axis=0),
-                np.var(obs, axis=0), obs.shape[0])
-        else:
-            raise ValueError("Wrong shape for obs")
+        self._obs_normalizer = Normalizer(env.observation_space.shape)
 
     def copy_state(self, source_env):
-        self._obs_mean = copy.deepcopy(source_env._obs_mean)
+        # self._obs_rms = copy.deepcopy(source_env._obs_rms)
         self._obs_var = copy.deepcopy(source_env._obs_var)
-
-    def _apply_normalize_obs(self, raw_obs):
-        if self.training:
-            self._update_obs_estimate(raw_obs)
-        if len(raw_obs.shape) == 1:
-            return np.clip(
-                (raw_obs - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8),
-                -self.clipob, self.clipob)
-        elif len(raw_obs.shape) == 2:
-            return np.clip(
-                (raw_obs - self._obs_mean[np.newaxis, ...]) / (
-                    np.sqrt(self._obs_var[np.newaxis, ...]) + 1e-8),
-                -self.clipob, self.clipob)
+        self._obs_mean = copy.deepcopy(source_env._obs_mean)
 
     def observation(self, observation):
-        return self._apply_normalize_obs(observation)
+        if self.training:
+            self._obs_normalizer.update_estimate(observation)
+        return observation
 
 
 class NormRet(BaseWrapper):

@@ -31,7 +31,9 @@ class TwinSACQ(OffRLAlgo):
         self.qf1 = qf1
         self.qf2 = qf2
         self.target_qf1 = copy.deepcopy(qf1)
+        self.target_qf1.normalizer = self.qf1.normalizer
         self.target_qf2 = copy.deepcopy(qf2)
+        self.target_qf2.normalizer = self.qf2.normalizer
 
         self.to(self.device)
 
@@ -59,7 +61,7 @@ class TwinSACQ(OffRLAlgo):
                 self.target_entropy = target_entropy
             else:
                 self.target_entropy = -np.prod(
-                    self.env.action_space.shape).item()  # from rlkit
+                    self.env.action_space.shape).item()
             self.log_alpha = torch.zeros(1).to(self.device)
             self.log_alpha.requires_grad_()
             self.alpha_optimizer = optimizer_class(
@@ -73,6 +75,13 @@ class TwinSACQ(OffRLAlgo):
         self.policy_mean_reg_weight = policy_mean_reg_weight
 
         self.reparameterization = reparameterization
+
+    # def pretrain(self):
+    #     super().pretrain()
+    #     # All function and share the same normalizer
+    #     # So we only to stop once
+    #     if self.pf.normalizer is not None:
+    #         self.pf.normalizer.stop_update_estimate()
 
     def update(self, batch):
         self.training_update_num += 1
@@ -199,10 +208,10 @@ class TwinSACQ(OffRLAlgo):
         info['log_std/max'] = log_std.max().item()
         info['log_std/min'] = log_std.min().item()
 
-        info['log_probs/mean'] = log_std.mean().item()
-        info['log_probs/std'] = log_std.std().item()
-        info['log_probs/max'] = log_std.max().item()
-        info['log_probs/min'] = log_std.min().item()
+        info['log_probs/mean'] = log_probs.mean().item()
+        info['log_probs/std'] = log_probs.std().item()
+        info['log_probs/max'] = log_probs.max().item()
+        info['log_probs/min'] = log_probs.min().item()
 
         info['mean/mean'] = mean.mean().item()
         info['mean/std'] = mean.std().item()

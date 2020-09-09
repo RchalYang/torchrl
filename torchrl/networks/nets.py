@@ -15,6 +15,7 @@ class Net(nn.Module):
             self,
             output_shape,
             base_type,
+            normalizer=None,
             append_hidden_shapes=[],
             append_hidden_init_func=init.basic_init,
             net_last_init_func=init.uniform_init,
@@ -38,7 +39,11 @@ class Net(nn.Module):
         self.append_fcs.append(last)
         self.seq_append_fcs = nn.Sequential(*self.append_fcs)
 
+        self.normalizer = normalizer
+
     def forward(self, x):
+        if self.normalizer is not None:
+            x = self.normalizer.filt_torch(x)
         out = self.base(x)
         out = self.seq_append_fcs(out)
         return out
@@ -48,6 +53,18 @@ class FlattenNet(Net):
     def forward(self, input):
         out = torch.cat(input, dim=-1)
         return super().forward(out)
+
+
+class QNet(Net):
+    def forward(self, input):
+        assert len(input) == 2, "Q Net only get observation and action"
+        state, action = input
+        if self.normalizer is not None:
+            state = self.normalizer.filt_torch(state)
+        x = torch.cat([state, action], dim=-1)
+        out = self.base(x)
+        out = self.seq_append_fcs(out)
+        return out
 
 
 class BootstrappedNet(nn.Module):
