@@ -25,8 +25,15 @@ class UniformPolicyContinuous(nn.Module):
 
 
 class DetContPolicy(networks.Net):
+    def __init__(self, tanh_action=False, **kwargs):
+        super().__init__(**kwargs)
+        self.tanh_action = tanh_action
+
     def forward(self, x):
-        return torch.tanh(super().forward(x))
+        if self.tanh_action:
+            return torch.tanh(super().forward(x))
+        else:
+            return super().forward(x)
 
     def eval_act(self, x):
         with torch.no_grad():
@@ -39,12 +46,16 @@ class DetContPolicy(networks.Net):
 
 
 class FixGuassianContPolicy(networks.Net):
-    def __init__(self, norm_std_explore, **kwargs):
+    def __init__(self, norm_std_explore, tanh_action=False, **kwargs):
         super().__init__(**kwargs)
+        self.tanh_action = tanh_action
         self.norm_std_explore = norm_std_explore
 
     def forward(self, x):
-        return torch.tanh(super().forward(x))
+        if self.tanh_action:
+            return torch.tanh(super().forward(x))
+        else:
+            return super().forward(x)
 
     def eval_act(self, x):
         with torch.no_grad():
@@ -52,11 +63,9 @@ class FixGuassianContPolicy(networks.Net):
 
     def explore(self, x):
         action = self.forward(x).squeeze(0)
-        action += Normal(
-            torch.zeros(action.size()),
-            self.norm_std_explore * torch.ones(action.size())
-        ).sample().to(action.device)
-
+        noise = Normal(
+            0, self.norm_std_explore).sample(action.shape).to(action.device)
+        action = action + noise
         return {
             "action": action
         }
