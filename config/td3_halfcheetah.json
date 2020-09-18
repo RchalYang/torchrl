@@ -3,38 +3,41 @@
     "env_name" : "HalfCheetah-v2",
     "env":{
         "reward_scale":1,
-        "obs_norm":false,
-        "obs_alpha":0.001
+        "obs_norm":false
     },
     "replay_buffer":{
-        "size": 1e6
+        "size": 1e6,
+        "time_limit_filter": false
     },
     "net":{ 
         "hidden_shapes": [400,300],
-        "append_hidden_shapes":[]        
+        "append_hidden_shapes":[]
+    },
+    "policy":{
+        "tanh_action": true,
+        "norm_std_explore": 0.1
+    },
+    "collector":{
+        "epoch_frames": 1000,
+        "max_episode_frames": 999,
+        "eval_episodes": 1
     },
     "general_setting": {
         "discount" : 0.99,
-        "pretrain_frames" : 10000,
+        "pretrain_epochs" : 10,
         "num_epochs" : 3000,
-        "epoch_frames" : 1000,
-        "max_episode_frames" : 1000,
 
-        "batch_size" : 100,
-        "min_pool" : 10000,
+        "batch_size" : 256,
 
         "target_hard_update_period" : 1000,
         "use_soft_update" : true,
         "tau" : 0.005,
-        "opt_times" : 1,
-
-        "eval_episodes" : 1
+        "opt_times" : 1000
     },
     "td3":{
         "plr" : 1e-3,
         "qlr" : 1e-3,
         "policy_update_delay" : 2,
-        "norm_std_explore": 0.1,
         "norm_std_policy": 0.2,
         "noise_clip": 0.5
     }
