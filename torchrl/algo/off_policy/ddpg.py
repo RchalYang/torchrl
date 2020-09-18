@@ -15,20 +15,19 @@ class DDPG(OffRLAlgo):
             self,
             pf, qf,
             plr, qlr,
-            norm_std_explore,
             optimizer_class=optim.Adam,
             **kwargs):
         super(DDPG, self).__init__(**kwargs)
         self.pf = pf
         self.target_pf = copy.deepcopy(pf)
+        self.target_pf.normalizer = self.pf.normalizer
         self.qf = qf
         self.target_qf = copy.deepcopy(qf)
+        self.target_qf.normalizer = self.qf.normalizer
         self.to(self.device)
 
         self.plr = plr
         self.qlr = qlr
-
-        self.norm_std_explore = norm_std_explore
 
         self.pf_optimizer = optimizer_class(
             self.pf.parameters(),
@@ -51,11 +50,11 @@ class DDPG(OffRLAlgo):
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        rewards = torch.Tensor(rewards).to(self.device)
-        terminals = torch.Tensor(terminals).to(self.device)
         obs = torch.Tensor(obs).to(self.device)
         actions = torch.Tensor(actions).to(self.device)
         next_obs = torch.Tensor(next_obs).to(self.device)
+        rewards = torch.Tensor(rewards).to(self.device)
+        terminals = torch.Tensor(terminals).to(self.device)
 
         """
         Policy Loss.
@@ -71,9 +70,9 @@ class DDPG(OffRLAlgo):
         """
         target_actions = self.target_pf(next_obs)
         target_q_values = self.target_qf([next_obs, target_actions])
-
         q_target = rewards + (1. - terminals) * self.discount * target_q_values
         q_pred = self.qf([obs, actions])
+        assert q_pred.shape == q_target.shape
         qf_loss = self.qf_criterion(q_pred, q_target.detach())
 
         """
@@ -103,9 +102,7 @@ class DDPG(OffRLAlgo):
         info['Training/qf_loss'] = qf_loss.item()
         if self.grad_clip is not None:
             info['Training/pf_grad_norm'] = pf_grad_norm.item()
-            info['Training/qf1_grad_norm'] = qf1_grad_norm.item()
-            info['Training/qf2_grad_norm'] = qf2_grad_norm.item()
-            info['Training/vf_grad_norm'] = vf_grad_norm.item()
+            info['Training/qf_grad_norm'] = qf_grad_norm.item()
 
         info['new_actions/mean'] = new_actions.mean().item()
         info['new_actions/std'] = new_actions.std().item()

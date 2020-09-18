@@ -22,11 +22,14 @@ class TD3(OffRLAlgo):
 
         self.pf = pf
         self.target_pf = copy.deepcopy(pf)
+        self.target_pf.normalizer = self.pf.normalizer
 
         self.qf1 = qf1
         self.target_qf1 = copy.deepcopy(qf1)
+        self.target_qf1.normalizer = self.qf1.normalizer
         self.qf2 = qf2
         self.target_qf2 = copy.deepcopy(qf2)
+        self.target_qf2.normalizer = self.qf2.normalizer
         self.to(self.device)
 
         self.plr = plr
@@ -56,17 +59,18 @@ class TD3(OffRLAlgo):
 
     def update(self, batch):
         self.training_update_num += 1
+
         obs = batch['obs']
         actions = batch['acts']
         next_obs = batch['next_obs']
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        rewards = torch.Tensor(rewards).to(self.device)
-        terminals = torch.Tensor(terminals).to(self.device)
         obs = torch.Tensor(obs).to(self.device)
         actions = torch.Tensor(actions).to(self.device)
         next_obs = torch.Tensor(next_obs).to(self.device)
+        rewards = torch.Tensor(rewards).to(self.device)
+        terminals = torch.Tensor(terminals).to(self.device)
 
         """
         QF Loss
@@ -75,9 +79,8 @@ class TD3(OffRLAlgo):
         target_actions = sample_info["action"]
 
         noise = Normal(
-            torch.zeros(target_actions.size()),
-            self.norm_std_policy * torch.ones(target_actions.size())
-        ).sample().to(target_actions.device)
+            0, self.norm_std_policy
+        ).sample(target_actions.shape).to(target_actions.device)
         noise = torch.clamp(noise, -self.noise_clip, self.noise_clip)
         target_actions += noise
         target_actions = torch.clamp(target_actions, -1, 1)

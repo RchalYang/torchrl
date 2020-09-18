@@ -31,6 +31,7 @@ class TwinSAC(OffRLAlgo):
         self.qf2 = qf2
         self.vf = vf
         self.target_vf = copy.deepcopy(vf)
+        self.target_vf.normalizer = vf.normalizer
         self.to(self.device)
 
         self.plr = plr
@@ -216,10 +217,10 @@ class TwinSAC(OffRLAlgo):
         info['log_std/max'] = log_std.max().item()
         info['log_std/min'] = log_std.min().item()
 
-        info['log_probs/mean'] = log_std.mean().item()
-        info['log_probs/std'] = log_std.std().item()
-        info['log_probs/max'] = log_std.max().item()
-        info['log_probs/min'] = log_std.min().item()
+        info['log_probs/mean'] = log_probs.mean().item()
+        info['log_probs/std'] = log_probs.std().item()
+        info['log_probs/max'] = log_probs.max().item()
+        info['log_probs/min'] = log_probs.min().item()
 
         info['mean/mean'] = mean.mean().item()
         info['mean/std'] = mean.std().item()
