@@ -9,7 +9,14 @@ import json
 import csv
 
 class Logger():
-    def __init__(self, experiment_id, env_name, seed, params, log_dir = "./log"):
+    def __init__(
+            self,
+            experiment_id,
+            env_name,
+            seed,
+            params,
+            overwrite=False,
+            log_dir = "./log"):
 
         self.logger = logging.getLogger("{}_{}_{}".format(experiment_id,env_name,str(seed)))
 
@@ -23,15 +30,14 @@ class Logger():
         self.logger.addHandler( sh )
         self.logger.setLevel(logging.INFO)
 
-        work_dir = os.path.join( log_dir, experiment_id, env_name, str(seed) )
+        work_dir = os.path.join(log_dir, experiment_id, env_name, str(seed))
         self.work_dir = work_dir
-        if os.path.exists( work_dir ):
+        if os.path.exists(work_dir):
+            assert over_write, "Experiment Exists and Did not set overwrite"
             shutil.rmtree(work_dir)
         self.tf_writer = tensorboardX.SummaryWriter(work_dir)
 
         self.csv_file_path = os.path.join(work_dir, 'log.csv')
-        # self.csv_file = open(os.path.join(work_dir, 'log.csv'), "a")
-        # self.csv_writer = csv.writer(self.csv_file)
 
         self.update_count = 0
         self.stored_infos = {}
@@ -48,11 +54,10 @@ class Logger():
         self.logger.info(info)
 
     def add_update_info(self, infos):
-
         for info in infos:
-            if info not in self.stored_infos :
+            if info not in self.stored_infos:
                 self.stored_infos[info] = []
-            self.stored_infos[info].append( infos[info] )
+            self.stored_infos[info].append(infos[info])
 
         self.update_count += 1
 
@@ -70,7 +75,7 @@ class Logger():
 
         for info in infos:
             self.tf_writer.add_scalar(info, infos[info], total_frames)
-            tabulate_list.append([info, "{:.5f}".format( infos[info]) ])
+            tabulate_list.append([info, "{:.5f}".format( infos[info])])
             if csv_write:
                 if epoch_num == 0:
                     csv_titles += [info]
@@ -78,24 +83,24 @@ class Logger():
 
         tabulate_list.append([])
         
-        method_list = [ np.mean, np.std, np.max, np.min ]
-        name_list = [ "Mean", "Std", "Max", "Min" ]
-        tabulate_list.append( ["Name"] + name_list )
+        method_list = [np.mean, np.std, np.max, np.min]
+        name_list = ["Mean", "Std", "Max", "Min"]
+        tabulate_list.append(["Name"] + name_list)
 
         for info in self.stored_infos:
 
             temp_list = [info]
             for name, method in zip( name_list, method_list ):
                 processed_info = method(self.stored_infos[info])
-                self.tf_writer.add_scalar( "{}_{}".format( info, name ),
-                    processed_info, total_frames )
-                temp_list.append( "{:.5f}".format( processed_info ) )
+                self.tf_writer.add_scalar( "{}_{}".format(info, name),
+                    processed_info,total_frames)
+                temp_list.append( "{:.5f}".format(processed_info))
                 if csv_write:
                     if epoch_num == 0:
                         csv_titles += ["{}_{}".format(info, name)]
                     csv_values += ["{:.5f}".format(processed_info)]
 
-            tabulate_list.append( temp_list )
+            tabulate_list.append(temp_list)
         #clear
         self.stored_infos = {}
         if csv_write:
@@ -105,4 +110,4 @@ class Logger():
                     self.csv_writer.writerow(csv_titles)
                 self.csv_writer.writerow(csv_values)
 
-        print( tabulate(tabulate_list) )
+        print(tabulate(tabulate_list))

@@ -16,7 +16,7 @@ def get_args():
                         help='eval worker nums')
 
     parser.add_argument("--config", type=str,   default=None,
-                        help="config file", )
+                        help="config file",)
 
     parser.add_argument('--save_dir', type=str, default='./snapshots',
                         help='directory for snapshots (default: ./snapshots)')
@@ -27,12 +27,15 @@ def get_args():
     parser.add_argument('--no_cuda', action='store_true', default=False,
                         help='disables CUDA training')
 
+    parser.add_argument('--overwrite', action='store_true', default=False,
+                        help='overwrite previous experiments')
+
     parser.add_argument("--device", type=int, default=0,
-                        help="gpu secification", )
+                        help="gpu secification",)
 
     # tensorboard
     parser.add_argument("--id", type=str,   default=None,
-                        help="id for tensorboard", )
+                        help="id for tensorboard",)
 
     args = parser.parse_args()
 
