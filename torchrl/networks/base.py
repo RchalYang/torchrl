@@ -7,14 +7,18 @@ import torchrl.networks.init as init
 
 class MLPBase(nn.Module):
     def __init__(
-            self, input_shape, hidden_shapes,
+            self,
+            input_shape,
+            hidden_shapes,
             activation_func=nn.ReLU,
             init_func=init.basic_init,
+            add_ln=False,
             last_activation_func=None):
         super().__init__()
 
         self.activation_func = activation_func
         self.fcs = []
+        self.add_ln = add_ln
         if last_activation_func is not None:
             self.last_activation_func = last_activation_func
         else:
@@ -27,10 +31,16 @@ class MLPBase(nn.Module):
             init_func(fc)
             self.fcs.append(fc)
             self.fcs.append(activation_func())
+            if self.add_ln:
+                self.fcs.append(nn.LayerNorm(next_shape))
             input_shape = next_shape
             self.output_shape = next_shape
-        self.fcs.pop(-1)
-        self.fcs.append(self.last_activation_func())
+
+        if self.last_activation_func != self.activation_func:
+            if self.add_ln:
+                self.fcs.pop(-1)
+            self.fcs.pop(-1)
+            self.fcs.append(self.last_activation_func())
         self.seq_fcs = nn.Sequential(*self.fcs)
 
     def forward(self, x):
@@ -55,11 +65,13 @@ class CNNBase(nn.Module):
             hidden_shapes,
             activation_func=nn.ReLU,
             init_func=init.basic_init,
+            add_ln=False,
             last_activation_func=None):
         super().__init__()
 
         current_shape = input_shape
         in_channels = input_shape[0]
+        self.add_ln = add_ln
         self.activation_func = activation_func
         if last_activation_func is not None:
             self.last_activation_func = last_activation_func
@@ -80,14 +92,20 @@ class CNNBase(nn.Module):
             self.convs.append(activation_func())
             in_channels = out_channels
             current_shape = calc_next_shape(current_shape, conv_info)
+            if self.add_ln:
+                self.convs.append(nn.LayerNorm(current_shape[1:]))
+
             self.output_shape = current_shape[0] * \
                 current_shape[1] * current_shape[2]
 
-        self.convs.pop(-1)
-        self.convs.append(self.last_activation_func())
+        if self.last_activation_func != self.activation_func:
+            if self.add_ln:
+                self.convs.pop(-1)
+            self.convs.pop(-1)
+            self.convs.append(self.last_activation_func())
         self.seq_convs = nn.Sequential(*self.convs)
 
     def forward(self, x):
+        view_shape = out.size()[:-3] + torch.Size([-1])
         out = self.seq_convs(x)
-        batch_size = out.size()[0]
-        return out.view(batch_size, -1)
+        return out.view(view_shape)

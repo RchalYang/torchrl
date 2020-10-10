@@ -20,9 +20,15 @@ class Net(nn.Module):
             append_hidden_init_func=init.basic_init,
             net_last_init_func=init.uniform_init,
             activation_func=nn.ReLU,
+            add_ln=False,
             **kwargs):
         super().__init__()
-        self.base = base_type(activation_func=activation_func, **kwargs)
+        self.base = base_type(
+            activation_func=activation_func,
+            add_ln=add_ln,
+            **kwargs)
+
+        self.add_ln = add_ln
         self.activation_func = activation_func
         append_input_shape = self.base.output_shape
         self.append_fcs = []
@@ -31,6 +37,8 @@ class Net(nn.Module):
             append_hidden_init_func(fc)
             self.append_fcs.append(fc)
             self.append_fcs.append(self.activation_func())
+            if self.add_ln:
+                self.append_fcs(nn.LayerNorm(next_shape))
             append_input_shape = next_shape
 
         last = nn.Linear(append_input_shape, output_shape)
@@ -75,11 +83,15 @@ class BootstrappedNet(nn.Module):
             append_hidden_shapes=[],
             append_hidden_init_func=init.basic_init,
             net_last_init_func=init.uniform_init,
-            activation_func=nn.ReLU(),
+            activation_func=nn.ReLU,
+            add_ln=False,
             **kwargs):
         super().__init__()
-
-        self.base = base_type(activation_func=activation_func, **kwargs)
+        self.base = base_type(
+            activation_func=activation_func,
+            add_ln=add_ln
+            **kwargs)
+        self.add_ln = add_ln
         self.activation_func = activation_func
 
         self.bootstrapped_heads = []
@@ -94,6 +106,8 @@ class BootstrappedNet(nn.Module):
                 append_hidden_init_func(fc)
                 append_fcs.append(fc)
                 append_fcs.append(self.activation_func())
+                if self.add_ln:
+                    append_fcs.append(nn.LayerNorm(next_shape))
                 # set attr for pytorch to track parameters( device )
                 append_input_shape = next_shape
 
