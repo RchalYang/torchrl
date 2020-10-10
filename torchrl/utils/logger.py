@@ -15,8 +15,8 @@ class Logger():
             env_name,
             seed,
             params,
-            overwrite=False,
-            log_dir = "./log"):
+            log_dir = "./log",
+            overwrite=False):
 
         self.logger = logging.getLogger("{}_{}_{}".format(experiment_id,env_name,str(seed)))
 
@@ -33,7 +33,7 @@ class Logger():
         work_dir = os.path.join(log_dir, experiment_id, env_name, str(seed))
         self.work_dir = work_dir
         if os.path.exists(work_dir):
-            assert over_write, "Experiment Exists and Did not set overwrite"
+            assert overwrite, "Experiment Exists and Did not set overwrite"
             shutil.rmtree(work_dir)
         self.tf_writer = tensorboardX.SummaryWriter(work_dir)
 
