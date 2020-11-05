@@ -11,6 +11,14 @@ class BootstrappedDQN(DQN):
         bernoulli_p = 0.5,
         **kwargs
     ):
+        """
+        Initialize the superclass
+
+        Args:
+            self: (todo): write your description
+            head_num: (int): write your description
+            bernoulli_p: (todo): write your description
+        """
         super(BootstrappedDQN, self).__init__(**kwargs)
         
         # self.m_distribution = torch.distributions.bernoulli.Bernoulli( bernoulli_p )
@@ -20,6 +28,14 @@ class BootstrappedDQN(DQN):
         self.sample_key = [ "obs", "next_obs", "actions", "rewards", "terminals", "masks" ]
 
     def take_actions(self, ob, action_func):
+        """
+        Perform actions from the environment.
+
+        Args:
+            self: (todo): write your description
+            ob: (todo): write your description
+            action_func: (todo): write your description
+        """
         
         action = action_func( ob )
 
@@ -49,9 +65,22 @@ class BootstrappedDQN(DQN):
         return next_ob, done, reward, info
 
     def start_episode(self):
+        """
+        Start the episode.
+
+        Args:
+            self: (todo): write your description
+        """
         self.pf.sample_head() 
 
     def update(self, batch):
+        """
+        Perform an update of the model.
+
+        Args:
+            self: (todo): write your description
+            batch: (todo): write your description
+        """
         self.training_update_num += 1
 
         obs = batch['obs']

@@ -28,6 +28,27 @@ class TwinSAC(OffRLAlgo):
             target_entropy = None,
             **kwargs
     ):
+        """
+        Initialize the target device.
+
+        Args:
+            self: (todo): write your description
+            pf: (todo): write your description
+            vf: (int): write your description
+            qf1: (int): write your description
+            qf2: (int): write your description
+            plr: (float): write your description
+            vlr: (float): write your description
+            qlr: (str): write your description
+            optimizer_class: (todo): write your description
+            optim: (todo): write your description
+            Adam: (todo): write your description
+            policy_std_reg_weight: (todo): write your description
+            policy_mean_reg_weight: (str): write your description
+            reparameterization: (todo): write your description
+            automatic_entropy_tuning: (todo): write your description
+            target_entropy: (todo): write your description
+        """
         super(TwinSAC, self).__init__(**kwargs)
         self.pf = pf
         self.qf1 = qf1
@@ -208,6 +229,12 @@ class TwinSAC(OffRLAlgo):
 
     @property
     def networks(self):
+        """
+        R calculate networks of the network.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             self.pf,
             self.qf1,
@@ -218,6 +245,12 @@ class TwinSAC(OffRLAlgo):
 
     @property
     def snapshot_networks(self):
+        """
+        Return a list of all networks
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             ["pf", self.pf],
             ["qf1", self.qf1],
@@ -227,6 +260,12 @@ class TwinSAC(OffRLAlgo):
 
     @property
     def target_networks(self):
+        """
+        A list of the networks in the network.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             ( self.vf, self.target_vf )
         ]

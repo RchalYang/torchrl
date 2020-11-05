@@ -14,6 +14,15 @@ class OnRLAlgo(RLAlgo):
         gae=True,
         **kwargs
     ):
+        """
+        Initialize a tau instance.
+
+        Args:
+            self: (todo): write your description
+            shuffle: (bool): write your description
+            tau: (todo): write your description
+            gae: (float): write your description
+        """
         super(OnRLAlgo, self).__init__(**kwargs)
         self.sample_key = ["obs", "acts", "advs", "estimate_returns"]
         self.shuffle = shuffle
@@ -21,6 +30,12 @@ class OnRLAlgo(RLAlgo):
         self.gae = gae
 
     def process_epoch_samples(self):
+        """
+        Process epoch samples.
+
+        Args:
+            self: (todo): write your description
+        """
         sample = self.replay_buffer.last_sample(
             ['next_obs', 'terminals', "time_limits"])
         last_ob = torch.Tensor(sample['next_obs']).to(self.device)
@@ -35,6 +50,12 @@ class OnRLAlgo(RLAlgo):
             self.replay_buffer.discount_reward(last_value, self.discount)
 
     def update_per_epoch(self):
+        """
+        Update epoch epoch.
+
+        Args:
+            self: (todo): write your description
+        """
         self.process_epoch_samples()
         for batch in self.replay_buffer.one_iteration(
                         self.batch_size, self.sample_key, self.shuffle):
@@ -43,6 +64,12 @@ class OnRLAlgo(RLAlgo):
 
     @property
     def networks(self):
+        """
+        Returns a list of networks
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             self.pf,
             self.vf

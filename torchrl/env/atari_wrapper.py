@@ -36,6 +36,13 @@ class NoopResetEnv( BaseWrapper):
         return obs
 
     def step(self, ac):
+        """
+        Run a single step.
+
+        Args:
+            self: (todo): write your description
+            ac: (array): write your description
+        """
         return self.env.step(ac)
 
 class FireResetEnv( BaseWrapper ):
@@ -46,6 +53,12 @@ class FireResetEnv( BaseWrapper ):
         assert len(env.unwrapped.get_action_meanings()) >= 3
 
     def reset(self, **kwargs):
+        """
+        Reset the environment.
+
+        Args:
+            self: (todo): write your description
+        """
         self.env.reset(**kwargs)
         obs, _, done, _ = self.env.step(1)
         if done:
@@ -56,6 +69,13 @@ class FireResetEnv( BaseWrapper ):
         return obs
 
     def step(self, ac):
+        """
+        Run a single step.
+
+        Args:
+            self: (todo): write your description
+            ac: (array): write your description
+        """
         return self.env.step(ac)
 
 class EpisodicLifeEnv( BaseWrapper):
@@ -68,6 +88,13 @@ class EpisodicLifeEnv( BaseWrapper):
         self.was_real_done  = True
 
     def step(self, action):
+        """
+        Perform action.
+
+        Args:
+            self: (todo): write your description
+            action: (int): write your description
+        """
         obs, reward, done, info = self.env.step(action)
         self.was_real_done = done
         # check current lives, make loss of life terminal,
@@ -120,10 +147,23 @@ class MaxAndSkipEnv( BaseWrapper):
         return max_frame, total_reward, done, info
 
     def reset(self, **kwargs):
+        """
+        Reset the environment.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.env.reset(**kwargs)
 
 class ClipRewardEnv( gym.RewardWrapper, BaseWrapper ):
     def __init__(self, env):
+        """
+        Initialize the environment.
+
+        Args:
+            self: (todo): write your description
+            env: (todo): write your description
+        """
         super().__init__(env)
 
     def reward(self, reward):
@@ -141,26 +181,62 @@ class LazyFrames(object):
         self._out = None
 
     def _force(self):
+        """
+        Concatenames.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._out is None:
             self._out = np.concatenate(self._frames, axis=0)
             self._frames = None
         return self._out
 
     def __array__(self, dtype=None):
+        """
+        Return a copy of this array.
+
+        Args:
+            self: (todo): write your description
+            dtype: (todo): write your description
+        """
         out = self._force()
         if dtype is not None:
             out = out.astype(dtype)
         return out
 
     def __len__(self):
+        """
+        Returns the number of bytes.
+
+        Args:
+            self: (todo): write your description
+        """
         return len(self._force())
 
     def __getitem__(self, i):
+        """
+        Returns the item at the given index.
+
+        Args:
+            self: (todo): write your description
+            i: (todo): write your description
+        """
         return self._force()[i]
    
 class WarpFrame(gym.ObservationWrapper, BaseWrapper):
     """Warp frames to 84x84 as done in the Nature paper and later work."""
     def __init__(self, env, width=84, height=84, grayscale=True):
+        """
+        Initialize the array.
+
+        Args:
+            self: (todo): write your description
+            env: (todo): write your description
+            width: (int): write your description
+            height: (int): write your description
+            grayscale: (bool): write your description
+        """
         super().__init__(env)
         self.width = width
         self.height = height
@@ -173,6 +249,13 @@ class WarpFrame(gym.ObservationWrapper, BaseWrapper):
                 shape=(3, self.height, self.width), dtype=np.uint8)
 
     def observation(self, frame):
+        """
+        Convert an observation to the image.
+
+        Args:
+            self: (todo): write your description
+            frame: (todo): write your description
+        """
         if self.grayscale:
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
@@ -196,26 +279,59 @@ class FrameStack( BaseWrapper):
         self.observation_space = gym.spaces.Box(low=0, high=255, shape=( (shp[0] * k,) + shp[1:] ), dtype=env.observation_space.dtype)
 
     def reset(self):
+        """
+        Reset the environment.
+
+        Args:
+            self: (todo): write your description
+        """
         ob = self.env.reset()
         for _ in range(self.k):
             self.frames.append(ob)
         return self._get_ob()
 
     def step(self, action):
+        """
+        Run an environment todo.
+
+        Args:
+            self: (todo): write your description
+            action: (int): write your description
+        """
         ob, reward, done, info = self.env.step(action)
         self.frames.append(ob)
         return self._get_ob(), reward, done, info
 
     def _get_ob(self):
+        """
+        Return a list of the frame.
+
+        Args:
+            self: (todo): write your description
+        """
         assert len(self.frames) == self.k
         return LazyFrames(list(self.frames))
 
 class ScaledFloatFrame(gym.ObservationWrapper, BaseWrapper):
     def __init__(self, env):
+        """
+        Initialize an observation.
+
+        Args:
+            self: (todo): write your description
+            env: (todo): write your description
+        """
         super().__init__(env)
         self.observation_space = gym.spaces.Box(low=-0.5, high=0.5, shape=env.observation_space.shape, dtype=np.float32)
 
     def observation(self, observation):
+        """
+        Calculate the observation
+
+        Args:
+            self: (todo): write your description
+            observation: (str): write your description
+        """
         # careful! This undoes the memory optimization, use
         # with smaller replay buffers only.
         return np.array(observation).astype(np.float32) / 255.0 - 0.5

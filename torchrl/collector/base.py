@@ -18,6 +18,21 @@ class EnvInfo():
             max_episode_frames,
             continuous,
             env_rank):
+        """
+        Perform a single epoch.
+
+        Args:
+            self: (todo): write your description
+            env: (todo): write your description
+            device: (todo): write your description
+            train_render: (todo): write your description
+            eval_render: (todo): write your description
+            epoch_frames: (todo): write your description
+            eval_episodes: (todo): write your description
+            max_episode_frames: (int): write your description
+            continuous: (int): write your description
+            env_rank: (todo): write your description
+        """
 
         self.current_step = 0
 
@@ -36,9 +51,21 @@ class EnvInfo():
         self.env_args = None
 
     def start_episode(self):
+        """
+        Start a new episode.
+
+        Args:
+            self: (todo): write your description
+        """
         self.current_step = 0
 
     def finish_episode(self):
+        """
+        Finishes the episode.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
 
@@ -53,6 +80,21 @@ class BaseCollector:
             eval_render=False,
             device='cpu',
             max_episode_frames=999):
+        """
+        Initialize the game.
+
+        Args:
+            self: (todo): write your description
+            env: (todo): write your description
+            pf: (todo): write your description
+            replay_buffer: (todo): write your description
+            epoch_frames: (todo): write your description
+            train_render: (todo): write your description
+            eval_episodes: (todo): write your description
+            eval_render: (todo): write your description
+            device: (todo): write your description
+            max_episode_frames: (int): write your description
+        """
 
         self.pf = pf
         self.replay_buffer = replay_buffer
@@ -91,6 +133,16 @@ class BaseCollector:
 
     @classmethod
     def take_actions(cls, funcs, env_info, ob_info, replay_buffer):
+        """
+        Take actions from the environment.
+
+        Args:
+            cls: (callable): write your description
+            funcs: (todo): write your description
+            env_info: (todo): write your description
+            ob_info: (todo): write your description
+            replay_buffer: (todo): write your description
+        """
 
         pf = funcs["pf"]
         ob = ob_info["ob"]
@@ -130,9 +182,21 @@ class BaseCollector:
         return next_ob, done, reward, info
 
     def terminate(self):
+        """
+        Terminate the current session.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
     def train_one_epoch(self):
+        """
+        Train the epoch.
+
+        Args:
+            self: (todo): write your description
+        """
         train_rews = []
         train_epoch_reward = 0
         self.env.train()
@@ -156,6 +220,12 @@ class BaseCollector:
         }
 
     def eval_one_epoch(self):
+        """
+        Evaluate a single epoch.
+
+        Args:
+            self: (todo): write your description
+        """
 
         eval_infos = {}
         eval_rews = []
@@ -190,11 +260,24 @@ class BaseCollector:
         return eval_infos
 
     def to(self, device):
+        """
+        Convert the function to - > list of functions.
+
+        Args:
+            self: (todo): write your description
+            device: (todo): write your description
+        """
         for func in self.funcs:
             self.funcs[func].to(device)
 
     @property
     def funcs(self):
+        """
+        Return a list of functions
+
+        Args:
+            self: (todo): write your description
+        """
         return {
             "pf": self.pf
         }

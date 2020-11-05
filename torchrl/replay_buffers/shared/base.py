@@ -21,6 +21,14 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
         # example_dict,
         # tag
     ):
+        """
+        Initialize the consumer.
+
+        Args:
+            self: (todo): write your description
+            max_replay_buffer_size: (int): write your description
+            worker_nums: (int): write your description
+        """
         super().__init__(max_replay_buffer_size)
 
         self.worker_nums = worker_nums
@@ -32,6 +40,13 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
             self.tag = get_random_tag()
 
     def build_by_example(self, example_dict):
+        """
+        Build an example. example.
+
+        Args:
+            self: (todo): write your description
+            example_dict: (dict): write your description
+        """
         self._size = NpShmemArray(self.worker_nums, np.int32, self.tag+"_size")
         self._top  = NpShmemArray(self.worker_nums, np.int32, self.tag+"_top")
 
@@ -49,6 +64,12 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
                 self.__setattr__(current_tag, np_array )
 
     def rebuild_from_tag(self):
+        """
+        Rebuild the worker tags from_tag.
+
+        Args:
+            self: (todo): write your description
+        """
         self._size  = NpShmemArray(self.worker_nums, np.int32,
             self.tag+"_size", create=False)
         self._top   = NpShmemArray(self.worker_nums, np.int32,
@@ -60,20 +81,49 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
             self.__setattr__(key, np_array )
 
     def add_sample(self, sample_dict, worker_rank, **kwargs):
+        """
+        Add a sample.
+
+        Args:
+            self: (todo): write your description
+            sample_dict: (dict): write your description
+            worker_rank: (todo): write your description
+        """
         for key in sample_dict:
             self.__getattribute__( "_" + key )[self._top[worker_rank], worker_rank] = sample_dict[key]
         self._advance(worker_rank)
 
     def terminate_episode(self):
+        """
+        Terminate the episode.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
     def _advance(self, worker_rank):
+        """
+        Advance the buffer.
+
+        Args:
+            self: (todo): write your description
+            worker_rank: (int): write your description
+        """
         self._top[worker_rank] = (self._top[worker_rank] + 1) % \
             self._max_replay_buffer_size
         if self._size[worker_rank] < self._max_replay_buffer_size:
             self._size[worker_rank] = self._size[worker_rank] + 1
 
     def random_batch(self, batch_size, sample_key):
+        """
+        Return a batch of samples.
+
+        Args:
+            self: (todo): write your description
+            batch_size: (int): write your description
+            sample_key: (str): write your description
+        """
         assert batch_size % self.worker_nums == 0, \
             "batch size should be dividable by worker_nums"
         batch_size //= self.worker_nums
@@ -86,6 +136,12 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
         return return_dict
 
     def num_steps_can_sample(self):
+        """
+        Return the number of steps that have the minimum.
+
+        Args:
+            self: (todo): write your description
+        """
         min_size = np.min(self._size)
         max_size = np.max(self._size)
         assert max_size == min_size, \
@@ -94,6 +150,12 @@ class SharedBaseReplayBuffer(BaseReplayBuffer):
 
 class AsyncSharedReplayBuffer(SharedBaseReplayBuffer):
     def num_steps_can_sample(self):
+        """
+        Return the number of steps that have been modified.
+
+        Args:
+            self: (todo): write your description
+        """
         # Use asynchronized sampling could cause sample collected is 
         # different across different workers but actually it's find
         min_size = np.min(self._size)

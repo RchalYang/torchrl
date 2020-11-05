@@ -29,6 +29,11 @@ from torchrl.collector import BaseCollector
 import gym
 
 def experiment(args):
+    """
+    Run experiment
+
+    Args:
+    """
 
     device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
 

@@ -7,12 +7,27 @@ class VecReplayBuffer(BaseReplayBuffer):
     Replay Buffer That Support Vector Env
     """
     def __init__(self, env_nums, **kwargs):
+        """
+        Initialize the buffer.
+
+        Args:
+            self: (todo): write your description
+            env_nums: (int): write your description
+        """
         super().__init__(**kwargs)
         self.env_nums = env_nums
         self._max_replay_buffer_size = self._max_replay_buffer_size // \
             self.env_nums
 
     def random_batch(self, batch_size, sample_key):
+        """
+        Return a batch of the given batch.
+
+        Args:
+            self: (todo): write your description
+            batch_size: (int): write your description
+            sample_key: (str): write your description
+        """
         assert batch_size % self.env_nums == 0, \
             "batch size should be dividable by worker_nums"
         batch_size //= self.env_nums

@@ -46,12 +46,27 @@ typecode_to_type = {
 
 
 def address_of_buffer(buf):  # (python 3)
+    """
+    Return a buffer to the buffer. buffer.
+
+    Args:
+        buf: (todo): write your description
+    """
     return ctypes.addressof(ctypes.c_char.from_buffer(buf))
 
 
 class ShmemBufferWrapper:
 
     def __init__(self, tag, size, create=True):
+        """
+        Initialize memory.
+
+        Args:
+            self: (todo): write your description
+            tag: (str): write your description
+            size: (int): write your description
+            create: (todo): write your description
+        """
         # default vals so __del__ doesn't fail if __init__ fails to complete
         self._mem = None
         self._map = None
@@ -67,12 +82,24 @@ class ShmemBufferWrapper:
         self._mem.close_fd()
 
     def get_address(self):
+        """
+        Returns the address of the address.
+
+        Args:
+            self: (todo): write your description
+        """
         # assert self._map.size() == self.size  # (changed for python 3)
         assert self._map.size() >= self.size # strictly equal might not meet in MAC
         addr = address_of_buffer(self._map)
         return addr
 
     def __del__(self):
+        """
+        Clears the memory.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._map is not None:
             self._map.close()
         if self._mem is not None and self._owner:
@@ -80,6 +107,15 @@ class ShmemBufferWrapper:
 
 
 def ShmemRawArray(typecode_or_type, size_or_initializer, tag, create=True):
+    """
+    Decor for a binary data typecode.
+
+    Args:
+        typecode_or_type: (todo): write your description
+        size_or_initializer: (bool): write your description
+        tag: (array): write your description
+        create: (bool): write your description
+    """
     assert frozenset(tag).issubset(valid_chars)
     if tag[0] != "/":
         tag = "/%s" % (tag,)
@@ -105,6 +141,15 @@ def ShmemRawArray(typecode_or_type, size_or_initializer, tag, create=True):
 
 
 def NpShmemArray(shape, dtype, tag, create=True):
+    """
+    Return numpy array of shape and shape.
+
+    Args:
+        shape: (int): write your description
+        dtype: (todo): write your description
+        tag: (str): write your description
+        create: (bool): write your description
+    """
     size = int(np.prod(shape))
     nbytes = size * np.dtype(dtype).itemsize
     shmem = ShmemRawArray(ctypes.c_char, nbytes, tag, create)
@@ -112,4 +157,9 @@ def NpShmemArray(shape, dtype, tag, create=True):
 
 
 def get_random_tag():
+    """
+    Generate random random tag.
+
+    Args:
+    """
     return str(time.time()).replace(".", "")[-9:]

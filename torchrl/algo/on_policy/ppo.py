@@ -20,6 +20,16 @@ class PPO(A2C):
         clipped_value_loss=False,
         **kwargs
     ):
+        """
+        Initialize the loss.
+
+        Args:
+            self: (todo): write your description
+            pf: (todo): write your description
+            clip_para: (todo): write your description
+            opt_epochs: (int): write your description
+            clipped_value_loss: (todo): write your description
+        """
         self.target_pf = copy.deepcopy(pf)
         super(PPO, self).__init__(pf=pf, **kwargs)
 
@@ -29,6 +39,12 @@ class PPO(A2C):
         self.sample_key = ["obs", "acts", "advs", "estimate_returns", "values"]
 
     def update_per_epoch(self):
+        """
+        Perform the epoch.
+
+        Args:
+            self: (todo): write your description
+        """
         self.process_epoch_samples()
         atu.update_linear_schedule(
             self.pf_optimizer, self.current_epoch, self.num_epochs, self.plr)
@@ -43,6 +59,13 @@ class PPO(A2C):
                 self.logger.add_update_info(infos)
 
     def update(self, batch):
+        """
+        Update the state update of the given batch.
+
+        Args:
+            self: (todo): write your description
+            batch: (todo): write your description
+        """
         self.training_update_num += 1
 
         info = {}
@@ -131,6 +154,12 @@ class PPO(A2C):
 
     @property
     def networks(self):
+        """
+        A list of connected networks in this layer.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             self.pf,
             self.vf,

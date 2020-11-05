@@ -5,6 +5,12 @@ import subprocess
 import argparse
 
 def checkNotFinish(popen_list):
+    """
+    Check if a list of poll_list is available.
+
+    Args:
+        popen_list: (list): write your description
+    """
     for eachpopen in popen_list:
         if eachpopen.poll() == None:
             return True

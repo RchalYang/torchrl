@@ -33,6 +33,11 @@ import random
 import torchrl.networks.init as init
 
 def experiment(args):
+    """
+    Run experiment
+
+    Args:
+    """
 
     import torch.multiprocessing as mp
     mp.set_start_method('spawn')

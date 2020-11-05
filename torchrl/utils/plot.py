@@ -12,6 +12,11 @@ import argparse
 from tensorflow.python.summary.summary_iterator import summary_iterator
 
 def get_args():
+    """
+    Parse command line arguments.
+
+    Args:
+    """
     parser = argparse.ArgumentParser(description='RL')
     
     parser.add_argument('--seed', type=int, nargs='+', default=(0,),
@@ -46,10 +51,22 @@ env_name = args.env_name
 env_id = args.id
 
 def get_name(path):
+    """
+    Get the name of a file
+
+    Args:
+        path: (str): write your description
+    """
     print(path)
     return os.path.join( path, os.listdir(path)[0] )
 
 def post_process(array):
+    """
+    Applies the mean of the mean normalization.
+
+    Args:
+        array: (array): write your description
+    """
     smoth_para = 10
     new_array = []
     for i in range(len(array)):

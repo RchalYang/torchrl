@@ -9,6 +9,13 @@ class OnPolicyReplayBufferBase:
     Replay Buffer for On Policy algorithms
     """
     def last_sample(self, sample_key):
+        """
+        Return the last sample of a sample.
+
+        Args:
+            self: (todo): write your description
+            sample_key: (str): write your description
+        """
         return_dict = {}
         for key in sample_key:
             return_dict[key] = self.__getattribute__("_"+key)[
@@ -72,6 +79,15 @@ class OnPolicyReplayBufferBase:
         self._estimate_returns = np.array(estimate_returns)
 
     def one_iteration(self, batch_size, sample_key, shuffle):
+        """
+        Return an iterator that returns batches of data.
+
+        Args:
+            self: (todo): write your description
+            batch_size: (int): write your description
+            sample_key: (str): write your description
+            shuffle: (bool): write your description
+        """
         indices = np.arange(self._max_replay_buffer_size)
         if shuffle:
             indices = np.random.permutation(self._max_replay_buffer_size)
@@ -99,6 +115,15 @@ class SharedOnPolicyReplayBuffer(SharedBaseReplayBuffer, OnPolicyReplayBufferBas
 
 class VecOnPolicyReplayBuffer(OnPolicyReplayBufferBase, VecReplayBuffer):
     def one_iteration(self, batch_size, sample_key, shuffle):
+        """
+        Return an iterator that returns batches of data.
+
+        Args:
+            self: (todo): write your description
+            batch_size: (int): write your description
+            sample_key: (str): write your description
+            shuffle: (bool): write your description
+        """
         indices = np.arange(self._max_replay_buffer_size)
         if shuffle:
             indices = np.random.permutation(self._max_replay_buffer_size)

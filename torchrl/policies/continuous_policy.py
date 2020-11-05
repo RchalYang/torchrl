@@ -13,13 +13,34 @@ LOG_SIG_MIN = -20
 
 class UniformPolicyContinuous(nn.Module):
     def __init__(self, action_shape):
+        """
+        Initialize the initial shape.
+
+        Args:
+            self: (todo): write your description
+            action_shape: (todo): write your description
+        """
         super().__init__()
         self.action_shape = action_shape
 
     def forward(self, x):
+        """
+        Forward computation.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+        """
         return torch.Tensor(np.random.uniform(-1., 1., self.action_shape))
 
     def explore(self, x):
+        """
+        Return a random variate x.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+        """
         return {
             "action": torch.Tensor(np.random.uniform(
                 -1., 1., self.action_shape))
@@ -28,13 +49,34 @@ class UniformPolicyContinuous(nn.Module):
 
 class DetContPolicy(networks.Net):
     def forward(self, x):
+        """
+        Forward computation.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+        """
         return torch.tanh(super().forward(x))
 
     def eval_act(self, x):
+        """
+        Evaluate the given function.
+
+        Args:
+            self: (todo): write your description
+            x: (array): write your description
+        """
         with torch.no_grad():
             return self.forward(x).squeeze(0).detach().cpu().numpy()
 
     def explore(self, x):
+        """
+        Explore the forward.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+        """
         return {
             "action": self.forward(x).squeeze(0)
         }
@@ -42,17 +84,45 @@ class DetContPolicy(networks.Net):
 
 class FixGuassianContPolicy(networks.Net):
     def __init__(self, norm_std_explore, **kwargs):
+        """
+        Initialize the underlying underlying norm.
+
+        Args:
+            self: (todo): write your description
+            norm_std_explore: (todo): write your description
+        """
         super().__init__(**kwargs)
         self.norm_std_explore = norm_std_explore
 
     def forward(self, x):
+        """
+        Forward computation.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+        """
         return torch.tanh(super().forward(x))
 
     def eval_act(self, x):
+        """
+        Evaluate the given function.
+
+        Args:
+            self: (todo): write your description
+            x: (array): write your description
+        """
         with torch.no_grad():
             return self.forward(x).squeeze(0).detach().cpu().numpy()
 
     def explore(self, x):
+        """
+        Perform an action on x.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+        """
         action = self.forward(x).squeeze(0)
         action += Normal(
             torch.zeros(action.size()),
@@ -66,6 +136,13 @@ class FixGuassianContPolicy(networks.Net):
 
 class GuassianContPolicyBase():
     def eval_act(self, x):
+        """
+        Evaluate the distribution.
+
+        Args:
+            self: (todo): write your description
+            x: (array): write your description
+        """
         with torch.no_grad():
             mean, _, _ = self.forward(x)
         if self.tanh_action:
@@ -73,6 +150,15 @@ class GuassianContPolicyBase():
         return mean.squeeze(0).detach().cpu().numpy()
 
     def explore(self, x, return_log_probs=False, return_pre_tanh=False):
+        """
+        Explore an objective function.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+            return_log_probs: (bool): write your description
+            return_pre_tanh: (bool): write your description
+        """
         mean, std, log_std = self.forward(x)
 
         if self.tanh_action:
@@ -115,6 +201,14 @@ class GuassianContPolicyBase():
         return dic
 
     def update(self, obs, actions):
+        """
+        Update actions.
+
+        Args:
+            self: (todo): write your description
+            obs: (array): write your description
+            actions: (todo): write your description
+        """
         mean, std, log_std = self.forward(obs)
 
         if self.tanh_action:
@@ -137,10 +231,24 @@ class GuassianContPolicyBase():
 
 class GuassianContPolicy(networks.Net, GuassianContPolicyBase):
     def __init__(self, tanh_action=False, **kwargs):
+        """
+        Initialize the underlying action.
+
+        Args:
+            self: (todo): write your description
+            tanh_action: (todo): write your description
+        """
         super().__init__(**kwargs)
         self.tanh_action = tanh_action
 
     def forward(self, x):
+        """
+        Perform of the log - likelihood.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+        """
         x = super().forward(x)
 
         mean, log_std = x.chunk(2, dim=-1)
@@ -153,11 +261,26 @@ class GuassianContPolicy(networks.Net, GuassianContPolicyBase):
 
 class GuassianContPolicyBasicBias(networks.Net, GuassianContPolicyBase):
     def __init__(self, output_shape, tanh_action=False, **kwargs):
+        """
+        Initialize the layer.
+
+        Args:
+            self: (todo): write your description
+            output_shape: (str): write your description
+            tanh_action: (todo): write your description
+        """
         super().__init__(output_shape=output_shape, **kwargs)
         self.logstd = nn.Parameter(torch.zeros(output_shape))
         self.tanh_action = tanh_action
 
     def forward(self, x):
+        """
+        Forward computation of the model.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+        """
         mean = super().forward(x)
 
         logstd = torch.clamp(self.logstd, LOG_SIG_MIN, LOG_SIG_MAX)

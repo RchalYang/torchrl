@@ -24,6 +24,14 @@ class TanhNormal(Distribution):
         self.epsilon = epsilon
 
     def sample_n(self, n, return_pre_tanh_value=False):
+        """
+        Sample n timeseries
+
+        Args:
+            self: (todo): write your description
+            n: (int): write your description
+            return_pre_tanh_value: (bool): write your description
+        """
         z = self.normal.sample_n(n)
         if return_pre_tanh_value:
             return torch.tanh(z), z
@@ -76,4 +84,10 @@ class TanhNormal(Distribution):
             return torch.tanh(z)
 
     def entropy(self):
+        """
+        Returns the entropy of this node.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.normal.entropy()

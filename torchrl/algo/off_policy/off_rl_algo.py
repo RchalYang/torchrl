@@ -23,6 +23,18 @@ class OffRLAlgo(RLAlgo):
 
         **kwargs
     ):
+        """
+        Initialize a new epoch.
+
+        Args:
+            self: (todo): write your description
+            pretrain_epochs: (int): write your description
+            min_pool: (int): write your description
+            target_hard_update_period: (int): write your description
+            use_soft_update: (bool): write your description
+            tau: (todo): write your description
+            opt_times: (int): write your description
+        """
         super(OffRLAlgo, self).__init__(**kwargs)
 
         # environment relevant information
@@ -40,6 +52,12 @@ class OffRLAlgo(RLAlgo):
         self.sample_key = [ "obs", "next_obs", "acts", "rewards", "terminals" ]
 
     def update_per_timestep(self):
+        """
+        Update the timestep batch.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.replay_buffer.num_steps_can_sample() > max( self.min_pool, self.batch_size ):
             for _ in range( self.opt_times ):
                 batch = self.replay_buffer.random_batch(self.batch_size, self.sample_key)
@@ -47,12 +65,24 @@ class OffRLAlgo(RLAlgo):
                 self.logger.add_update_info( infos )
 
     def update_per_epoch(self):
+        """
+        Update epoch epoch.
+
+        Args:
+            self: (todo): write your description
+        """
         for _ in range( self.opt_times ):
             batch = self.replay_buffer.random_batch(self.batch_size, self.sample_key)
             infos = self.update( batch )
             self.logger.add_update_info( infos )
 
     def pretrain(self):
+        """
+        Initialize the training.
+
+        Args:
+            self: (todo): write your description
+        """
         total_frames = 0
 
         # pretrain_epochs = math.ceil( self.pretrain_frames / self.epoch_frames / self.collector.worker_nums)
