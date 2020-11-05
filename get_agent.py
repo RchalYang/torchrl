@@ -14,6 +14,12 @@ from torchrl.algo import *
 from torchrl.collector import BaseCollector
 
 def get_agent( params):
+    """
+    Build an agent.
+
+    Args:
+        params: (dict): write your description
+    """
 
     env = params['general_setting']['env']
     # params['general_setting']['collector'] = BaseCollector(

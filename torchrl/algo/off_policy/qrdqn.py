@@ -12,6 +12,13 @@ class QRDQN(DQN):
         quantile_num = 100,
         **kwargs
     ):
+        """
+        Initialize the device.
+
+        Args:
+            self: (todo): write your description
+            quantile_num: (int): write your description
+        """
         super(QRDQN, self).__init__(**kwargs)
         
         self.quantile_num = quantile_num
@@ -19,6 +26,13 @@ class QRDQN(DQN):
         self.qf_criterion = atu.quantile_regression_loss
 
     def update(self, batch):
+        """
+        Update the state update.
+
+        Args:
+            self: (todo): write your description
+            batch: (todo): write your description
+        """
         self.training_update_num += 1
 
         obs = batch['obs']

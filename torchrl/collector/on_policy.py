@@ -6,6 +6,14 @@ from torchrl.env import VecEnv
 
 class OnPlicyCollectorBase(BaseCollector):
     def __init__(self, vf, discount=0.99, **kwargs):
+        """
+        Initialize the environment.
+
+        Args:
+            self: (todo): write your description
+            vf: (int): write your description
+            discount: (float): write your description
+        """
         self.vf = vf
         super().__init__(**kwargs)
         self.discount = discount
@@ -15,6 +23,16 @@ class OnPlicyCollectorBase(BaseCollector):
 
     @classmethod
     def take_actions(cls, funcs, env_info, ob_info, replay_buffer):
+        """
+        Take actions from the environment.
+
+        Args:
+            cls: (callable): write your description
+            funcs: (todo): write your description
+            env_info: (todo): write your description
+            ob_info: (todo): write your description
+            replay_buffer: (todo): write your description
+        """
 
         pf = funcs["pf"]
         vf = funcs["vf"]
@@ -73,6 +91,12 @@ class OnPlicyCollectorBase(BaseCollector):
 
     @property
     def funcs(self):
+        """
+        Returns a list of the functions
+
+        Args:
+            self: (todo): write your description
+        """
         return {
             "pf": self.pf,
             "vf": self.vf
@@ -83,6 +107,16 @@ class VecOnPlicyCollector(OnPlicyCollectorBase):
 
     @classmethod
     def take_actions(cls, funcs, env_info, ob_info, replay_buffer):
+        """
+        Renders actions.
+
+        Args:
+            cls: (callable): write your description
+            funcs: (todo): write your description
+            env_info: (todo): write your description
+            ob_info: (todo): write your description
+            replay_buffer: (todo): write your description
+        """
 
         pf = funcs["pf"]
         vf = funcs["vf"]
@@ -148,6 +182,12 @@ class VecOnPlicyCollector(OnPlicyCollectorBase):
         return next_obs, dones, rewards, infos
 
     def train_one_epoch(self):
+        """
+        Train the epoch.
+
+        Args:
+            self: (todo): write your description
+        """
         train_rews = []
         train_epoch_reward = 0
         self.env.train()
@@ -171,6 +211,12 @@ class VecOnPlicyCollector(OnPlicyCollectorBase):
         }
 
     def eval_one_epoch(self):
+        """
+        Evaluate a single epoch.
+
+        Args:
+            self: (todo): write your description
+        """
 
         eval_infos = {}
         eval_rews = []

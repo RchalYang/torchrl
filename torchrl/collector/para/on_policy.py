@@ -6,6 +6,14 @@ from .base import ParallelCollector
 
 class ParallelOnPlicyCollector(ParallelCollector):
     def __init__(self, vf, discount = 0.99, **kwargs):
+        """
+        Initialize vfvf. vf
+
+        Args:
+            self: (todo): write your description
+            vf: (int): write your description
+            discount: (float): write your description
+        """
         self.vf = vf
         self.vf.share_memory()
         self.discount = discount
@@ -13,6 +21,16 @@ class ParallelOnPlicyCollector(ParallelCollector):
 
     @classmethod
     def take_actions(cls, funcs, env_info, ob_info, replay_buffer):
+        """
+        Take actions from the environment.
+
+        Args:
+            cls: (callable): write your description
+            funcs: (todo): write your description
+            env_info: (todo): write your description
+            ob_info: (todo): write your description
+            replay_buffer: (todo): write your description
+        """
 
         pf = funcs["pf"]
         vf = funcs["vf"]
@@ -67,6 +85,12 @@ class ParallelOnPlicyCollector(ParallelCollector):
 
     @property
     def funcs(self):
+        """
+        Returns a list of the functions
+
+        Args:
+            self: (todo): write your description
+        """
         return {
             "pf":self.pf,
             "vf":self.vf

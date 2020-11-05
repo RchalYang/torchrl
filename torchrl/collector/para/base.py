@@ -23,6 +23,21 @@ class ParallelCollector(BaseCollector):
         worker_nums=4,
         eval_worker_nums=1,
             **kwargs):
+        """
+        Initialize the worker process.
+
+        Args:
+            self: (todo): write your description
+            env: (todo): write your description
+            pf: (todo): write your description
+            replay_buffer: (todo): write your description
+            env_cls: (todo): write your description
+            env_args: (dict): write your description
+            train_epochs: (int): write your description
+            eval_epochs: (int): write your description
+            worker_nums: (int): write your description
+            eval_worker_nums: (int): write your description
+        """
 
         super().__init__(
             env, pf, replay_buffer,
@@ -52,6 +67,18 @@ class ParallelCollector(BaseCollector):
     def train_worker_process(cls, shared_funcs, env_info,
         replay_buffer, shared_que,
         start_barrier, epochs ):
+        """
+        Train the worker process.
+
+        Args:
+            cls: (todo): write your description
+            shared_funcs: (todo): write your description
+            env_info: (todo): write your description
+            replay_buffer: (todo): write your description
+            shared_que: (str): write your description
+            start_barrier: (todo): write your description
+            epochs: (todo): write your description
+        """
 
         replay_buffer.rebuild_from_tag()
         local_funcs = copy.deepcopy(shared_funcs)
@@ -95,6 +122,16 @@ class ParallelCollector(BaseCollector):
     @staticmethod
     def eval_worker_process(shared_pf, 
         env_info, shared_que, start_barrier, epochs):
+        """
+        Evaleval worker process.
+
+        Args:
+            shared_pf: (todo): write your description
+            env_info: (todo): write your description
+            shared_que: (str): write your description
+            start_barrier: (todo): write your description
+            epochs: (todo): write your description
+        """
 
         pf = copy.deepcopy(shared_pf).to(env_info.device)
 
@@ -135,6 +172,12 @@ class ParallelCollector(BaseCollector):
 
 
     def start_worker(self):
+        """
+        Start workers.
+
+        Args:
+            self: (todo): write your description
+        """
         self.workers = []
         self.shared_que = self.manager.Queue(self.worker_nums)
         self.start_barrier = mp.Barrier(self.worker_nums+1)
@@ -167,6 +210,12 @@ class ParallelCollector(BaseCollector):
             self.eval_workers.append(eval_p)
 
     def terminate(self):
+        """
+        Terminate all workers.
+
+        Args:
+            self: (todo): write your description
+        """
         self.start_barrier.wait()
         self.eval_start_barrier.wait()
         for p in self.workers:
@@ -176,6 +225,12 @@ class ParallelCollector(BaseCollector):
             p.join()
 
     def train_one_epoch(self):
+        """
+        Training function.
+
+        Args:
+            self: (todo): write your description
+        """
         self.start_barrier.wait()
         train_rews = []
         train_epoch_reward = 0
@@ -193,6 +248,12 @@ class ParallelCollector(BaseCollector):
         }
         
     def eval_one_epoch(self):
+        """
+        Evaluate the jobs and return the result.
+
+        Args:
+            self: (todo): write your description
+        """
         self.eval_start_barrier.wait()
         eval_rews = []
 
@@ -208,12 +269,24 @@ class ParallelCollector(BaseCollector):
 
     @property
     def funcs(self):
+        """
+        Return a list of functions
+
+        Args:
+            self: (todo): write your description
+        """
         return {
             "pf": self.pf
         }
     
 class AsyncParallelCollector(ParallelCollector):
     def start_worker(self):
+        """
+        Start the worker threads.
+
+        Args:
+            self: (todo): write your description
+        """
         self.workers = []
         self.shared_que = self.manager.Queue(self.worker_nums)
         self.start_barrier = mp.Barrier(self.worker_nums)
@@ -246,6 +319,12 @@ class AsyncParallelCollector(ParallelCollector):
             self.eval_workers.append(eval_p)
 
     def terminate(self):
+        """
+        Terminate all the workers.
+
+        Args:
+            self: (todo): write your description
+        """
         # self.eval_start_barrier.wait()
         for p in self.workers:
             p.join()
@@ -254,6 +333,12 @@ class AsyncParallelCollector(ParallelCollector):
             p.join()
 
     def train_one_epoch(self):
+        """
+        Train the model.
+
+        Args:
+            self: (todo): write your description
+        """
         train_rews = []
         train_epoch_reward = 0
 
@@ -270,6 +355,12 @@ class AsyncParallelCollector(ParallelCollector):
         }
         
     def eval_one_epoch(self):
+        """
+        Evaluate the worker.
+
+        Args:
+            self: (todo): write your description
+        """
         # self.eval_start_barrier.wait()
         eval_rews = []
         self.shared_funcs["pf"].load_state_dict(self.funcs["pf"].state_dict())

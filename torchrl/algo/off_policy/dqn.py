@@ -16,6 +16,19 @@ class DQN(OffRLAlgo):
         optimizer_info = {},
         **kwargs
     ):
+        """
+        Initialize the device.
+
+        Args:
+            self: (todo): write your description
+            qf: (int): write your description
+            pf: (todo): write your description
+            qlr: (str): write your description
+            optimizer_class: (todo): write your description
+            optim: (todo): write your description
+            Adam: (todo): write your description
+            optimizer_info: (todo): write your description
+        """
         super(DQN, self).__init__(**kwargs)
         
         self.pf = pf
@@ -32,14 +45,35 @@ class DQN(OffRLAlgo):
         self.qf_criterion = nn.MSELoss()
         
     def get_actions(self, ob):
+        """
+        Returns the actions of all actions.
+
+        Args:
+            self: (todo): write your description
+            ob: (todo): write your description
+        """
         return self.pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )["action"]
 
     def get_pretrain_actions(self, ob):
+        """
+        Get actions of the actions.
+
+        Args:
+            self: (todo): write your description
+            ob: (todo): write your description
+        """
         return self.pretrain_pf.explore( torch.Tensor( ob ).to(self.device).unsqueeze(0) )["action"]
 
 
 
     def update(self, batch):
+        """
+        Perform a single update of the model.
+
+        Args:
+            self: (todo): write your description
+            batch: (todo): write your description
+        """
         self.training_update_num += 1
 
         obs = batch['obs']
@@ -82,6 +116,12 @@ class DQN(OffRLAlgo):
 
     @property
     def networks(self):
+        """
+        A list of networks.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             self.qf,
             self.target_qf
@@ -89,6 +129,12 @@ class DQN(OffRLAlgo):
     
     @property
     def target_networks(self):
+        """
+        A list of all networks of the target.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             ( self.qf, self.target_qf )
         ]

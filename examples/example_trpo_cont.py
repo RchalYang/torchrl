@@ -26,6 +26,11 @@ args = get_args()
 params = get_params(args.config)
 
 def experiment(args):
+    """
+    Run experiment
+
+    Args:
+    """
     # import torch.multiprocessing as mp
     # mp.set_start_method('spawn')
 

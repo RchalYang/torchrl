@@ -10,6 +10,17 @@ import csv
 
 class Logger():
     def __init__(self, experiment_id, env_name, seed, params, log_dir = "./log"):
+        """
+        Initialize workdir.
+
+        Args:
+            self: (todo): write your description
+            experiment_id: (int): write your description
+            env_name: (str): write your description
+            seed: (int): write your description
+            params: (dict): write your description
+            log_dir: (str): write your description
+        """
 
         self.logger = logging.getLogger("{}_{}_{}".format(experiment_id,env_name,str(seed)))
 
@@ -45,9 +56,23 @@ class Logger():
         )
 
     def log(self, info):
+        """
+        Log a message
+
+        Args:
+            self: (todo): write your description
+            info: (todo): write your description
+        """
         self.logger.info(info)
 
     def add_update_info(self, infos):
+        """
+        Add info about infos. infos.
+
+        Args:
+            self: (todo): write your description
+            infos: (todo): write your description
+        """
 
         for info in infos:
             if info not in self.stored_infos :
@@ -57,6 +82,17 @@ class Logger():
         self.update_count += 1
 
     def add_epoch_info(self, epoch_num, total_frames, total_time, infos, csv_write=True):
+        """
+        Add epoch info to csv file.
+
+        Args:
+            self: (todo): write your description
+            epoch_num: (int): write your description
+            total_frames: (todo): write your description
+            total_time: (todo): write your description
+            infos: (todo): write your description
+            csv_write: (bool): write your description
+        """
         if csv_write:
             if epoch_num == 0:
                 csv_titles = ["EPOCH", "Time Consumed", "Total Frames"]

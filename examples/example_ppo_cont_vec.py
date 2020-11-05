@@ -37,6 +37,11 @@ import torchrl.networks.init as init
 from torchrl.env import VecEnv
 
 def experiment(args):
+    """
+    Generate experiment
+
+    Args:
+    """
 
     import torch.multiprocessing as mp
     mp.set_start_method('spawn')

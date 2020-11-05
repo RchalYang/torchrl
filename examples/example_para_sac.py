@@ -31,6 +31,11 @@ from torchrl.replay_buffers.shared import SharedBaseReplayBuffer
 import gym
 
 def experiment(args):
+    """
+    Perform experiment
+
+    Args:
+    """
 
     device = torch.device("cuda:{}".format(args.device) if args.cuda else "cpu")
 

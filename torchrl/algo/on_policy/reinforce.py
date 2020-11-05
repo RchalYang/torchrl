@@ -16,6 +16,18 @@ class Reinforce(OnRLAlgo):
         entropy_coeff=0.001,
         **kwargs
     ):
+        """
+        Initialize the optimizer.
+
+        Args:
+            self: (todo): write your description
+            pf: (todo): write your description
+            plr: (float): write your description
+            optimizer_class: (todo): write your description
+            optim: (todo): write your description
+            Adam: (todo): write your description
+            entropy_coeff: (todo): write your description
+        """
         super(Reinforce, self).__init__(**kwargs)
         self.pf = pf
         # Use a vacant value network to simplify the code structure
@@ -32,6 +44,13 @@ class Reinforce(OnRLAlgo):
         self.gae = False
 
     def update(self, batch):
+        """
+        Perform a single update.
+
+        Args:
+            self: (todo): write your description
+            batch: (todo): write your description
+        """
         self.training_update_num += 1
 
         info = {}

@@ -29,6 +29,22 @@ class RLAlgo():
         save_interval=100,
         save_dir=None
     ):
+        """
+        Initialize the environment.
+
+        Args:
+            self: (todo): write your description
+            env: (todo): write your description
+            replay_buffer: (todo): write your description
+            collector: (todo): write your description
+            logger: (todo): write your description
+            discount: (float): write your description
+            num_epochs: (int): write your description
+            batch_size: (int): write your description
+            device: (todo): write your description
+            save_interval: (int): write your description
+            save_dir: (str): write your description
+        """
 
         self.env = env
 
@@ -63,24 +79,62 @@ class RLAlgo():
         self.best_eval = None
 
     def start_epoch(self):
+        """
+        Start the epoch.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
     def finish_epoch(self):
+        """
+        Return the epoch. epoch.
+
+        Args:
+            self: (todo): write your description
+        """
         return {}
 
     def pretrain(self):
+        """
+        Returns the next callable.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
     def update_per_epoch(self):
+        """
+        Update epoch epoch. epoch.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
     def snapshot(self, prefix, epoch):
+        """
+        Snapshot the model to disk.
+
+        Args:
+            self: (todo): write your description
+            prefix: (str): write your description
+            epoch: (int): write your description
+        """
         for name, network in self.snapshot_networks:
             model_file_name = "model_{}_{}.pth".format(name, epoch)
             model_path = osp.join(prefix, model_file_name)
             torch.save(network.state_dict(), model_path)
 
     def train(self):
+        """
+        Training function.
+
+        Args:
+            self: (todo): write your description
+        """
         self.pretrain()
         total_frames = 0
         if hasattr(self, "pretrain_frames"):
@@ -144,9 +198,22 @@ class RLAlgo():
         self.collector.terminate()
 
     def update(self, batch):
+        """
+        Updates the given batch.
+
+        Args:
+            self: (todo): write your description
+            batch: (todo): write your description
+        """
         raise NotImplementedError
 
     def _update_target_networks(self):
+        """
+        Updates the network updates of the network.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.use_soft_update:
             for net, target_net in self.target_networks:
                 atu.soft_update_from_to(net, target_net, self.tau)
@@ -157,19 +224,44 @@ class RLAlgo():
 
     @property
     def networks(self):
+        """
+        List of networks.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
         ]
 
     @property
     def snapshot_networks(self):
+        """
+        Returns a list.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
         ]
 
     @property
     def target_networks(self):
+        """
+        Returns a list of the networks
+
+        Args:
+            self: (todo): write your description
+        """
         return [
         ]
 
     def to(self, device):
+        """
+        Sets the list of devices to the specified device.
+
+        Args:
+            self: (todo): write your description
+            device: (todo): write your description
+        """
         for net in self.networks:
             net.to(device)

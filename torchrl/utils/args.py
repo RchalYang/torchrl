@@ -4,6 +4,11 @@ import json
 import torch
 
 def get_args():
+    """
+    Parse command line arguments.
+
+    Args:
+    """
     parser = argparse.ArgumentParser(description='RL')
     
     parser.add_argument('--seed', type=int, default=0,
@@ -41,6 +46,12 @@ def get_args():
     return args
 
 def get_params(file_name):
+    """
+    Get parameters from file.
+
+    Args:
+        file_name: (str): write your description
+    """
     with open(file_name) as f:
         params = json.load(f)
     return params

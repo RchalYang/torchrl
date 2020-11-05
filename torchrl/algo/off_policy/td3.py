@@ -20,6 +20,24 @@ class TD3(OffRLAlgo):
         noise_clip = 0.5,
         **kwargs
     ):
+        """
+        Initialize the device.
+
+        Args:
+            self: (todo): write your description
+            pf: (todo): write your description
+            qf1: (int): write your description
+            qf2: (int): write your description
+            plr: (float): write your description
+            qlr: (str): write your description
+            optimizer_class: (todo): write your description
+            optim: (todo): write your description
+            Adam: (todo): write your description
+            policy_update_delay: (todo): write your description
+            norm_std_explore: (todo): write your description
+            norm_std_policy: (todo): write your description
+            noise_clip: (todo): write your description
+        """
         super(TD3, self).__init__(**kwargs)
 
         self.pf = pf
@@ -154,6 +172,12 @@ class TD3(OffRLAlgo):
 
     @property
     def networks(self):
+        """
+        A list of networks.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             self.pf,
             self.qf1,
@@ -165,6 +189,12 @@ class TD3(OffRLAlgo):
 
     @property
     def snapshot_networks(self):
+        """
+        Return a list of networks
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             ["pf", self.pf],
             ["qf1", self.qf1],
@@ -173,6 +203,12 @@ class TD3(OffRLAlgo):
 
     @property
     def target_networks(self):
+        """
+        A list of all networks of the network.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             ( self.pf, self.target_pf ),
             ( self.qf1, self.target_qf1 ),

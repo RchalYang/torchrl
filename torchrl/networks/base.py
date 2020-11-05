@@ -11,6 +11,21 @@ class MLPBase(nn.Module):
             activation_func=nn.ReLU,
             init_func=init.basic_init,
             last_activation_func=None):
+        """
+        Initialize the network.
+
+        Args:
+            self: (todo): write your description
+            input_shape: (dict): write your description
+            hidden_shapes: (int): write your description
+            activation_func: (todo): write your description
+            nn: (todo): write your description
+            ReLU: (todo): write your description
+            init_func: (todo): write your description
+            init: (str): write your description
+            basic_init: (str): write your description
+            last_activation_func: (todo): write your description
+        """
         super().__init__()
 
         self.activation_func = activation_func
@@ -34,6 +49,13 @@ class MLPBase(nn.Module):
         self.seq_fcs = nn.Sequential(*self.fcs)
 
     def forward(self, x):
+        """
+        Evaluate x.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+        """
         return self.seq_fcs(x)
 
 
@@ -56,6 +78,21 @@ class CNNBase(nn.Module):
             activation_func=F.relu,
             init_func=init.basic_init,
             last_activation_func=None):
+        """
+        Initialize the network.
+
+        Args:
+            self: (todo): write your description
+            input_shape: (dict): write your description
+            hidden_shapes: (int): write your description
+            activation_func: (todo): write your description
+            F: (int): write your description
+            relu: (todo): write your description
+            init_func: (todo): write your description
+            init: (str): write your description
+            basic_init: (str): write your description
+            last_activation_func: (todo): write your description
+        """
         super().__init__()
 
         current_shape = input_shape
@@ -85,6 +122,13 @@ class CNNBase(nn.Module):
         self.seq_convs = nn.Sequential(*self.convs)
 
     def forward(self, x):
+        """
+        Forward computation.
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+        """
         out = self.seq_convs(x)
         batch_size = out.size()[0]
         return out.view(batch_size, -1)

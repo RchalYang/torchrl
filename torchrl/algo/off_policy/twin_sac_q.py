@@ -28,6 +28,25 @@ class TwinSACQ(OffRLAlgo):
             target_entropy = None,
             **kwargs
     ):
+        """
+        Initialize the kwargs.
+
+        Args:
+            self: (todo): write your description
+            pf: (todo): write your description
+            qf1: (int): write your description
+            qf2: (int): write your description
+            plr: (float): write your description
+            qlr: (str): write your description
+            optimizer_class: (todo): write your description
+            optim: (todo): write your description
+            Adam: (todo): write your description
+            policy_std_reg_weight: (todo): write your description
+            policy_mean_reg_weight: (str): write your description
+            reparameterization: (todo): write your description
+            automatic_entropy_tuning: (todo): write your description
+            target_entropy: (todo): write your description
+        """
         super(TwinSACQ, self).__init__(**kwargs)
         self.pf = pf
         self.qf1 = qf1
@@ -207,6 +226,12 @@ class TwinSACQ(OffRLAlgo):
 
     @property
     def networks(self):
+        """
+        A list of networks of the target.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             self.pf,
             self.qf1,
@@ -217,6 +242,12 @@ class TwinSACQ(OffRLAlgo):
     
     @property
     def snapshot_networks(self):
+        """
+        Return a list of networks
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             ["pf", self.pf],
             ["qf1", self.qf1],
@@ -225,6 +256,12 @@ class TwinSACQ(OffRLAlgo):
 
     @property
     def target_networks(self):
+        """
+        A list of all networks of the target.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             ( self.qf1, self.target_qf1 ),
             ( self.qf2, self.target_qf2 )

@@ -37,6 +37,15 @@ class TRPO(A2C):
         """
         def normal_distribution_kl_divergence(mean_old, std_old,
                                               mean_new, std_new):
+            """
+            Evaluate the kl divergence.
+
+            Args:
+                mean_old: (todo): write your description
+                std_old: (bool): write your description
+                mean_new: (int): write your description
+                std_new: (todo): write your description
+            """
             return torch.mean(torch.sum(
                     (torch.log(std_new) - torch.log(std_old) +
                         (std_old * std_old + (mean_old - mean_new).pow(2)) /
@@ -155,6 +164,13 @@ class TRPO(A2C):
         return x.detach()
 
     def update(self, batch):
+        """
+        Perform an update of the device.
+
+        Args:
+            self: (todo): write your description
+            batch: (todo): write your description
+        """
         self.training_update_num += 1
 
         info = {}
@@ -234,6 +250,13 @@ class TRPO(A2C):
         return info
 
     def update_vf(self, batch):
+        """
+        Updates a single loss.
+
+        Args:
+            self: (todo): write your description
+            batch: (todo): write your description
+        """
         self.training_update_num += 1
 
         obs = batch['obs']
@@ -259,6 +282,12 @@ class TRPO(A2C):
         return info
 
     def update_per_epoch(self):
+        """
+        Update the epoch.
+
+        Args:
+            self: (todo): write your description
+        """
         self.process_epoch_samples()
         atu.update_linear_schedule(
             self.pf_optimizer, self.current_epoch, self.num_epochs, self.plr)
@@ -282,6 +311,12 @@ class TRPO(A2C):
 
     @property
     def networks(self):
+        """
+        Returns a list of networks
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             self.pf,
             self.vf

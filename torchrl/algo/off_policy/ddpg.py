@@ -21,6 +21,20 @@ class DDPG(OffRLAlgo):
             optimizer_class=optim.Adam,
             **kwargs
     ):
+        """
+        Initialize the device.
+
+        Args:
+            self: (todo): write your description
+            pf: (todo): write your description
+            qf: (int): write your description
+            plr: (float): write your description
+            qlr: (str): write your description
+            norm_std_explore: (todo): write your description
+            optimizer_class: (todo): write your description
+            optim: (todo): write your description
+            Adam: (todo): write your description
+        """
         super(DDPG, self).__init__(**kwargs)
         self.pf = pf
         self.target_pf = copy.deepcopy(pf)
@@ -60,6 +74,13 @@ class DDPG(OffRLAlgo):
     #     return action
 
     def update(self, batch):
+        """
+        Updates the update of a batch.
+
+        Args:
+            self: (todo): write your description
+            batch: (todo): write your description
+        """
         self.training_update_num += 1
         
         obs = batch['obs']
@@ -122,6 +143,12 @@ class DDPG(OffRLAlgo):
 
     @property
     def networks(self):
+        """
+        A list of the : class : network.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             self.pf,
             self.qf,
@@ -131,6 +158,12 @@ class DDPG(OffRLAlgo):
     
     @property
     def snapshot_networks(self):
+        """
+        Returns a list of networks
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             ["pf", self.pf],
             ["qf", self.qf],
@@ -138,6 +171,12 @@ class DDPG(OffRLAlgo):
 
     @property
     def target_networks(self):
+        """
+        A list of all networks of the target.
+
+        Args:
+            self: (todo): write your description
+        """
         return [
             ( self.pf, self.target_pf ),
             ( self.qf, self.target_qf )

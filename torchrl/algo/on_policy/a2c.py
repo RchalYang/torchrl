@@ -18,6 +18,20 @@ class A2C(OnRLAlgo):
         entropy_coeff=0.001,
         **kwargs
     ):
+        """
+        Initialize the optimizer.
+
+        Args:
+            self: (todo): write your description
+            pf: (todo): write your description
+            vf: (int): write your description
+            plr: (float): write your description
+            vlr: (float): write your description
+            optimizer_class: (todo): write your description
+            optim: (todo): write your description
+            Adam: (todo): write your description
+            entropy_coeff: (todo): write your description
+        """
         super(A2C, self).__init__(**kwargs)
         self.pf = pf
         self.vf = vf
@@ -44,6 +58,13 @@ class A2C(OnRLAlgo):
         self.vf_criterion = nn.MSELoss()
 
     def update(self, batch):
+        """
+        Updates the model.
+
+        Args:
+            self: (todo): write your description
+            batch: (todo): write your description
+        """
         self.training_update_num += 1
 
         info = {}
