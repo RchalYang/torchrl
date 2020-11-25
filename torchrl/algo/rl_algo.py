@@ -8,6 +8,7 @@ import gym
 import os
 import os.path as osp
 import pathlib
+import pickle
 
 
 class RLAlgo():
@@ -84,6 +85,13 @@ class RLAlgo():
             model_file_name = "model_{}_{}.pth".format(name, epoch)
             model_path = osp.join(prefix, model_file_name)
             torch.save(network.state_dict(), model_path)
+            if hasattr(network, "normalizer") and \
+               network.normalizer is not None:
+                normalizer_file_name = "normalizer_{}_{}.pkl".format(
+                    name, epoch)
+                normalizer_path = osp.join(prefix, normalizer_file_name)
+                with open(normalizer_path, "wb") as f:
+                    pickle.dump(network.normalizer, f)
 
     def train(self):
         self.pretrain()
