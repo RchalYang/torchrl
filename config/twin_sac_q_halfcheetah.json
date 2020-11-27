@@ -1,9 +1,8 @@
 {
-    "agent":"twin_sac_q",
     "env_name" : "HalfCheetah-v2",
     "env":{
         "reward_scale":1,
-        "obs_norm": true
+        "obs_norm": false
     },
     "replay_buffer":{
         "size": 1e6,

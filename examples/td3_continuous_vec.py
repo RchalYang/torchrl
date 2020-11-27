@@ -4,17 +4,17 @@ import time
 import sys
 import os.path as osp
 import numpy as np
+import gym
+import random
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from torchrl.utils import get_args
 from torchrl.utils import get_params
-from torchrl.replay_buffers.on_policy import OnPolicyReplayBuffer
+from torchrl.replay_buffers import BaseReplayBuffer
 from torchrl.utils import Logger
 import torchrl.policies as policies
 import torchrl.networks as networks
-from torchrl.algo import PPO
-from torchrl.collector.on_policy import VecOnPlicyCollector
-import gym
-import random
+from torchrl.algo import TD3
+from torchrl.collector.base import VecCollector
 from torchrl.env import get_vec_env
 
 
@@ -50,9 +50,10 @@ def experiment(args):
     logger = Logger(
         experiment_name, params['env_name'],
         args.seed, params, args.log_dir, args.overwrite)
+
     params['general_setting']['env'] = env
 
-    replay_buffer = OnPolicyReplayBuffer(
+    replay_buffer = BaseReplayBuffer(
         env_nums=args.vec_env_nums,
         max_replay_buffer_size=int(buffer_param['size']),
         time_limit_filter=buffer_param['time_limit_filter']
@@ -63,32 +64,42 @@ def experiment(args):
     params['general_setting']['device'] = device
 
     params['net']['base_type'] = networks.MLPBase
-    params['net']['activation_func'] = torch.nn.Tanh
-    pf = policies.GuassianContPolicyBasicBias(
+    params['net']['activation_func'] = torch.nn.ReLU
+
+    obs_normalizer = env._obs_normalizer if hasattr(env, "_obs_normalizer") \
+        else None
+    params['net']['normalizer'] = obs_normalizer
+
+    pf = policies.FixGuassianContPolicy(
         input_shape=env.observation_space.shape[0],
         output_shape=env.action_space.shape[0],
         **params['net'],
-        **params['policy']
-    )
-    vf = networks.Net(
-        input_shape=env.observation_space.shape,
+        **params['policy'])
+    qf1 = networks.QNet(
+        input_shape=env.observation_space.shape[0] + env.action_space.shape[0],
         output_shape=1,
-        **params['net']
-    )
+        **params['net'])
+
+    qf2 = networks.QNet(
+        input_shape=env.observation_space.shape[0] + env.action_space.shape[0],
+        output_shape=1,
+        **params['net'])
+
     print(pf)
-    print(vf)
-    params['general_setting']['collector'] = VecOnPlicyCollector(
-        vf, env=env, pf=pf,
+    print(qf1)
+    params['general_setting']['collector'] = VecCollector(
+        env=env, pf=pf,
         replay_buffer=replay_buffer, device=device,
         train_render=False,
         **params["collector"]
     )
     params['general_setting']['save_dir'] = osp.join(
         logger.work_dir, "model")
-    agent = PPO(
+    agent = TD3(
             pf=pf,
-            vf=vf,
-            **params["ppo"],
+            qf1=qf1,
+            qf2=qf2,
+            **params["td3"],
             **params["general_setting"]
         )
     agent.train()

@@ -120,8 +120,8 @@ class PPO(A2C):
         info['ratio/max'] = ratio.max().item()
         info['ratio/min'] = ratio.min().item()
 
-        info['grad_norm/pf'] = pf_grad_norm
-        info['grad_norm/vf'] = vf_grad_norm
+        info['grad_norm/pf'] = pf_grad_norm.item()
+        info['grad_norm/vf'] = vf_grad_norm.item()
         return info
 
     @property

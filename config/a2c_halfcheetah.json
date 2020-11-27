@@ -1,5 +1,4 @@
 {
-    "agent":"A2C",
     "env_name" : "HalfCheetah-v2",
     "env":{
         "reward_scale":1,

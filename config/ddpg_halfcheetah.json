@@ -23,7 +23,7 @@
     },
     "general_setting": {
         "discount" : 0.99,
-        "pretrain_epochs" : 10,
+        "pretrain_epochs" : 1,
         "num_epochs" : 3000,
 
         "batch_size" : 256,
@@ -33,11 +33,8 @@
         "tau" : 0.005,
         "opt_times" : 1000
     },
-    "td3":{
-        "plr" : 1e-3,
-        "qlr" : 1e-3,
-        "policy_update_delay" : 2,
-        "norm_std_policy": 0.2,
-        "noise_clip": 0.5
+    "ddpg":{
+        "plr" : 3e-4,
+        "qlr" : 3e-4
     }
 }

@@ -48,7 +48,8 @@ def experiment(args):
         os.path.splitext(args.config)[0])[-1] if args.id is None \
         else args.id
     logger = Logger(
-        experiment_name, params['env_name'], args.seed, params, args.log_dir)
+        experiment_name, params['env_name'],
+        args.seed, params, args.log_dir, args.overwrite)
 
     params['general_setting']['env'] = env
 
