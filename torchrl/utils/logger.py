@@ -8,6 +8,7 @@ import sys
 import json
 import csv
 
+
 class Logger():
     def __init__(
             self,
@@ -82,7 +83,7 @@ class Logger():
                 csv_values += ["{:.5f}".format(infos[info])]
 
         tabulate_list.append([])
-        
+    
         method_list = [np.mean, np.std, np.max, np.min]
         name_list = ["Mean", "Std", "Max", "Min"]
         tabulate_list.append(["Name"] + name_list)

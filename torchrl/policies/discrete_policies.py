@@ -117,7 +117,7 @@ class CategoricalDisPolicy(networks.Net):
     """
     def forward(self, x):
         logits = super().forward(x)
-        return torch.softmax(logits, dim=1)
+        return torch.softmax(logits, dim=-1)
 
     def explore(self, x, return_log_probs=False):
 
@@ -137,13 +137,13 @@ class CategoricalDisPolicy(networks.Net):
 
     def eval_act(self, x):
         output = self.forward(x)
-        return output.max(dim=-1)[1].detach().item()
+        return output.max(dim=-1)[1].detach().cpu().numpy()
 
     def update(self, obs, actions):
         output = self.forward(obs)
         dis = Categorical(output)
 
-        log_prob = dis.log_prob(actions).unsqueeze(1)
+        log_prob = dis.log_prob(actions).unsqueeze(-1)
         ent = dis.entropy()
 
         out = {

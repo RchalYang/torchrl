@@ -106,6 +106,8 @@ class CNNBase(nn.Module):
         self.seq_convs = nn.Sequential(*self.convs)
 
     def forward(self, x):
-        view_shape = out.size()[:-3] + torch.Size([-1])
+        view_shape = x.size()[:-3] + torch.Size([-1])
+        x = x.view(torch.Size(
+            [np.prod(x.size()[:-3])]) + x.size()[-3:])
         out = self.seq_convs(x)
         return out.view(view_shape)

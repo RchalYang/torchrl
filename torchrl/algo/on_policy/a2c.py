@@ -59,12 +59,15 @@ class A2C(OnRLAlgo):
 
         out = self.pf.update(obs, acts)
         log_probs = out['log_prob']
-        std = out["std"]
+        if 'std' in out:
+            std = out["std"]
         ent = out['ent']
 
         # Normalize the advantage
         advs = (advs - advs.mean()) / (advs.std() + 1e-5)
-        assert log_probs.shape == advs.shape
+        assert log_probs.shape == advs.shape, \
+            "log_prob shape: {}, adv shape: {}".format(
+                log_probs.shape, advs.shape)
 
         policy_loss = -log_probs * advs
         policy_loss = policy_loss.mean() - self.entropy_coeff * ent.mean()
@@ -90,10 +93,12 @@ class A2C(OnRLAlgo):
         info['v_pred/max'] = values.max().item()
         info['v_pred/min'] = values.min().item()
 
-        info['std/mean'] = std.mean().item()
-        info['std/std'] = std.std().item()
-        info['std/max'] = std.max().item()
-        info['std/min'] = std.min().item()
+        if 'std' in out:
+            # Log for continuous
+            info['std/mean'] = std.mean().item()
+            info['std/std'] = std.std().item()
+            info['std/max'] = std.max().item()
+            info['std/min'] = std.min().item()
 
         info['ent'] = ent.mean().item()
         info['log_prob'] = log_probs.mean().item()

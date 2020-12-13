@@ -4,7 +4,7 @@ import numpy as np
 from .base import ParallelCollector
 
 
-class ParallelOnPlicyCollector(ParallelCollector):
+class ParallelOnPolicyCollector(ParallelCollector):
     def __init__(self, vf, discount = 0.99, **kwargs):
         self.vf = vf
         self.vf.share_memory()

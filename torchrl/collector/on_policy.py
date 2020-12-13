@@ -5,7 +5,7 @@ from .base import BaseCollector, VecCollector
 from torchrl.env import VecEnv
 
 
-class OnPlicyCollectorBase(BaseCollector):
+class OnPolicyCollectorBase(BaseCollector):
     def __init__(self, vf, discount=0.99, **kwargs):
         self.vf = vf
         super().__init__(**kwargs)
@@ -80,7 +80,7 @@ class OnPlicyCollectorBase(BaseCollector):
         }
 
 
-class VecOnPlicyCollector(VecCollector):
+class VecOnPolicyCollector(VecCollector):
     def __init__(self, vf, discount=0.99, **kwargs):
         self.vf = vf
         super().__init__(**kwargs)
@@ -122,9 +122,13 @@ class VecOnPlicyCollector(VecCollector):
         }
         self.train_rew += rewards
 
+        if np.any(dones):
+            self.train_rews += list(self.train_rew[dones])
+            self.train_rew[dones] = 0
+
         if np.any(dones) or \
            np.any(self.current_step >= self.max_episode_frames):
-            self.train_rews.append(self.train_rew[dones])
+            # self.train_rews.append(self.train_rew[dones])
 
             surpass_flag = self.current_step >= self.max_episode_frames
             last_ob = torch.Tensor(
@@ -142,7 +146,7 @@ class VecOnPlicyCollector(VecCollector):
             self.current_step[dones | surpass_flag] = 0
 
             # self.training_episode_rewards += list(self.train_rew[dones])
-            self.train_rew[dones] = 0
+            # self.train_rew[dones] = 0
 
         self.replay_buffer.add_sample(sample_dict)
 
