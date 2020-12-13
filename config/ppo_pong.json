@@ -1,0 +1,43 @@
+{
+    "env_name": "PongNoFrameskip-v4",
+    "env":{
+        "frame_stack":true,
+        "scale": true,
+        "clip_rewards": true
+    },
+    "replay_buffer":{
+        "size": 2048,
+        "time_limit_filter": true
+    },
+    "policy":{
+    },
+    "net":{ 
+        "hidden_shapes": [
+            [16, [8,8], [4,4], [0,0]],
+            [32, [4,4], [2,2], [0,0]],
+            [64, [3,3], [1,1], [0,0]]
+        ],
+        "append_hidden_shapes":[512]
+    },
+    "collector":{
+        "epoch_frames": 2048,
+        "max_episode_frames" : 128,
+        "eval_episodes" : 1
+    },
+    "general_setting": {
+        "discount" : 0.99,
+        "num_epochs" : 4880,
+        "batch_size" : 256,
+        "gae": true,
+        "eval_interval": 10
+    },
+    "ppo":{
+        "plr" : 3e-4,
+        "vlr" : 3e-4,
+        "clip_para" : 0.1,
+        "opt_epochs": 10,
+        "tau": 0.95,
+        "shuffle":true,
+        "entropy_coeff": 0.01
+    }
+}
