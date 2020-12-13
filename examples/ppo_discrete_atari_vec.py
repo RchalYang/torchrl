@@ -11,7 +11,7 @@ from torchrl.replay_buffers.on_policy import OnPolicyReplayBuffer
 from torchrl.utils import Logger
 import torchrl.policies as policies
 import torchrl.networks as networks
-from torchrl.algo import A2C
+from torchrl.algo import PPO
 from torchrl.collector.on_policy import VecOnPolicyCollector
 import gym
 import random
@@ -63,11 +63,13 @@ def experiment(args):
     params['general_setting']['logger'] = logger
     params['general_setting']['device'] = device
 
-    params['net']['base_type'] = networks.MLPBase
+    params['net']['base_type'] = networks.CNNBase
     params['net']['activation_func'] = torch.nn.Tanh
-    pf = policies.GuassianContPolicyBasicBias(
-        input_shape=env.observation_space.shape[0],
-        output_shape=env.action_space.shape[0],
+    print(env.observation_space.shape)
+    print(env.action_space.n)
+    pf = policies.CategoricalDisPolicy(
+        input_shape=env.observation_space.shape,
+        output_shape=env.action_space.n,
         **params['net'],
         **params['policy']
     )
@@ -86,10 +88,10 @@ def experiment(args):
     )
     params['general_setting']['save_dir'] = osp.join(
         logger.work_dir, "model")
-    agent = A2C(
+    agent = PPO(
             pf=pf,
             vf=vf,
-            **params["a2c"],
+            **params["ppo"],
             **params["general_setting"]
         )
     agent.train()

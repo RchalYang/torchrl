@@ -63,11 +63,13 @@ def experiment(args):
     params['general_setting']['logger'] = logger
     params['general_setting']['device'] = device
 
-    params['net']['base_type'] = networks.MLPBase
+    params['net']['base_type'] = networks.CNNBase
     params['net']['activation_func'] = torch.nn.Tanh
-    pf = policies.GuassianContPolicyBasicBias(
-        input_shape=env.observation_space.shape[0],
-        output_shape=env.action_space.shape[0],
+    print(env.observation_space.shape)
+    print(env.action_space.n)
+    pf = policies.CategoricalDisPolicy(
+        input_shape=env.observation_space.shape,
+        output_shape=env.action_space.n,
         **params['net'],
         **params['policy']
     )

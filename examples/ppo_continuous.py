@@ -13,7 +13,7 @@ from torchrl.utils import Logger
 import torchrl.policies as policies
 import torchrl.networks as networks
 from torchrl.algo import PPO
-from torchrl.collector.on_policy import OnPlicyCollectorBase
+from torchrl.collector.on_policy import OnPolicyCollectorBase
 import gym
 import random
 import torchrl.networks.init as init
@@ -69,7 +69,7 @@ def experiment(args):
         output_shape=1,
         **params['net']
     )
-    params['general_setting']['collector'] = OnPlicyCollectorBase(
+    params['general_setting']['collector'] = OnPolicyCollectorBase(
         vf, env=env, pf=pf, replay_buffer=replay_buffer, device=device,
         train_render=False,
         **params["collector"]

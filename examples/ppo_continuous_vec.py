@@ -12,7 +12,7 @@ from torchrl.utils import Logger
 import torchrl.policies as policies
 import torchrl.networks as networks
 from torchrl.algo import PPO
-from torchrl.collector.on_policy import VecOnPlicyCollector
+from torchrl.collector.on_policy import VecOnPolicyCollector
 import gym
 import random
 from torchrl.env import get_vec_env
@@ -77,7 +77,7 @@ def experiment(args):
     )
     print(pf)
     print(vf)
-    params['general_setting']['collector'] = VecOnPlicyCollector(
+    params['general_setting']['collector'] = VecOnPolicyCollector(
         vf, env=env, pf=pf,
         replay_buffer=replay_buffer, device=device,
         train_render=False,
