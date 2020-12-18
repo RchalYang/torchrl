@@ -51,11 +51,11 @@ class DQN(OffRLAlgo):
         next_obs = torch.Tensor(next_obs).to(self.device)
 
         q_pred = self.qf(obs)
-        q_s_a = q_pred.gather(1, actions.unsqueeze(1).long())
+        q_s_a = q_pred.gather(-1, actions.long())
         next_q_pred = self.target_qf(next_obs)
 
         target_q_s_a = rewards + self.discount * \
-            (1 - terminals) * next_q_pred.max(1, keepdim=True)[0]
+            (1 - terminals) * next_q_pred.max(-1, keepdim=True)[0]
         assert q_s_a.shape == target_q_s_a.shape
         qf_loss = self.qf_criterion(q_s_a, target_q_s_a.detach())
 

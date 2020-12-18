@@ -1,41 +1,42 @@
 {
-    "agent":"dqn",
-    "env_name" : "CartPole-v1",
+    "env_name" : "CartPole-v0",
     "env":{
         "reward_scale":1,
-        "obs_norm":false,
-        "obs_alpha":0.001
+        "obs_norm":false
     },
     "replay_buffer":{
-        "size": 1e6
+        "size": 1e4,
+        "time_limit_filter": false
     },
-    "net":{ 
-        "hidden_shapes": [ 64, 64 ],
+    "net":{
+        "hidden_shapes": [128, 128, 128],
         "append_hidden_shapes":[]        
     },
     "policy":{
         "start_epsilon":1,
         "end_epsilon":0.1,
-        "decay_frames":10000
+        "decay_frames":50000
+    },
+    "collector":{
+        "epoch_frames": 10,
+        "max_episode_frames": 1000,
+        "eval_episodes": 3
     },
     "general_setting": {
         "discount" : 0.99,
-        "pretrain_frames" : 1000,
+        "pretrain_epochs" : 100,
         "num_epochs" : 3000,
-        "epoch_frames" : 1000,
-        "max_episode_frames" : 1000,
 
-        "batch_size" : 32,
+        "batch_size" : 64,
         "min_pool" : 1000,
 
-        "target_hard_update_period" : 10000,
-        "use_soft_update" : false,
-        "tau" : 0.001,
-        "opt_times" : 1,
-
-        "eval_episodes" : 1
+        "target_hard_update_period" : 1000,
+        "use_soft_update" : true,
+        "tau" : 0.005,
+        "opt_times" : 10,
+        "eval_interval": 100
     },
     "dqn":{
-        "qlr" : 2.5e-4
+        "qlr" : 1e-3
     }
 }

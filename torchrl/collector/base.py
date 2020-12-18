@@ -207,7 +207,7 @@ class VecCollector(BaseCollector):
 
         self.train_rew += reward
         if np.any(done):
-            self.train_rews.append(list(self.train_rew[done]))
+            self.train_rews += list(self.train_rew[done])
             self.train_rew[done] = 0
 
         if np.any(done) or \
@@ -262,8 +262,10 @@ class VecCollector(BaseCollector):
 
                     if self.eval_render:
                         self.eval_env.render()
-                except Exception:
+                except Exception as e:
+                    print(e)
                     print(act)
+                    exit()
             eval_rews += list(rews)
             traj_lens += list(traj_len)
 

@@ -36,11 +36,11 @@ class EpsilonGreedyDQNDiscretePolicy():
         self.epsilon = self.start_epsilon
 
     def q_to_a(self, q):
-        return q.max(dim=-1)[1].detach().item()
+        return q.max(dim=-1, keepdim=True)[1].detach()
 
     def explore(self, x):
         self.count += 1
-        r = np.random.rand()
+        x = x.squeeze(0)
 
         if self.count < self.decay_frames:
             self.epsilon = self.start_epsilon - \
@@ -49,13 +49,16 @@ class EpsilonGreedyDQNDiscretePolicy():
         else:
             self.epsilon = self.end_epsilon
 
-        if r < self.epsilon:
-            return {
-                "action": np.random.randint(0, self.action_shape)
-            }
-
         output = self.qf(x)
         action = self.q_to_a(output)
+        r = torch.Tensor(np.random.rand(*action.shape))
+        random_action = torch.LongTensor(
+            np.random.randint(
+                low=0, high=self.action_shape, size=action.shape)
+        ).to(x.device)
+
+        action[r < self.epsilon] = random_action[r < self.epsilon]
+
         return {
             "q_value": output,
             "action": action
@@ -64,7 +67,10 @@ class EpsilonGreedyDQNDiscretePolicy():
     def eval_act(self, x):
         output = self.qf(x)
         action = self.q_to_a(output)
-        return action
+        return action.cpu().numpy()
+
+    def to(self, device):
+        self.qf.to(device)
 
 
 class EpsilonGreedyQRDQNDiscretePolicy(EpsilonGreedyDQNDiscretePolicy):

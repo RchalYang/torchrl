@@ -53,8 +53,6 @@ class OffRLAlgo(RLAlgo):
     def pretrain(self):
         total_frames = 0
 
-        # pretrain_epochs = math.ceil( self.pretrain_frames /
-        #  self.epoch_frames / self.collector.worker_nums)
         self.pretrain_frames = self.pretrain_epochs * self.epoch_frames
 
         for pretrain_epoch in range(self.pretrain_epochs):
