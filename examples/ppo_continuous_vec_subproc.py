@@ -16,6 +16,7 @@ from torchrl.collector.on_policy import VecOnPolicyCollector
 import gym
 import random
 from torchrl.env import get_vec_env
+from torchrl.env import get_subprocvec_env
 
 
 args = get_args()
@@ -27,18 +28,20 @@ def experiment(args):
     device = torch.device(
         "cuda:{}".format(args.device) if args.cuda else "cpu")
 
-    env = get_vec_env(
+    env = get_subprocvec_env(
         params["env_name"],
         params["env"],
-        args.vec_env_nums
+        args.vec_env_nums,
+        4
     )
-    # eval_env = get_vec_env(
-    #     params["env_name"],
-    #     params["env"],
-    #     args.vec_env_nums
-    # )
-    # if hasattr(env, "_obs_normalizer"):
-    #     eval_env._obs_normalizer = env._obs_normalizer
+    eval_env = get_subprocvec_env(
+        params["env_name"],
+        params["env"],
+        args.vec_env_nums,
+        4
+    )
+    if hasattr(env, "_obs_normalizer"):
+        eval_env._obs_normalizer = env._obs_normalizer
 
     env.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -71,6 +74,7 @@ def experiment(args):
 
     params['net']['base_type'] = networks.MLPBase
     params['net']['activation_func'] = torch.nn.Tanh
+
     pf = policies.GuassianContPolicyBasicBias(
         input_shape=env.observation_space.shape[0],
         output_shape=env.action_space.shape[0],
@@ -85,8 +89,7 @@ def experiment(args):
     print(pf)
     print(vf)
     params['general_setting']['collector'] = VecOnPolicyCollector(
-        # vf, env=env, eval_env=eval_env, pf=pf,
-        vf, env=env, pf=pf,
+        vf, env=env, eval_env=eval_env, pf=pf,
         replay_buffer=replay_buffer, device=device,
         train_render=False,
         **params["collector"]

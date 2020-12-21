@@ -10,7 +10,7 @@ from torchrl.env.vecenv import VecEnv
 class BaseCollector:
     def __init__(
             self,
-            env, pf, replay_buffer,
+            env, eval_env, pf, replay_buffer,
             epoch_frames,
             train_render=False,
             eval_episodes=1,
@@ -26,7 +26,12 @@ class BaseCollector:
         self.continuous = isinstance(self.env.action_space, gym.spaces.Box)
         self.train_render = train_render
 
-        self.eval_env = copy.deepcopy(env)
+        if eval_env is not None:
+            self.eval_env = eval_env
+        else:
+            self.eval_env = copy.deepcopy(env)
+            if hasattr(env, "_obs_normalizer"):
+                self.eval_env._obs_normalizer = env._obs_normalizer
         self.eval_env._reward_scale = 1
         self.eval_episodes = eval_episodes
         self.eval_render = eval_render
@@ -34,7 +39,6 @@ class BaseCollector:
         self.current_ob = self.env.reset()
 
         self.train_rew = 0
-        # self.training_episode_rewards = deque(maxlen=20)
 
         # device specification
         self.device = device
@@ -122,8 +126,6 @@ class BaseCollector:
 
         done = False
 
-        # self.eval_env.copy_state(self.env)
-        self.eval_env = copy.deepcopy(self.env)
         self.eval_env.eval()
 
         traj_lens = []
@@ -226,13 +228,10 @@ class VecCollector(BaseCollector):
         eval_infos = {}
         eval_rews = []
 
-        # self.eval_env.copy_state(self.env)
-        self.eval_env = copy.deepcopy(self.env)
         self.eval_env.eval()
 
         traj_lens = []
         for _ in range(self.eval_episodes):
-
             done = np.zeros((self.eval_env.env_nums, 1)).astype(np.bool)
             epi_done = np.zeros((self.eval_env.env_nums, 1)).astype(np.bool)
 

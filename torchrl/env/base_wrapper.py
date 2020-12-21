@@ -90,7 +90,7 @@ class Normalizer():
 
     def filt(self, raw):
         return np.clip(
-            (raw - self._mean) / (np.sqrt(self._var) + 1e-4)
+            (raw - self._mean) / (np.sqrt(self._var) + 1e-4),
             -self.clip, self.clip)
 
     def filt_torch(self, raw):
@@ -118,7 +118,7 @@ class NormObs(gym.ObservationWrapper, BaseWrapper):
     def observation(self, observation):
         if self.training:
             self._obs_normalizer.update_estimate(observation)
-        return observation
+        return self._obs_normalizer.filt(observation)
 
 
 class NormRet(BaseWrapper):

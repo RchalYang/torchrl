@@ -15,7 +15,6 @@ class Net(nn.Module):
             self,
             output_shape,
             base_type,
-            normalizer=None,
             append_hidden_shapes=[],
             append_hidden_init_func=init.basic_init,
             net_last_init_func=init.uniform_init,
@@ -38,7 +37,7 @@ class Net(nn.Module):
             self.append_fcs.append(fc)
             self.append_fcs.append(self.activation_func())
             if self.add_ln:
-                self.append_fcs(nn.LayerNorm(next_shape))
+                self.append_fcs.append(nn.LayerNorm(next_shape))
             append_input_shape = next_shape
 
         last = nn.Linear(append_input_shape, output_shape)
@@ -47,11 +46,7 @@ class Net(nn.Module):
         self.append_fcs.append(last)
         self.seq_append_fcs = nn.Sequential(*self.append_fcs)
 
-        self.normalizer = normalizer
-
     def forward(self, x):
-        if self.normalizer is not None:
-            x = self.normalizer.filt_torch(x)
         out = self.base(x)
         out = self.seq_append_fcs(out)
         return out
@@ -67,8 +62,6 @@ class QNet(Net):
     def forward(self, input):
         assert len(input) == 2, "Q Net only get observation and action"
         state, action = input
-        if self.normalizer is not None:
-            state = self.normalizer.filt_torch(state)
         x = torch.cat([state, action], dim=-1)
         out = self.base(x)
         out = self.seq_append_fcs(out)

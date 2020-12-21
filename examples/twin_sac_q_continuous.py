@@ -60,10 +60,6 @@ def experiment(args):
     params['net']['base_type'] = networks.MLPBase
     params['net']['activation_func'] = torch.nn.ReLU
 
-    obs_normalizer = env._obs_normalizer if hasattr(env, "_obs_normalizer") \
-        else None
-    params['net']['normalizer'] = obs_normalizer
-
     pf = policies.GuassianContPolicy(
         input_shape=env.observation_space.shape[0], 
         output_shape=2 * env.action_space.shape[0],

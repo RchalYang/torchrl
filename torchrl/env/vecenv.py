@@ -21,6 +21,9 @@ class VecEnv(BaseWrapper):
             self.env_funcs = [env_funcs for _ in range(env_nums)]
             self.env_args = [env_args for _ in range(env_nums)]
 
+        self.set_up_envs()
+
+    def set_up_envs(self):
         self.envs = [env_func(*env_arg) for env_func, env_arg
                      in zip(self.env_funcs, self.env_args)]
 

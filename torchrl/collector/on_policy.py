@@ -60,7 +60,6 @@ class OnPolicyCollectorBase(BaseCollector):
             next_ob = self.env.reset()
             self.current_step = 0
 
-            # self.training_episode_rewards.append(self.train_rew)
             self.train_rews.append(self.train_rew)
             self.train_rew = 0
             # self.pf.finish_episode()
@@ -128,7 +127,6 @@ class VecOnPolicyCollector(VecCollector):
 
         if np.any(dones) or \
            np.any(self.current_step >= self.max_episode_frames):
-            # self.train_rews.append(self.train_rew[dones])
 
             surpass_flag = self.current_step >= self.max_episode_frames
             last_ob = torch.Tensor(
@@ -145,8 +143,6 @@ class VecOnPolicyCollector(VecCollector):
             )
             self.current_step[dones | surpass_flag] = 0
 
-            # self.training_episode_rewards += list(self.train_rew[dones])
-            # self.train_rew[dones] = 0
 
         self.replay_buffer.add_sample(sample_dict)
 

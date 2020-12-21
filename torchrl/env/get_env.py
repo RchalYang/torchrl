@@ -2,6 +2,7 @@ from .atari_wrapper import *
 from .continuous_wrapper import *
 from .base_wrapper import *
 from .vecenv import VecEnv
+from .subproc_vecenv import SubProcVecEnv
 
 
 def wrap_deepmind(env, frame_stack=False, scale=False, clip_rewards=False):
@@ -69,6 +70,16 @@ def get_single_env(env_id, env_param):
 def get_vec_env(env_id, env_param, vec_env_nums):
     vec_env = VecEnv(
         vec_env_nums, get_single_env,
+        [env_id, env_param])
+
+    if "obs_norm" in env_param and env_param["obs_norm"]:
+        vec_env = NormObs(vec_env)
+    return vec_env
+
+
+def get_subprocvec_env(env_id, env_param, vec_env_nums, proc_nums):
+    vec_env = SubProcVecEnv(
+        proc_nums, vec_env_nums, get_single_env,
         [env_id, env_param])
 
     if "obs_norm" in env_param and env_param["obs_norm"]:

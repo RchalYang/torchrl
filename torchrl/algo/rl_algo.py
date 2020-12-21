@@ -81,17 +81,17 @@ class RLAlgo():
         pass
 
     def snapshot(self, prefix, epoch):
+        if hasattr(self.env, "normalizer") and \
+            self.env.normalizer is not None:
+            normalizer_file_name = "normalizer_{}.pkl".format(epoch)
+            normalizer_path = osp.join(prefix, normalizer_file_name)
+            with open(normalizer_path, "wb") as f:
+                pickle.dump(self.env.normalizer, f)
+
         for name, network in self.snapshot_networks:
             model_file_name = "model_{}_{}.pth".format(name, epoch)
             model_path = osp.join(prefix, model_file_name)
             torch.save(network.state_dict(), model_path)
-            if hasattr(network, "normalizer") and \
-               network.normalizer is not None:
-                normalizer_file_name = "normalizer_{}_{}.pkl".format(
-                    name, epoch)
-                normalizer_path = osp.join(prefix, normalizer_file_name)
-                with open(normalizer_path, "wb") as f:
-                    pickle.dump(network.normalizer, f)
 
     def train(self):
         self.pretrain()
