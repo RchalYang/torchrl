@@ -6,15 +6,12 @@ Environments with continuous & discrete action space are supported.
 
 Environments with 1d & 3d observation space are supported.
 
-Multi-Process data-collector is supported
+Multi-Process Env is supported
 
-## Update
-
-asynchronous sampling and evaluation for off-policy methods is supported.
 
 ## Requirements
 1. General Requirements
-* Pytorch 1.4
+* Pytorch 1.7
 * Gym(0.10.9)
 * Mujoco(1.50.1)
 * tabulate (for log)
@@ -37,7 +34,7 @@ use **environment.yml** to create virtual envrionment
 specify parameters for algorithms in config file & specify log directory / seed / device in argument
 
 ```
-    python examples/example_para_sac.py --config config/sac_halfcheetah.json --seed 0 --device 0
+    python examples/ppo_continuous_vec.py --config config/ppo_halfcheetah.json --seed 0 --device 0 --id ppo_halfcheetah
 ```
 
 Checkout examples folder for detailed informations
@@ -57,15 +54,3 @@ Checkout examples folder for detailed informations
         * Bootstrapped DQN
         * QRDQN
 
-## Figure:
-![HalfCheetah-v2 SAC DDPG](./fig/HalfCheetah-v2.png "HalfCheetah-v2")
-
-## TODO:
-1. Add More Algorithm
-    * On-Policy Methods:
-        * A3C
-    * DQN: C51 / IQN
-2. Add multiprocess support for environments - finished
-3. Different experience replay buffer:
-    * Priotized experience replay
-    * HER
