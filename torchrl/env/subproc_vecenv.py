@@ -4,25 +4,46 @@ import multiprocessing as mp
 from toolz.dicttoolz import merge_with
 
 
+class CloudpickleWrapper(object):
+    """
+    Uses cloudpickle to serialize contents (otherwise multiprocessing tries to use pickle)
+    """
+
+    def __init__(self, x):
+        self.x = x
+
+    def __getstate__(self):
+        import cloudpickle
+        return cloudpickle.dumps(self.x)
+
+    def __setstate__(self, ob):
+        import pickle
+        self.x = pickle.loads(ob)
+
 def env_worker(
-    env_funcs, env_args, child_pipe
+    env_funcs, env_args, child_pipe, parent_pipe
 ):
     envs = [
         env_func(*env_arg) \
         for env_func, env_arg in zip(env_funcs, env_args)
     ]
 
+    parent_pipe.close()
+
     try:
         while True:
             command, data = child_pipe.recv()
             if command == 'step':
-                child_pipe.send([env.step(action) for env, action in zip(envs, data)])
+                results = [env.step(action) for env, action in zip(envs, data)]
+                child_pipe.send(results)
             elif command == 'reset':
-                child_pipe.send([env.reset(**data) for env in envs])
+                results = [env.reset(**data) for env in envs]
+                child_pipe.send(results)
             elif command == 'partial_reset':
                 index_mask, kwargs = data
                 indexs = np.argwhere(index_mask == 1).reshape((-1))
-                child_pipe.send([envs[index].reset(**kwargs) for index in indexs])
+                results = [envs[index].reset(**kwargs) for index in indexs]
+                child_pipe.send(results)
             # elif command == 'render':
             #     child_pipe.send(env.render(mode='rgb_array'))
             elif command == 'train':
@@ -54,19 +75,22 @@ class SubProcVecEnv(VecEnv):
         assert self.env_nums % self.proc_nums == 0
         self.env_nums_per_proc = self.env_nums // self.proc_nums
 
+        self.ctx = mp.get_context()
         for i in range(self.proc_nums):
             env_idx_start = i * self.env_nums_per_proc
             env_idx_end = (i + 1) * self.env_nums_per_proc
-            child_pipe, parent_pipe = mp.Pipe()
-            p = mp.Process(
+            parent_pipe, child_pipe = self.ctx.Pipe()
+            p = self.ctx.Process(
                 target=env_worker,
                 args=(
                     self.env_funcs[env_idx_start: env_idx_end],
                     self.env_args[env_idx_start: env_idx_end],
-                    child_pipe
+                    child_pipe,
+                    parent_pipe
                 )
             )
             p.start()
+            child_pipe.close()
             self.workers.append(p)
             self.parent_pipes.append(parent_pipe)
 
@@ -77,6 +101,10 @@ class SubProcVecEnv(VecEnv):
     def eval(self):
         for parent_pipe in self.parent_pipes:
             parent_pipe.send(('eval', None))
+
+    def close(self):
+        for parent_pipe in self.parent_pipes:
+            parent_pipe.send(('close', None))
 
     def reset(self, **kwargs):
         for parent_pipe in self.parent_pipes:
@@ -93,7 +121,9 @@ class SubProcVecEnv(VecEnv):
         index_mask_per_proc = np.split(index_mask, self.proc_nums)
         for index_mask_current, parent_pipe in zip(
             index_mask_per_proc, self.parent_pipes):
-            parent_pipe.send(('partial_reset', (index_mask_current, kwargs)))
+            parent_pipe.send(
+                ('partial_reset', (index_mask_current, kwargs))
+            )
 
         partial_obs = []
         for parent_pipe in self.parent_pipes:
@@ -102,12 +132,14 @@ class SubProcVecEnv(VecEnv):
         return self._obs
 
     def step(self, actions):
-        actions = np.split(actions, self.proc_nums)
-
+        actions = np.split(actions, self.proc_nums * self.env_nums_per_proc)
         for index, parent_pipe in enumerate(self.parent_pipes):
-            parent_pipe.send(
-                ('step', np.split(actions[index], self.env_nums_per_proc))
-            )
+            parent_pipe.send((
+                'step',
+                actions[
+                    index * self.env_nums_per_proc: (index +1) * self.env_nums_per_proc
+                ]
+            ))
         results = []
         for parent_pipe in self.parent_pipes:
             results += parent_pipe.recv()

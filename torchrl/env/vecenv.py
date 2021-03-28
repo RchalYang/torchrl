@@ -35,6 +35,10 @@ class VecEnv(BaseWrapper):
         for env in self.envs:
             env.eval()
 
+    def close(self):
+        for env in self.envs:
+            env.close()
+
     def reset(self, **kwargs):
         obs = [env.reset() for env in self.envs]
         self._obs = np.stack(obs)
