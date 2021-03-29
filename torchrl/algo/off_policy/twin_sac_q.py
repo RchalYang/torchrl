@@ -31,9 +31,7 @@ class TwinSACQ(OffRLAlgo):
         self.qf1 = qf1
         self.qf2 = qf2
         self.target_qf1 = copy.deepcopy(qf1)
-        self.target_qf1.normalizer = self.qf1.normalizer
         self.target_qf2 = copy.deepcopy(qf2)
-        self.target_qf2.normalizer = self.qf2.normalizer
 
         self.to(self.device)
 

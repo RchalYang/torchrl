@@ -29,7 +29,6 @@ class SAC(OffRLAlgo):
         self.qf = qf
         self.vf = vf
         self.target_vf = copy.deepcopy(vf)
-        self.target_vf.normalizer = self.vf.normalizer
         self.to(self.device)
 
         self.plr = plr

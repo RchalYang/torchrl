@@ -31,7 +31,6 @@ class TwinSAC(OffRLAlgo):
         self.qf2 = qf2
         self.vf = vf
         self.target_vf = copy.deepcopy(vf)
-        self.target_vf.normalizer = vf.normalizer
         self.to(self.device)
 
         self.plr = plr

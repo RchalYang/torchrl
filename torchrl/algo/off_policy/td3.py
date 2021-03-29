@@ -22,14 +22,11 @@ class TD3(OffRLAlgo):
 
         self.pf = pf
         self.target_pf = copy.deepcopy(pf)
-        self.target_pf.normalizer = self.pf.normalizer
 
         self.qf1 = qf1
         self.target_qf1 = copy.deepcopy(qf1)
-        self.target_qf1.normalizer = self.qf1.normalizer
         self.qf2 = qf2
         self.target_qf2 = copy.deepcopy(qf2)
-        self.target_qf2.normalizer = self.qf2.normalizer
         self.to(self.device)
 
         self.plr = plr

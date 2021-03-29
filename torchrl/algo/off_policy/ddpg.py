@@ -20,10 +20,8 @@ class DDPG(OffRLAlgo):
         super(DDPG, self).__init__(**kwargs)
         self.pf = pf
         self.target_pf = copy.deepcopy(pf)
-        self.target_pf.normalizer = self.pf.normalizer
         self.qf = qf
         self.target_qf = copy.deepcopy(qf)
-        self.target_qf.normalizer = self.qf.normalizer
         self.to(self.device)
 
         self.plr = plr
