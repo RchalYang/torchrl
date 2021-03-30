@@ -32,6 +32,13 @@ def experiment(args):
         params["env"],
         args.vec_env_nums
     )
+    env.train()
+    eval_env = get_vec_env(
+        params["env_name"],
+        params["env"],
+        args.vec_env_nums
+    )
+    eval_env.eval()
 
     env.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -84,7 +91,7 @@ def experiment(args):
     print(pf)
     print(qf1)
     params['general_setting']['collector'] = VecCollector(
-        env=env, pf=pf,
+        env=env, eval_env=eval_env, pf=pf,
         replay_buffer=replay_buffer, device=device,
         train_render=False,
         **params["collector"]

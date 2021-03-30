@@ -76,8 +76,9 @@ class TD3(OffRLAlgo):
         target_actions = sample_info["action"]
 
         noise = Normal(
-            0, self.norm_std_policy
-        ).sample(target_actions.shape).to(target_actions.device)
+            torch.zeros(target_actions.size()),
+            self.norm_std_policy * torch.ones(target_actions.size())
+        ).sample().to(target_actions.device)
         noise = torch.clamp(noise, -self.noise_clip, self.noise_clip)
         target_actions += noise
         target_actions = torch.clamp(target_actions, -1, 1)
