@@ -32,11 +32,11 @@ def experiment(args):
         params["env"],
         args.vec_env_nums
     )
-    # eval_env = get_vec_env(
-    #     params["env_name"],
-    #     params["env"],
-    #     args.vec_env_nums
-    # )
+    eval_env = get_vec_env(
+        params["env_name"],
+        params["env"],
+        args.vec_env_nums
+    )
     # if hasattr(env, "_obs_normalizer"):
     #     eval_env._obs_normalizer = env._obs_normalizer
 
@@ -85,8 +85,8 @@ def experiment(args):
     print(pf)
     print(vf)
     params['general_setting']['collector'] = VecOnPolicyCollector(
-        # vf, env=env, eval_env=eval_env, pf=pf,
-        vf, env=env, pf=pf,
+        vf, env=env, eval_env=eval_env, pf=pf,
+        # vf, env=env, pf=pf,
         replay_buffer=replay_buffer, device=device,
         train_render=False,
         **params["collector"]

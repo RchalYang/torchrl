@@ -44,8 +44,10 @@ class BaseReplayBuffer():
         indices = np.random.randint(0, size, batch_size)
         return_dict = {}
         for key in sample_key:
-            return_dict[key] = self.__getattribute__("_"+key)[indices].reshape(
-                (batch_size * self.env_nums, -1))
+            return_dict[key] = self.__getattribute__("_"+key)[indices]
+            data_shape = (batch_size * self.env_nums,) + \
+                return_dict[key].shape[2:]
+            return_dict[key] = return_dict[key].reshape(data_shape)
         return return_dict
 
     def num_steps_can_sample(self):

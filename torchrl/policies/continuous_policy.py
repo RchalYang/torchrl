@@ -12,6 +12,7 @@ LOG_SIG_MIN = -20
 class UniformPolicyContinuous(nn.Module):
     def __init__(self, action_shape):
         super().__init__()
+        self.continuous = True
         self.action_shape = action_shape
 
     def forward(self, x):
@@ -27,6 +28,7 @@ class UniformPolicyContinuous(nn.Module):
 class DetContPolicy(networks.Net):
     def __init__(self, tanh_action=False, **kwargs):
         super().__init__(**kwargs)
+        self.continuous = True
         self.tanh_action = tanh_action
 
     def forward(self, x):
@@ -48,6 +50,7 @@ class DetContPolicy(networks.Net):
 class FixGuassianContPolicy(networks.Net):
     def __init__(self, norm_std_explore, tanh_action=False, **kwargs):
         super().__init__(**kwargs)
+        self.continuous = True
         self.tanh_action = tanh_action
         self.norm_std_explore = norm_std_explore
 
@@ -134,6 +137,7 @@ class GuassianContPolicyBase():
 
         out = {
             "mean": mean,
+            "dis": Normal(mean, std),
             "log_std": log_std,
             "std": std,
             "log_prob": log_prob,
@@ -145,6 +149,7 @@ class GuassianContPolicyBase():
 class GuassianContPolicy(networks.Net, GuassianContPolicyBase):
     def __init__(self, tanh_action=False, **kwargs):
         super().__init__(**kwargs)
+        self.continuous = True
         self.tanh_action = tanh_action
 
     def forward(self, x):
@@ -161,6 +166,7 @@ class GuassianContPolicy(networks.Net, GuassianContPolicyBase):
 class GuassianContPolicyBasicBias(networks.Net, GuassianContPolicyBase):
     def __init__(self, output_shape, tanh_action=False, **kwargs):
         super().__init__(output_shape=output_shape, **kwargs)
+        self.continuous = True
         self.logstd = nn.Parameter(torch.zeros(output_shape))
         self.tanh_action = tanh_action
 

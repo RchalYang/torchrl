@@ -36,14 +36,14 @@ class OnPolicyCollectorBase(BaseCollector):
         self.current_step += 1
 
         sample_dict = {
-            "obs": self.current_ob.copy(),
-            "next_obs": next_ob,
-            "acts": act,
-            "values": [value],
-            "rewards": [reward],
-            "terminals": [done],
-            "time_limits": [
-                info["time_limit"] if "time_limit" in info else False]
+            "obs": np.expand_dims(self.current_ob, 0),
+            "next_obs": np.expand_dims(next_ob, 0),
+            "acts": np.expand_dims(act, 0),
+            "values": [[value]],
+            "rewards": [[reward]],
+            "terminals": [[done]],
+            "time_limits": [[
+                info["time_limit"] if "time_limit" in info else False]]
         }
         self.train_rew += reward
 

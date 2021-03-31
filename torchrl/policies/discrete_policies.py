@@ -9,6 +9,7 @@ class UniformPolicyDiscrete(nn.Module):
     def __init__(self, action_num):
         super().__init__()
         self.action_num = action_num
+        self.continuous = False
 
     def forward(self, x):
         return np.random.randint(self.action_num)
@@ -34,6 +35,7 @@ class EpsilonGreedyDQNDiscretePolicy():
         self.count = 0
         self.action_shape = action_shape
         self.epsilon = self.start_epsilon
+        self.continuous = False
 
     def q_to_a(self, q):
         return q.max(dim=-1, keepdim=True)[1].detach()
@@ -80,6 +82,7 @@ class EpsilonGreedyQRDQNDiscretePolicy(EpsilonGreedyDQNDiscretePolicy):
     def __init__(self, quantile_num, **kwargs):
         super().__init__(**kwargs)
         self.quantile_num = quantile_num
+        self.continuous = False
 
     def q_to_a(self, q):
         q = q.view(-1, self.action_shape, self.quantile_num)
@@ -95,6 +98,7 @@ class BootstrappedDQNDiscretePolicy():
         self.head_num = head_num
         self.action_shape = action_shape
         self.idx = 0
+        self.continuous = False
 
     def sample_head(self):
         self.idx = np.random.randint(self.head_num)
@@ -121,6 +125,10 @@ class CategoricalDisPolicy(networks.Net):
     """
     Discrete Policy
     """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.continuous = False
+
     def forward(self, x):
         logits = super().forward(x)
         return torch.softmax(logits, dim=-1)
@@ -153,7 +161,7 @@ class CategoricalDisPolicy(networks.Net):
         ent = dis.entropy()
 
         out = {
-            "dis": output,
+            "dis": dis,
             "log_prob": log_prob,
             "ent": ent
         }

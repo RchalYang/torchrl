@@ -75,13 +75,13 @@ class BaseCollector:
         self.current_step += 1
         self.train_rew += reward
         sample_dict = {
-            "obs": self.current_ob,
-            "next_obs": next_ob,
-            "acts": act,
-            "rewards": [reward],
-            "terminals": [done],
-            "time_limits": [
-                info["time_limit"] if "time_limit" in info else False]
+            "obs": np.expand_dims(self.current_ob, 0),
+            "next_obs": np.expand_dims(next_ob, 0),
+            "acts": np.expand_dims(act, 0),
+            "rewards": [[reward]],
+            "terminals": [[done]],
+            "time_limits": [[
+                info["time_limit"] if "time_limit" in info else False]]
         }
 
         if done or self.current_step >= self.max_episode_frames:
@@ -125,7 +125,9 @@ class BaseCollector:
         eval_rews = []
 
         done = False
-
+        if hasattr(self.env, "_obs_normalizer"):
+            self.eval_env._obs_normalizer = copy.deepcopy(self.env._obs_normalizer)
+            print(copy)
         self.eval_env.eval()
 
         traj_lens = []
@@ -228,6 +230,9 @@ class VecCollector(BaseCollector):
         eval_infos = {}
         eval_rews = []
 
+        if hasattr(self.env, "_obs_normalizer"):
+            self.eval_env._obs_normalizer = copy.deepcopy(self.env._obs_normalizer)
+            # print(copy)
         self.eval_env.eval()
 
         traj_lens = []

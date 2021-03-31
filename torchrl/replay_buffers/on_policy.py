@@ -83,7 +83,8 @@ class OnPolicyReplayBufferBase:
             for key in sample_key:
                 return_dict[key] = self.__getattribute__("_"+key)[
                     indices[pos: pos+batch_size]]
-                data_shape = (-1, ) + return_dict[key].shape[1:]
+                data_shape = (batch_size * self.env_nums,) + \
+                    return_dict[key].shape[2:]
                 return_dict[key] = return_dict[key].reshape(data_shape)
 
             yield return_dict
