@@ -1,0 +1,38 @@
+{
+    "env_name" : "HalfCheetah-v2",
+    "env":{
+        "reward_scale":1,
+        "obs_norm": true
+    },
+    "replay_buffer":{
+        "size": 2048,
+        "time_limit_filter": true
+    },
+    "policy":{
+        "tanh_action": true
+    },
+    "net":{ 
+        "hidden_shapes": [64, 64],
+        "append_hidden_shapes":[]
+    },
+    "collector":{
+        "epoch_frames": 2048,
+        "max_episode_frames" : 2048,
+        "eval_episodes" : 1
+    },
+    "general_setting": {
+        "discount" : 0.99,
+        "num_epochs" : 488,
+        "batch_size" : 128,
+        "gae": true
+    },
+    "vmpo":{
+        "plr" : 3e-4,
+        "vlr" : 3e-4,
+
+        "opt_epochs": 10,
+        "shuffle":true,
+        "tau": 0.95,
+        "alpha_eps": 0.01
+    }
+}
