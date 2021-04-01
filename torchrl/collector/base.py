@@ -102,7 +102,8 @@ class BaseCollector:
         return reward
 
     def terminate(self):
-        pass
+        self.env.close()
+        self.eval_env.close()
 
     def train_one_epoch(self):
         self.train_rews = []
@@ -127,7 +128,6 @@ class BaseCollector:
         done = False
         if hasattr(self.env, "_obs_normalizer"):
             self.eval_env._obs_normalizer = copy.deepcopy(self.env._obs_normalizer)
-            print(copy)
         self.eval_env.eval()
 
         traj_lens = []
@@ -232,7 +232,6 @@ class VecCollector(BaseCollector):
 
         if hasattr(self.env, "_obs_normalizer"):
             self.eval_env._obs_normalizer = copy.deepcopy(self.env._obs_normalizer)
-            # print(copy)
         self.eval_env.eval()
 
         traj_lens = []

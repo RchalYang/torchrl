@@ -38,6 +38,81 @@ class PPO(A2C):
                 infos = self.update(batch)
                 self.logger.add_update_info(infos)
 
+    def update_actor(
+        self,
+        info,
+        obs,
+        actions,
+        advs
+    ):
+
+        out = self.pf.update(obs, actions)
+        log_probs = out['log_prob']
+        ent = out['ent']
+
+        target_out = self.target_pf.update(obs, actions)
+        target_log_probs = target_out['log_prob']
+
+        ratio = torch.exp(log_probs - target_log_probs.detach())
+
+        assert ratio.shape == advs.shape, print(ratio.shape, advs.shape)
+        surrogate_loss_pre_clip = ratio * advs
+        surrogate_loss_clip = torch.clamp(ratio,
+                                          1.0 - self.clip_para,
+                                          1.0 + self.clip_para) * advs
+
+        policy_loss = -torch.mean(torch.min(
+                            surrogate_loss_clip, surrogate_loss_pre_clip))
+        policy_loss = policy_loss - self.entropy_coeff * ent.mean()
+
+        self.pf_optimizer.zero_grad()
+        policy_loss.backward()
+        pf_grad_norm = torch.nn.utils.clip_grad_norm_(
+            self.pf.parameters(), 0.5)
+        self.pf_optimizer.step()
+
+        info['Training/policy_loss'] = policy_loss.item()
+
+        info['logprob/mean'] = log_probs.mean().item()
+        info['logprob/std'] = log_probs.std().item()
+        info['logprob/max'] = log_probs.max().item()
+        info['logprob/min'] = log_probs.min().item()
+
+        info['ratio/max'] = ratio.max().item()
+        info['ratio/min'] = ratio.min().item()
+
+        info['grad_norm/pf'] = pf_grad_norm.item()
+
+    def update_critic(
+        self,
+        info,
+        obs,
+        est_rets
+    ):
+        values = self.vf(obs)
+        assert values.shape == est_rets.shape, \
+            print(values.shape, est_rets.shape)
+
+        if self.clipped_value_loss:
+            values_clipped = old_values + \
+                (values - old_values).clamp(-self.clip_para, self.clip_para)
+            vf_loss = (values - est_rets).pow(2)
+            vf_loss_clipped = (
+                values_clipped - est_rets).pow(2)
+            vf_loss = 0.5 * torch.max(vf_loss,
+                                      vf_loss_clipped).mean()
+        else:
+            vf_loss = self.vf_criterion(values, est_rets)
+
+        self.vf_optimizer.zero_grad()
+        vf_loss.backward()
+        vf_grad_norm = torch.nn.utils.clip_grad_norm_(
+            self.vf.parameters(), 0.5)
+        self.vf_optimizer.step()
+
+        info['Training/vf_loss'] = vf_loss.item()
+        info['grad_norm/vf'] = vf_grad_norm.item()
+
     def update(self, batch):
         self.training_update_num += 1
 
@@ -63,65 +138,9 @@ class PPO(A2C):
         # Normalize the advantage
         advs = (advs - advs.mean()) / (advs.std() + 1e-5)
 
-        out = self.pf.update(obs, actions)
-        log_probs = out['log_prob']
-        ent = out['ent']
+        self.update_critic(info, obs, est_rets)
+        self.update_actor(info, obs, actions, advs)
 
-        target_out = self.target_pf.update(obs, actions)
-        target_log_probs = target_out['log_prob']
-
-        ratio = torch.exp(log_probs - target_log_probs.detach())
-
-        assert ratio.shape == advs.shape, print(ratio.shape, advs.shape)
-        surrogate_loss_pre_clip = ratio * advs
-        surrogate_loss_clip = torch.clamp(ratio,
-                                          1.0 - self.clip_para,
-                                          1.0 + self.clip_para) * advs
-
-        policy_loss = -torch.mean(torch.min(
-                            surrogate_loss_clip, surrogate_loss_pre_clip))
-        policy_loss = policy_loss - self.entropy_coeff * ent.mean()
-
-        values = self.vf(obs)
-        assert values.shape == est_rets.shape, \
-            print(values.shape, est_rets.shape)
-
-        if self.clipped_value_loss:
-            values_clipped = old_values + \
-                (values - old_values).clamp(-self.clip_para, self.clip_para)
-            vf_loss = (values - est_rets).pow(2)
-            vf_loss_clipped = (
-                values_clipped - est_rets).pow(2)
-            vf_loss = 0.5 * torch.max(vf_loss,
-                                      vf_loss_clipped).mean()
-        else:
-            vf_loss = self.vf_criterion(values, est_rets)
-
-        self.pf_optimizer.zero_grad()
-        policy_loss.backward()
-        pf_grad_norm = torch.nn.utils.clip_grad_norm_(
-            self.pf.parameters(), 0.5)
-        self.pf_optimizer.step()
-
-        self.vf_optimizer.zero_grad()
-        vf_loss.backward()
-        vf_grad_norm = torch.nn.utils.clip_grad_norm_(
-            self.vf.parameters(), 0.5)
-        self.vf_optimizer.step()
-
-        info['Training/policy_loss'] = policy_loss.item()
-        info['Training/vf_loss'] = vf_loss.item()
-
-        info['logprob/mean'] = log_probs.mean().item()
-        info['logprob/std'] = log_probs.std().item()
-        info['logprob/max'] = log_probs.max().item()
-        info['logprob/min'] = log_probs.min().item()
-
-        info['ratio/max'] = ratio.max().item()
-        info['ratio/min'] = ratio.min().item()
-
-        info['grad_norm/pf'] = pf_grad_norm.item()
-        info['grad_norm/vf'] = vf_grad_norm.item()
         return info
 
     @property
