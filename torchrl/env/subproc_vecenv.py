@@ -4,6 +4,9 @@ import multiprocessing as mp
 from toolz.dicttoolz import merge_with
 
 
+mp.set_start_method('spawn', force=True)
+
+
 def env_worker(
     env_funcs, env_args, child_pipe, parent_pipe
 ):
@@ -18,7 +21,9 @@ def env_worker(
         while True:
             command, data = child_pipe.recv()
             if command == 'step':
-                results = [env.step(action) for env, action in zip(envs, data)]
+                results = [
+                    env.step(np.squeeze(action)) for env, action in zip(envs, data)
+                ]
                 child_pipe.send(results)
             elif command == 'reset':
                 results = [env.reset(**data) for env in envs]
