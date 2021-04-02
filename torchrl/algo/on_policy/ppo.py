@@ -49,9 +49,11 @@ class PPO(A2C):
         out = self.pf.update(obs, actions)
         log_probs = out['log_prob']
         ent = out['ent']
+        log_std = out['log_std']
 
-        target_out = self.target_pf.update(obs, actions)
-        target_log_probs = target_out['log_prob']
+        with torch.no_grad():
+            target_out = self.target_pf.update(obs, actions)
+            target_log_probs = target_out['log_prob']
 
         ratio = torch.exp(log_probs - target_log_probs.detach())
 
@@ -78,6 +80,11 @@ class PPO(A2C):
         info['logprob/max'] = log_probs.max().item()
         info['logprob/min'] = log_probs.min().item()
 
+        info['log_std/mean'] = log_std.mean().item()
+        info['log_std/std'] = log_std.std().item()
+        info['log_std/max'] = log_std.max().item()
+        info['log_std/min'] = log_std.min().item()
+
         info['ratio/max'] = ratio.max().item()
         info['ratio/min'] = ratio.min().item()
 
@@ -87,6 +94,7 @@ class PPO(A2C):
         self,
         info,
         obs,
+        old_values,
         est_rets
     ):
         values = self.vf(obs)
@@ -138,7 +146,7 @@ class PPO(A2C):
         # Normalize the advantage
         advs = (advs - advs.mean()) / (advs.std() + 1e-5)
 
-        self.update_critic(info, obs, est_rets)
+        self.update_critic(info, obs, old_values, est_rets)
         self.update_actor(info, obs, actions, advs)
 
         return info
