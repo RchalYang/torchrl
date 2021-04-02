@@ -36,11 +36,8 @@ class MLPBase(nn.Module):
             input_shape = next_shape
             self.output_shape = next_shape
 
-        if self.last_activation_func != self.activation_func:
-            if self.add_ln:
-                self.fcs.pop(-1)
-            self.fcs.pop(-1)
-            self.fcs.append(self.last_activation_func())
+        self.fcs.pop(-1)
+        self.fcs.append(self.last_activation_func())
         self.seq_fcs = nn.Sequential(*self.fcs)
 
     def forward(self, x):
@@ -98,11 +95,8 @@ class CNNBase(nn.Module):
             self.output_shape = current_shape[0] * \
                 current_shape[1] * current_shape[2]
 
-        if self.last_activation_func != self.activation_func:
-            if self.add_ln:
-                self.convs.pop(-1)
-            self.convs.pop(-1)
-            self.convs.append(self.last_activation_func())
+        self.convs.pop(-1)
+        self.convs.append(self.last_activation_func())
         self.seq_convs = nn.Sequential(*self.convs)
 
     def forward(self, x):
