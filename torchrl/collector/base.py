@@ -191,6 +191,9 @@ class VecCollector(BaseCollector):
             act = act[..., 0]
         elif np.isnan(act).any():
             print("NaN detected. BOOM")
+            print(self.pf.forward(
+                torch.Tensor(self.current_ob).to(self.device)
+            ))
             exit()
 
         next_ob, reward, done, infos = self.env.step(act)

@@ -28,6 +28,8 @@ class OnPolicyCollectorBase(BaseCollector):
             act = act[0]
         elif np.isnan(act).any():
             print("NaN detected. BOOM")
+            print(ob_tensor)
+            print(self.pf.forward(ob_tensor))
             exit()
 
         next_ob, reward, done, info = self.env.step(act)
@@ -100,6 +102,8 @@ class VecOnPolicyCollector(VecCollector):
         if type(acts) is not int:
             if np.isnan(acts).any():
                 print("NaN detected. BOOM")
+                print(ob_tensor)
+                print(self.pf.forward(ob_tensor))
                 exit()
 
         next_obs, rewards, dones, infos = self.env.step(acts)
