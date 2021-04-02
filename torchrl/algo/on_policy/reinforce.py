@@ -73,3 +73,9 @@ class Reinforce(OnRLAlgo):
         info['logprob/min'] = log_probs.min().item()
 
         return info
+
+    @property
+    def snapshot_networks(self):
+        return [
+            ("pf", self.pf)
+        ]

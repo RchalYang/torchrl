@@ -85,3 +85,9 @@ class DQN(OffRLAlgo):
         return [
             (self.qf, self.target_qf)
         ]
+
+    @property
+    def snapshot_networks(self):
+        return [
+            ("pf", self.qf),
+        ]

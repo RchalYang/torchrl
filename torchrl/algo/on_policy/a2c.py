@@ -104,3 +104,10 @@ class A2C(OnRLAlgo):
         info['log_prob'] = log_probs.mean().item()
 
         return info
+
+    @property
+    def snapshot_networks(self):
+        return [
+            ("pf", self.pf),
+            ("vf", self.vf)
+        ]
