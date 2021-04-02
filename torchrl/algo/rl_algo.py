@@ -81,12 +81,12 @@ class RLAlgo():
         pass
 
     def snapshot(self, prefix, epoch):
-        if hasattr(self.env, "normalizer") and \
-            self.env.normalizer is not None:
-            normalizer_file_name = "normalizer_{}.pkl".format(epoch)
+        if hasattr(self.env, "_obs_normalizer") and \
+            self.env._obs_normalizer is not None:
+            normalizer_file_name = "_obs_normalizer_{}.pkl".format(epoch)
             normalizer_path = osp.join(prefix, normalizer_file_name)
             with open(normalizer_path, "wb") as f:
-                pickle.dump(self.env.normalizer, f)
+                pickle.dump(self.env._obs_normalizer, f)
 
         for name, network in self.snapshot_networks:
             model_file_name = "model_{}_{}.pth".format(name, epoch)
