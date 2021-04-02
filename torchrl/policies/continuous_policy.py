@@ -175,6 +175,7 @@ class GuassianContPolicyBasicBias(networks.Net, GuassianContPolicyBase):
 
         # logstd = torch.clamp(self.logstd, LOG_SIG_MIN, LOG_SIG_MAX)
         logstd = self.logstd
+        logstd = torch.clamp(logstd, LOG_SIG_MIN, LOG_SIG_MAX)
         std = torch.exp(logstd)
         std = std.unsqueeze(0).expand_as(mean)
         return mean, std, logstd
