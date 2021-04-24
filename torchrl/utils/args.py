@@ -12,6 +12,9 @@ def get_args():
     parser.add_argument('--vec_env_nums', type=int, default=4,
                         help='vec env nums')
 
+    parser.add_argument('--proc_nums', type=int, default=4,
+                        help='vec env nums')
+
     parser.add_argument('--eval_worker_nums', type=int, default=2,
                         help='eval worker nums')
 

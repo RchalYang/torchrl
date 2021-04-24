@@ -17,6 +17,8 @@ from torchrl.algo import TwinSACQ
 from torchrl.collector.base import VecCollector
 from torchrl.env import get_vec_env
 
+import cProfile
+# import r
 
 args = get_args()
 params = get_params(args.config)
@@ -32,6 +34,13 @@ def experiment(args):
         params["env"],
         args.vec_env_nums
     )
+    eval_env = get_vec_env(
+        params["env_name"],
+        params["env"],
+        args.vec_env_nums
+    )
+    if hasattr(env, "_obs_normalizer"):
+        eval_env._obs_normalizer = env._obs_normalizer
 
     env.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -84,7 +93,7 @@ def experiment(args):
     print(pf)
     print(qf1)
     params['general_setting']['collector'] = VecCollector(
-        env=env, pf=pf,
+        env=env, pf=pf, eval_env=eval_env,
         replay_buffer=replay_buffer, device=device,
         train_render=False,
         **params["collector"]
@@ -102,4 +111,5 @@ def experiment(args):
 
 
 if __name__ == "__main__":
+    # cProfile.run()
     experiment(args)
