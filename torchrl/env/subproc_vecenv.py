@@ -140,8 +140,8 @@ class SubProcVecEnv(VecEnv):
             np.stack(dones)[:, np.newaxis], infos   
 
     def seed(self, seed):
-        for parent_pipe in self.parent_pipes:
-            parent_pipe.send(('seed', seed))
+        for idx, parent_pipe in enumerate(self.parent_pipes):
+            parent_pipe.send(('seed', seed * self.env_nums + idx))
 
     @property
     def observation_space(self):
@@ -150,3 +150,8 @@ class SubProcVecEnv(VecEnv):
     @property
     def action_space(self):
         return self.example_env.action_space
+
+    def __getattr__(self, attr):
+        if attr == '_wrapped_env':
+            raise AttributeError()
+        return getattr(self.example_env, attr)

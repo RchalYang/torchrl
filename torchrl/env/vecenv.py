@@ -61,8 +61,8 @@ class VecEnv(BaseWrapper):
             np.stack(dones)[:, np.newaxis], infos
 
     def seed(self, seed):
-        for env in self.envs:
-            env.seed(seed)
+        for idx, env in enumerate(self.envs):
+            env.seed(seed * self.env_nums + idx)
 
     @property
     def observation_space(self):
@@ -71,3 +71,8 @@ class VecEnv(BaseWrapper):
     @property
     def action_space(self):
         return self.envs[0].action_space
+
+    def __getattr__(self, attr):
+        if attr == '_wrapped_env':
+            raise AttributeError()
+        return getattr(self.envs[0], attr)
