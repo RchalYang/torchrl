@@ -164,10 +164,10 @@ class GuassianContPolicy(networks.Net, GuassianContPolicyBase):
 
 
 class GuassianContPolicyBasicBias(networks.Net, GuassianContPolicyBase):
-    def __init__(self, output_shape, tanh_action=False, **kwargs):
+    def __init__(self, output_shape, tanh_action=False, log_init=0.125, **kwargs):
         super().__init__(output_shape=output_shape, **kwargs)
         self.continuous = True
-        self.logstd = nn.Parameter(torch.zeros(output_shape))
+        self.logstd = nn.Parameter(torch.ones(output_shape) * np.log(log_init))
         self.tanh_action = tanh_action
 
     def forward(self, x):
