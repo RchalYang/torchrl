@@ -7,6 +7,7 @@ from tabulate import tabulate
 import sys
 import json
 import csv
+import git
 
 
 class Logger():
@@ -16,10 +17,12 @@ class Logger():
             env_name,
             seed,
             params,
-            log_dir = "./log",
+            log_dir="./log",
             overwrite=False):
 
-        self.logger = logging.getLogger("{}_{}_{}".format(experiment_id,env_name,str(seed)))
+        self.logger = logging.getLogger(
+            "{}_{}_{}".format(experiment_id, env_name, str(seed))
+        )
 
         self.logger.handlers = []
         self.logger.propagate = False
@@ -36,19 +39,24 @@ class Logger():
         if os.path.exists(work_dir):
             assert overwrite, "Experiment Exists and Did not set overwrite"
             shutil.rmtree(work_dir)
-        self.tf_writer = tensorboardX.SummaryWriter(work_dir)
 
+        self.tf_writer = tensorboardX.SummaryWriter(work_dir)
         self.csv_file_path = os.path.join(work_dir, 'log.csv')
+        self.git_file_path = os.path.join(work_dir, 'git_hash.txt')
+        repo = git.Repo(search_parent_directories=True)
+        sha = repo.head.object.hexsha
+        with open(self.git_file_path, 'w') as git_output_file:
+            git_output_file.write(sha)
 
         self.update_count = 0
         self.stored_infos = {}
 
-        with open( os.path.join(work_dir, 'params.json'), 'w' ) as output_param:
-            json.dump( params, output_param, indent = 2 )
+        with open(os.path.join(work_dir, 'params.json'), 'w') as output_param:
+            json.dump(params, output_param, indent=2)
 
         self.logger.info("Experiment Name:{}".format(experiment_id))
         self.logger.info(
-            json.dumps(params, indent = 2 )
+            json.dumps(params, indent=2)
         )
 
     def log(self, info):
@@ -62,7 +70,9 @@ class Logger():
 
         self.update_count += 1
 
-    def add_epoch_info(self, epoch_num, total_frames, total_time, infos, csv_write=True):
+    def add_epoch_info(
+        self, epoch_num, total_frames, total_time, infos, csv_write=True
+    ):
         if csv_write:
             if epoch_num == 0:
                 csv_titles = ["EPOCH", "Time Consumed", "Total Frames"]
@@ -76,14 +86,14 @@ class Logger():
 
         for info in infos:
             self.tf_writer.add_scalar(info, infos[info], total_frames)
-            tabulate_list.append([info, "{:.5f}".format( infos[info])])
+            tabulate_list.append([info, "{:.5f}".format(infos[info])])
             if csv_write:
                 if epoch_num == 0:
                     csv_titles += [info]
                 csv_values += ["{:.5f}".format(infos[info])]
 
         tabulate_list.append([])
-    
+
         method_list = [np.mean, np.std, np.max, np.min]
         name_list = ["Mean", "Std", "Max", "Min"]
         tabulate_list.append(["Name"] + name_list)
@@ -91,18 +101,21 @@ class Logger():
         for info in self.stored_infos:
 
             temp_list = [info]
-            for name, method in zip( name_list, method_list ):
+            for name, method in zip(name_list, method_list):
                 processed_info = method(self.stored_infos[info])
-                self.tf_writer.add_scalar( "{}_{}".format(info, name),
-                    processed_info,total_frames)
-                temp_list.append( "{:.5f}".format(processed_info))
+                self.tf_writer.add_scalar(
+                    "{}_{}".format(info, name),
+                    processed_info, total_frames
+                )
+                temp_list.append("{:.5f}".format(processed_info))
                 if csv_write:
                     if epoch_num == 0:
                         csv_titles += ["{}_{}".format(info, name)]
                     csv_values += ["{:.5f}".format(processed_info)]
 
             tabulate_list.append(temp_list)
-        #clear
+
+        # clear
         self.stored_infos = {}
         if csv_write:
             with open(self.csv_file_path, 'a') as f:
