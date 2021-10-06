@@ -161,6 +161,7 @@ class RLAlgo():
 
         self.snapshot(self.save_dir, "finish")
         self.collector.terminate()
+        self.logger.finish()
 
     def update(self, batch):
         raise NotImplementedError

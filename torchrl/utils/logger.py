@@ -9,6 +9,10 @@ import json
 import csv
 import git
 
+USE_WB = True
+if USE_WB:
+    import wandb
+
 
 class Logger():
     def __init__(
@@ -31,7 +35,7 @@ class Logger():
         formatter = logging.Formatter(format)
         sh.setFormatter(formatter)
         sh.setLevel(logging.INFO)
-        self.logger.addHandler( sh )
+        self.logger.addHandler(sh)
         self.logger.setLevel(logging.INFO)
 
         work_dir = os.path.join(log_dir, experiment_id, env_name, str(seed))
@@ -59,6 +63,20 @@ class Logger():
             json.dumps(params, indent=2)
         )
 
+        params["name_combine"] = "{}_{}".format(experiment_id, env_name)
+        if USE_WB:
+            wandb.init(
+                project=params['project'],
+                name="{}_{}_{}".format(experiment_id, env_name, str(seed)),
+                group="{}_{}".format(experiment_id, env_name),
+                # job_type=env_name,
+                config=params
+            )
+
+    def finish(self):
+        if USE_WB:
+            wandb.finish()
+
     def log(self, info):
         self.logger.info(info)
 
@@ -84,6 +102,13 @@ class Logger():
 
         tabulate_list = [["Name", "Value"]]
 
+        if USE_WB:
+            wb_log_dict = {
+                "EPOCH": epoch_num,
+                "Time Consumed": total_time,
+                "Total Frames": total_frames
+            }
+
         for info in infos:
             self.tf_writer.add_scalar(info, infos[info], total_frames)
             tabulate_list.append([info, "{:.5f}".format(infos[info])])
@@ -91,6 +116,8 @@ class Logger():
                 if epoch_num == 0:
                     csv_titles += [info]
                 csv_values += ["{:.5f}".format(infos[info])]
+            if USE_WB:
+                wb_log_dict[info] = infos[info]
 
         tabulate_list.append([])
 
@@ -99,7 +126,6 @@ class Logger():
         tabulate_list.append(["Name"] + name_list)
 
         for info in self.stored_infos:
-
             temp_list = [info]
             for name, method in zip(name_list, method_list):
                 processed_info = method(self.stored_infos[info])
@@ -112,8 +138,13 @@ class Logger():
                     if epoch_num == 0:
                         csv_titles += ["{}_{}".format(info, name)]
                     csv_values += ["{:.5f}".format(processed_info)]
+                if USE_WB:
+                    wb_log_dict["{}_{}".format(info, name)] = processed_info
 
             tabulate_list.append(temp_list)
+
+        if USE_WB:
+            wandb.log(wb_log_dict)
 
         # clear
         self.stored_infos = {}
