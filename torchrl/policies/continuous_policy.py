@@ -82,6 +82,13 @@ class GuassianContPolicyBase():
             mean = torch.tanh(mean)
         return mean.squeeze(0).detach().cpu().numpy()
 
+    def torch_eval_act(self, x):
+        with torch.no_grad():
+            mean, _, _ = self.forward(x)
+        if self.tanh_action:
+            mean = torch.tanh(mean)
+        return mean.detach()
+
     def explore(self, x, return_log_probs=False, return_pre_tanh=False):
         mean, std, log_std = self.forward(x)
 
