@@ -1,32 +1,26 @@
 import torch
 import torch.optim as optim
-from .on_rl_algo import OnRLAlgo
+from .on_policy_trainer import OnPolicyTrainer
 from torchrl.networks.nets import ZeroNet
 
 
-class Reinforce(OnRLAlgo):
+class ReinforceTrainer(OnPolicyTrainer):
     """
     Reinforce
     """
     def __init__(
-            self,
-            pf,
-            plr,
-            optimizer_class=optim.Adam,
-            entropy_coeff=0.001,
-            **kwargs):
-        super(Reinforce, self).__init__(**kwargs)
-        self.pf = pf
-        # Use a vacant value network to simplify the code structure
-        self.vf = ZeroNet()
-        self.to(self.device)
-
+        self,
+        plr: float = 3e-4,
+        optimizer_class: object = optim.Adam,
+        entropy_coeff: float = 0.001,
+        **kwargs
+    ):
+        super(ReinforceTrainer, self).__init__(**kwargs)
         self.plr = plr
         self.pf_optimizer = optimizer_class(
             self.pf.parameters(),
             lr=self.plr
         )
-
         self.entropy_coeff = entropy_coeff
         self.gae = False
 
@@ -44,16 +38,9 @@ class Reinforce(OnRLAlgo):
         info['advs/max'] = advs.max().item()
         info['advs/min'] = advs.min().item()
 
-        obs = torch.Tensor(obs).to(self.device)
-        acts = torch.Tensor(acts).to(self.device)
-        advs = torch.Tensor(advs).to(self.device)
-
-        out = self.pf.update(obs, acts)
+        out = self.agent.update(obs, acts)
         log_probs = out['log_prob']
         ent = out['ent']
-
-        # Normalize the advantage
-        advs = (advs - advs.mean()) / (advs.std() + 1e-5)
 
         assert log_probs.shape == advs.shape
         policy_loss = -log_probs * advs
@@ -72,10 +59,17 @@ class Reinforce(OnRLAlgo):
         info['logprob/max'] = log_probs.max().item()
         info['logprob/min'] = log_probs.min().item()
 
+        if 'std' in out:
+            # Log for continuous
+            std = out["std"]
+            info['std/mean'] = std.mean().item()
+            info['std/std'] = std.std().item()
+            info['std/max'] = std.max().item()
+            info['std/min'] = std.min().item()
         return info
 
     @property
-    def snapshot_networks(self):
+    def optimizers(self):
         return [
-            ("pf", self.pf)
+            ("pf_optim", self.pf_optimizer)
         ]

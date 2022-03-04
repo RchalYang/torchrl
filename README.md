@@ -8,6 +8,7 @@ Environments with 1d & 3d observation space are supported.
 
 Multi-Process Env is supported
 
+Fully GPU training is supported
 
 ## Requirements
 1. General Requirements
@@ -45,6 +46,10 @@ Checkout examples folder for detailed informations
     * A2C(Actor Critic)
     * PPO(Proximal Policy Optimization)
     * TRPO
+    * V-MPO
+    * DAAC
+    * IDAAC
+    * PPG
 * Off-Policy Methods:
     * Soft Actor Critic: SAC(TwinSAC)
     * Deep Deterministic Policy Gradient :DDPG
@@ -53,4 +58,13 @@ Checkout examples folder for detailed informations
         * Basic Double DQN
         * Bootstrapped DQN
         * QRDQN
+* Imitation Learning:
+    * Behaviour Cloning
+    * GAIL
 
+## Update:
+
+Major Update:
+* Update code structure:
+    * separate agent & trainer
+* Use Hydra for configuration

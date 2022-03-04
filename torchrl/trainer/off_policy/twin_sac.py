@@ -4,7 +4,7 @@ import copy
 import torch
 import torch.optim as optim
 from torch import nn as nn
-from .off_rl_algo import OffRLAlgo
+from .off_policy_trainer import OffRLAlgo
 
 
 class TwinSAC(OffRLAlgo):

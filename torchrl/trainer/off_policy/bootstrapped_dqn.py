@@ -1,15 +1,17 @@
 import numpy as np
 import torch
 from torch import nn as nn
-from .dqn import DQN
+from .dqn import DQNTrainer
 
 
-class BootstrappedDQN(DQN):
-    def __init__(self,
-                 head_num=10,
-                 bernoulli_p=0.5,
-                 **kwargs):
-        super(BootstrappedDQN, self).__init__(**kwargs)
+class BootstrappedDQNTrainer(DQNTrainer):
+    def __init__(
+        self,
+        head_num: int = 10,
+        bernoulli_p: int = 0.5,
+        **kwargs
+    ):
+        super(BootstrappedDQNTrainer, self).__init__(**kwargs)
 
         # self.m_distribution = torch.distributions.bernoulli.Bernoulli( bernoulli_p )
         self.bernoulli_p = bernoulli_p
@@ -51,7 +53,7 @@ class BootstrappedDQN(DQN):
         return next_ob, done, reward, info
 
     def start_episode(self):
-        self.pf.sample_head() 
+        self.pf.sample_head()
 
     def update(self, batch):
         self.training_update_num += 1

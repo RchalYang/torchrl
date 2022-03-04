@@ -1,25 +1,19 @@
-"""
-Legacy. Left for Reference
-"""
-
 import gym
 
 import torch.optim as optim
-
 import torchrl.networks as networks
 import torchrl.replay_buffers as replay_buffers
 import torchrl.policies as policies
 
-from torchrl.algo import *
+from torchrl.trainer import *
 from torchrl.collector import BaseCollector
 
-def get_agent( params):
 
+def get_agent(params):
     env = params['general_setting']['env']
     # params['general_setting']['collector'] = BaseCollector(
     #     env
-    # ) 
-
+    # )
     if len(env.observation_space.shape) == 3:
         params['net']['base_type']=networks.CNNBase
         if params['env']['frame_stack']:    

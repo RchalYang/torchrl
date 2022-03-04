@@ -3,54 +3,42 @@ import copy
 import torch
 import torch.optim as optim
 from torch import nn as nn
-from torch.distributions import  Normal
-from .off_rl_algo import OffRLAlgo
+from torch.distributions import Normal
+from .off_policy_trainer import OffPolicyTrainer
 
 
-class TD3(OffRLAlgo):
+class TD3Trainer(OffPolicyTrainer):
     def __init__(
-            self,
-            pf, qf1, qf2,
-            plr, qlr,
-            optimizer_class=optim.Adam,
-
-            policy_update_delay=2,
-            norm_std_policy=0.2,
-            noise_clip=0.5,
-            **kwargs):
-        super(TD3, self).__init__(**kwargs)
-
-        self.pf = pf
-        self.target_pf = copy.deepcopy(pf)
-
-        self.qf1 = qf1
-        self.target_qf1 = copy.deepcopy(qf1)
-        self.qf2 = qf2
-        self.target_qf2 = copy.deepcopy(qf2)
-        self.to(self.device)
+        self,
+        plr: float,
+        qlr: float,
+        policy_update_delay: int = 2,
+        norm_std_policy: float = 0.2,
+        noise_clip: float = 0.5,
+        **kwargs
+    ) -> None:
+        super(TD3Trainer, self).__init__(**kwargs)
 
         self.plr = plr
         self.qlr = qlr
 
-        self.pf_optimizer = optimizer_class(
-            self.pf.parameters(),
+        self.pf_optimizer = self.optimizer_class(
+            self.agent.pf.parameters(),
             lr=self.plr,
         )
 
-        self.qf1_optimizer = optimizer_class(
-            self.qf1.parameters(),
+        self.qf1_optimizer = self.optimizer_class(
+            self.agent.qf1.parameters(),
             lr=self.qlr,
         )
 
-        self.qf2_optimizer = optimizer_class(
-            self.qf2.parameters(),
+        self.qf2_optimizer = self.optimizer_class(
+            self.agent.qf2.parameters(),
             lr=self.qlr,
         )
 
         self.qf_criterion = nn.MSELoss()
-
         self.policy_update_delay = policy_update_delay
-
         self.norm_std_policy = norm_std_policy
         self.noise_clip = noise_clip
 
@@ -178,4 +166,11 @@ class TD3(OffRLAlgo):
             (self.pf, self.target_pf),
             (self.qf1, self.target_qf1),
             (self.qf2, self.target_qf2),
+        ]
+
+    @property
+    def optimizers(self):
+        return [
+            ("pf_optim", self.pf_optimizer),
+            ("qf_optim", self.qf_optimizer)
         ]

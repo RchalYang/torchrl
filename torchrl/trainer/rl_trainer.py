@@ -1,36 +1,46 @@
-import copy
 import time
 from collections import deque
+from typing import Dict
 import numpy as np
 import torch
-import torchrl.algo.utils as atu
+import torch.nn as nn
+import torchrl.trainer.utils as atu
+import torch.optim as optim
+
 import gym
-import os
 import os.path as osp
 import pathlib
 import pickle
+from torchrl.agent import RLAgent
+from torchrl.replay_buffers.base import BaseReplayBuffer
 
 
-class RLAlgo():
+class RLTrainer():
     """
     Base RL Algorithm Framework
     """
     def __init__(
-            self,
-            env=None,
-            replay_buffer=None,
-            collector=None,
-            logger=None,
-            grad_clip=None,
-            discount=0.99,
-            num_epochs=3000,
-            batch_size=128,
-            device='cpu',
-            save_interval=100,
-            eval_interval=1,
-            save_dir=None):
+        self,
+        agent: RLAgent = None,
+        env: object = None,
+        replay_buffer: BaseReplayBuffer = None,
+        collector: object = None,
+        logger: object = None,
+        grad_clip: float = None,
+        discount: float = 0.99,
+        num_epochs: int = 3000,
+        batch_size: int = 128,
+        device: str = 'cpu',
+        save_interval: int = 100,
+        eval_interval: int = 1,
+        save_dir: str = None,
+        episodes_reward_record_length: int = 30,
+        training_episode_rewards_record_length: int = 30,
+        optimizer_class: optim.Optimizer = optim.Adam,
+    ) -> None:
 
         self.env = env
+        self.agent = agent
 
         self.continuous = isinstance(self.env.action_space, gym.spaces.Box)
 
@@ -53,8 +63,10 @@ class RLAlgo():
         # Logger & relevant setting
         self.logger = logger
 
-        self.episode_rewards = deque(maxlen=30)
-        self.training_episode_rewards = deque(maxlen=30)
+        self.episode_rewards = deque(maxlen=episodes_reward_record_length)
+        self.training_episode_rewards = deque(
+            maxlen=training_episode_rewards_record_length
+        )
 
         self.save_interval = save_interval
         self.save_dir = save_dir
@@ -68,42 +80,32 @@ class RLAlgo():
         self.train_time = 0
         self.start = time.time()
 
-    def start_epoch(self):
+        self.optimizer_class = optimizer_class
+
+    def start_epoch(self) -> None:
         pass
 
-    def finish_epoch(self):
+    def finish_epoch(self) -> dict:
         return {}
 
-    def pretrain(self):
+    def pretrain(self) -> None:
         pass
 
-    def update_per_epoch(self):
+    def pre_update_process(self) -> None:
         pass
 
-    def snapshot(self, prefix, epoch):
-        if hasattr(self.env, "_obs_normalizer") and \
-            self.env._obs_normalizer is not None:
-            normalizer_file_name = "_obs_normalizer_{}.pkl".format(epoch)
-            normalizer_path = osp.join(prefix, normalizer_file_name)
-            with open(normalizer_path, "wb") as f:
-                pickle.dump(self.env._obs_normalizer, f)
+    def update_per_epoch(self) -> None:
+        pass
 
-        for name, network in self.snapshot_networks:
-            model_file_name = "model_{}_{}.pth".format(name, epoch)
-            model_path = osp.join(prefix, model_file_name)
-            torch.save(network.state_dict(), model_path)
-
-    def train(self):
+    def train(self) -> None:
         self.pretrain()
         total_frames = 0
         if hasattr(self, "pretrain_frames"):
             total_frames = self.pretrain_frames
-
         self.start_epoch()
 
         for epoch in range(self.num_epochs):
             self.current_epoch = epoch
-            start = time.time()
 
             self.start_epoch()
 
@@ -115,6 +117,7 @@ class RLAlgo():
             self.explore_time += time.time() - explore_start_time
 
             train_start_time = time.time()
+            self.pre_update_process()
             self.update_per_epoch()
             self.train_time += time.time() - train_start_time
 
@@ -133,7 +136,7 @@ class RLAlgo():
                     self.episode_rewards.append(reward)
 
                 if self.best_eval is None or \
-                    (np.mean(eval_infos["eval_rewards"]) > self.best_eval):
+                   (np.mean(eval_infos["eval_rewards"]) > self.best_eval):
                     self.best_eval = np.mean(eval_infos["eval_rewards"])
                     self.snapshot(self.save_dir, 'best')
                 del eval_infos["eval_rewards"]
@@ -157,39 +160,75 @@ class RLAlgo():
                 self.start = time.time()
 
             if epoch % self.save_interval == 0:
-                self.snapshot(self.save_dir, epoch)
+                self.snapshot(self.save_dir, str(epoch))
 
         self.snapshot(self.save_dir, "finish")
         self.collector.terminate()
         self.logger.finish()
 
-    def update(self, batch):
+    def update(
+        self,
+        batch: object
+    ) -> None:
         raise NotImplementedError
 
-    def _update_target_networks(self):
+    def _update_target_networks(self) -> None:
         if self.use_soft_update:
-            for net, target_net in self.target_networks:
+            for net, target_net in self.agent.target_networks:
                 atu.soft_update_from_to(net, target_net, self.tau)
         else:
             if self.training_update_num % self.target_hard_update_period == 0:
-                for net, target_net in self.target_networks:
+                for net, target_net in self.agent.target_networks:
                     atu.copy_model_params_from_to(net, target_net)
 
-    @property
-    def networks(self):
-        return [
-        ]
+    def snapshot(
+        self,
+        prefix: str,
+        epoch: str
+    ):
+        # Save Env
+        if hasattr(self.env, "_obs_normalizer") and \
+           self.env._obs_normalizer is not None:
+            normalizer_file_name = "_obs_normalizer_{}.pkl".format(epoch)
+            normalizer_path = osp.join(prefix, normalizer_file_name)
+            with open(normalizer_path, "wb") as f:
+                pickle.dump(self.env._obs_normalizer, f)
+
+        # Save Optimizier
+        for name, optim in self.optimizers:
+            optim_file_name = "optim_{}_{}.pth".format(name, epoch)
+            optim_path = osp.join(prefix, optim_file_name)
+            torch.save(optim.state_dict(), optim_path)
+
+        # Save Agent
+        self.agent.snapshot(prefix, epoch)
+
+    def resume(
+        self,
+        prefix: str,
+        epoch: str
+    ) -> None:
+        # Load Env
+        if hasattr(self.env, "_obs_normalizer") and \
+           self.env._obs_normalizer is not None:
+            normalizer_file_name = "_obs_normalizer_{}.pkl".format(epoch)
+            normalizer_path = osp.join(prefix, normalizer_file_name)
+            with open(normalizer_path, "rb") as f:
+                self.env._obs_normalizer = pickle.load(f)
+
+        # Load Optim
+        for name, optim in self.optimizers:
+            optim_file_name = "optim_{}_{}.pth".format(name, epoch)
+            optim_path = osp.join(prefix, optim_file_name)
+            optim.load_state_dict(
+                torch.load(
+                    optim_path,
+                    map_location=self.device
+                )
+            )
+        self.agent.resume(prefix, epoch)
 
     @property
-    def snapshot_networks(self):
+    def optimizers(self):
         return [
         ]
-
-    @property
-    def target_networks(self):
-        return [
-        ]
-
-    def to(self, device):
-        for net in self.networks:
-            net.to(device)

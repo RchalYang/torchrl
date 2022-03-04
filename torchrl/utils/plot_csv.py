@@ -23,7 +23,7 @@ def get_args():
                         help='environment to train on (default: HalfCheetah-v2)')
     parser.add_argument('--log_dir', type=str, default='./log',
                         help='directory for tensorboard logs (default: ./log)')
-    parser.add_argument( "--id", type=str, nargs='+', default=('origin',),
+    parser.add_argument("--id", type=str, nargs='+', default=('origin',),
                         help="id for tensorboard")
     parser.add_argument('--output_dir', type=str, default='./fig',
                         help='directory for plot output (default: ./fig)')

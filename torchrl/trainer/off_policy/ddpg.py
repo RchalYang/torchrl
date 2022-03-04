@@ -4,42 +4,40 @@ import torch
 import torch.optim as optim
 from torch import nn as nn
 from torch.distributions import Normal
-from .off_rl_algo import OffRLAlgo
+from .off_policy_trainer import OffPolicyTrainer
 
 
-class DDPG(OffRLAlgo):
+class DDPGTrainer(OffPolicyTrainer):
     """
     DDPG
     """
     def __init__(
-            self,
-            pf, qf,
-            plr, qlr,
-            optimizer_class=optim.Adam,
-            **kwargs):
-        super(DDPG, self).__init__(**kwargs)
-        self.pf = pf
-        self.target_pf = copy.deepcopy(pf)
-        self.qf = qf
-        self.target_qf = copy.deepcopy(qf)
-        self.to(self.device)
+        self,
+        plr: float,
+        qlr: float,
+        **kwargs
+    ) -> None:
+        super(DDPGTrainer, self).__init__(**kwargs)
 
         self.plr = plr
         self.qlr = qlr
 
-        self.pf_optimizer = optimizer_class(
-            self.pf.parameters(),
+        self.pf_optimizer = self.optimizer_class(
+            self.agent.pf.parameters(),
             lr=self.plr,
         )
 
-        self.qf_optimizer = optimizer_class(
-            self.qf.parameters(),
+        self.qf_optimizer = self.optimizer_class(
+            self.agent.qf.parameters(),
             lr=self.qlr,
         )
 
         self.qf_criterion = nn.MSELoss()
 
-    def update(self, batch):
+    def update(
+        self,
+        batch: dict
+    ) -> dict:
         self.training_update_num += 1
 
         obs = batch['obs']
@@ -48,28 +46,26 @@ class DDPG(OffRLAlgo):
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        obs = torch.Tensor(obs).to(self.device)
-        actions = torch.Tensor(actions).to(self.device)
-        next_obs = torch.Tensor(next_obs).to(self.device)
-        rewards = torch.Tensor(rewards).to(self.device)
-        terminals = torch.Tensor(terminals).to(self.device)
-
         """
         Policy Loss.
         """
 
-        new_actions = self.pf(obs)
-        new_q_pred = self.qf([obs, new_actions])
+        new_actions = self.agent.pf(obs)
+        new_q_pred = self.agent.predict_q(
+            obs, new_actions
+        )
 
         policy_loss = -new_q_pred.mean()
 
         """
         QF Loss
         """
-        target_actions = self.target_pf(next_obs)
-        target_q_values = self.target_qf([next_obs, target_actions])
+        target_actions = self.agent.target_pf(next_obs)
+        target_q_values = self.agent.predict_q(
+            next_obs, target_actions, use_target=True
+        )
         q_target = rewards + (1. - terminals) * self.discount * target_q_values
-        q_pred = self.qf([obs, actions])
+        q_pred = self.agent.predict_q(obs, actions)
         assert q_pred.shape == q_target.shape
         qf_loss = self.qf_criterion(q_pred, q_target.detach())
 
@@ -81,14 +77,14 @@ class DDPG(OffRLAlgo):
         policy_loss.backward()
         if self.grad_clip:
             pf_grad_norm = torch.nn.utils.clip_grad_norm_(
-                self.pf.parameters(), self.grad_clip)
+                self.agent.pf.parameters(), self.grad_clip)
         self.pf_optimizer.step()
 
         self.qf_optimizer.zero_grad()
         qf_loss.backward()
         if self.grad_clip:
             qf_grad_norm = torch.nn.utils.clip_grad_norm_(
-                self.qf.parameters(), self.grad_clip)
+                self.agent.qf.parameters(), self.grad_clip)
         self.qf_optimizer.step()
 
         self._update_target_networks()
@@ -110,24 +106,8 @@ class DDPG(OffRLAlgo):
         return info
 
     @property
-    def networks(self):
+    def optimizers(self):
         return [
-            self.pf,
-            self.qf,
-            self.target_pf,
-            self.target_qf
-        ]
-
-    @property
-    def snapshot_networks(self):
-        return [
-            ["pf", self.pf],
-            ["qf", self.qf],
-        ]
-
-    @property
-    def target_networks(self):
-        return [
-            (self.pf, self.target_pf),
-            (self.qf, self.target_qf)
+            ("pf_optim", self.pf_optimizer),
+            ("qf_optim", self.qf_optimizer)
         ]

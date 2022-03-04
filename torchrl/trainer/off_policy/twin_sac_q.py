@@ -4,17 +4,19 @@ import copy
 import torch
 import torch.optim as optim
 from torch import nn as nn
-from .off_rl_algo import OffRLAlgo
+from .off_policy_trainer import OffRLAlgo
 
 
-class SAC(OffRLAlgo):
+class TwinSACQ(OffRLAlgo):
     """
-    SAC
+    Twin SAC without V
     """
+
     def __init__(
             self,
-            pf, vf, qf,
-            plr, vlr, qlr,
+            pf,
+            qf1, qf2,
+            plr, qlr,
             optimizer_class=optim.Adam,
 
             policy_std_reg_weight=1e-3,
@@ -24,25 +26,26 @@ class SAC(OffRLAlgo):
             automatic_entropy_tuning=True,
             target_entropy=None,
             **kwargs):
-        super(SAC, self).__init__(**kwargs)
+        super(TwinSACQ, self).__init__(**kwargs)
         self.pf = pf
-        self.qf = qf
-        self.vf = vf
-        self.target_vf = copy.deepcopy(vf)
+        self.qf1 = qf1
+        self.qf2 = qf2
+        self.target_qf1 = copy.deepcopy(qf1)
+        self.target_qf2 = copy.deepcopy(qf2)
+
         self.to(self.device)
 
         self.plr = plr
-        self.vlr = vlr
         self.qlr = qlr
 
-        self.qf_optimizer = optimizer_class(
-            self.qf.parameters(),
+        self.qf1_optimizer = optimizer_class(
+            self.qf1.parameters(),
             lr=self.qlr,
         )
 
-        self.vf_optimizer = optimizer_class(
-            self.vf.parameters(),
-            lr=self.vlr,
+        self.qf2_optimizer = optimizer_class(
+            self.qf2.parameters(),
+            lr=self.qlr,
         )
 
         self.pf_optimizer = optimizer_class(
@@ -55,7 +58,8 @@ class SAC(OffRLAlgo):
             if target_entropy:
                 self.target_entropy = target_entropy
             else:
-                self.target_entropy = -np.prod(self.env.action_space.shape).item()  # from rlkit
+                self.target_entropy = -np.prod(
+                    self.env.action_space.shape).item()
             self.log_alpha = torch.zeros(1).to(self.device)
             self.log_alpha.requires_grad_()
             self.alpha_optimizer = optimizer_class(
@@ -64,16 +68,21 @@ class SAC(OffRLAlgo):
             )
 
         self.qf_criterion = nn.MSELoss()
-        self.vf_criterion = nn.MSELoss()
 
         self.policy_std_reg_weight = policy_std_reg_weight
         self.policy_mean_reg_weight = policy_mean_reg_weight
 
         self.reparameterization = reparameterization
 
+    # def pretrain(self):
+    #     super().pretrain()
+    #     # All function and share the same normalizer
+    #     # So we only to stop once
+    #     if self.pf.normalizer is not None:
+    #         self.pf.normalizer.stop_update_estimate()
+
     def update(self, batch):
         self.training_update_num += 1
-
         obs = batch['obs']
         actions = batch['acts']
         next_obs = batch['next_obs']
@@ -95,50 +104,52 @@ class SAC(OffRLAlgo):
         log_std = sample_info["log_std"]
         new_actions = sample_info["action"]
         log_probs = sample_info["log_prob"]
-        # ent = sample_info["ent"]
 
-        q_pred = self.qf([obs, actions])
-        v_pred = self.vf(obs)
+        q1_pred = self.qf1([obs, actions])
+        q2_pred = self.qf2([obs, actions])
 
         if self.automatic_entropy_tuning:
             """
             Alpha Loss
             """
-            alpha_loss = -(self.log_alpha *
-                           (log_probs + self.target_entropy).detach()).mean()
+            alpha_loss = -(self.log_alpha * (
+                log_probs + self.target_entropy).detach()).mean()
             self.alpha_optimizer.zero_grad()
             alpha_loss.backward()
             self.alpha_optimizer.step()
-            alpha = self.log_alpha.exp()
+            alpha = self.log_alpha.exp().detach()
         else:
             alpha = 1
             alpha_loss = 0
 
+        with torch.no_grad():
+            target_sample_info = self.pf.explore(
+                next_obs, return_log_probs=True)
+
+            target_actions = target_sample_info["action"]
+            target_log_probs = target_sample_info["log_prob"]
+
+            target_q1_pred = self.target_qf1([next_obs, target_actions])
+            target_q2_pred = self.target_qf2([next_obs, target_actions])
+            min_target_q = torch.min(target_q1_pred, target_q2_pred)
+            target_v_values = min_target_q - alpha * target_log_probs
         """
         QF Loss
         """
-        target_v_values = self.target_vf(next_obs)
         q_target = rewards + (1. - terminals) * self.discount * target_v_values
-        assert q_pred.shape == q_target.shape
-        qf_loss = self.qf_criterion(q_pred, q_target.detach())
+        assert q1_pred.shape == q_target.shape
+        assert q2_pred.shape == q_target.shape
+        qf1_loss = self.qf_criterion(q1_pred, q_target.detach())
+        qf2_loss = self.qf_criterion(q2_pred, q_target.detach())
 
-        """
-        VF Loss
-        """
-        q_new_actions = self.qf([obs, new_actions])
-        v_target = q_new_actions - alpha * log_probs
-        assert v_target == v_pred
-        vf_loss = self.vf_criterion(v_pred, v_target.detach())
-
+        q_new_actions = torch.min(
+            self.qf1([obs, new_actions]),
+            self.qf2([obs, new_actions]))
         """
         Policy Loss
         """
         if not self.reparameterization:
-            log_policy_target = q_new_actions - v_pred
-            assert log_probs.shape == log_policy_target.shape
-            policy_loss = (
-                log_probs * (alpha * log_probs - log_policy_target).detach()
-            ).mean()
+            raise NotImplementedError
         else:
             assert log_probs.shape == q_new_actions.shape
             policy_loss = (alpha * log_probs - q_new_actions).mean()
@@ -159,19 +170,19 @@ class SAC(OffRLAlgo):
                 self.pf.parameters(), self.grad_clip)
         self.pf_optimizer.step()
 
-        self.qf_optimizer.zero_grad()
-        qf_loss.backward()
+        self.qf1_optimizer.zero_grad()
+        qf1_loss.backward()
         if self.grad_clip:
-            qf_grad_norm = torch.nn.utils.clip_grad_norm_(
-                self.qf.parameters(), self.grad_clip)
-        self.qf_optimizer.step()
+            qf1_grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.qf1.parameters(), self.grad_clip)
+        self.qf1_optimizer.step()
 
-        self.vf_optimizer.zero_grad()
-        vf_loss.backward()
+        self.qf2_optimizer.zero_grad()
+        qf2_loss.backward()
         if self.grad_clip:
-            vf_grad_norm = torch.nn.utils.clip_grad_norm_(
-                self.vf.parameters(), self.grad_clip)
-        self.vf_optimizer.step()
+            qf2_grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.qf2.parameters(), self.grad_clip)
+        self.qf2_optimizer.step()
 
         self._update_target_networks()
 
@@ -183,12 +194,12 @@ class SAC(OffRLAlgo):
             info["Alpha"] = alpha.item()
             info["Alpha_loss"] = alpha_loss.item()
         info['Training/policy_loss'] = policy_loss.item()
-        info['Training/vf_loss'] = vf_loss.item()
-        info['Training/qf_loss'] = qf_loss.item()
+        info['Training/qf1_loss'] = qf1_loss.item()
+        info['Training/qf2_loss'] = qf2_loss.item()
         if self.grad_clip is not None:
             info['Training/pf_grad_norm'] = pf_grad_norm.item()
-            info['Training/qf_grad_norm'] = qf_grad_norm.item()
-            info['Training/vf_grad_norm'] = vf_grad_norm.item()
+            info['Training/qf1_grad_norm'] = qf1_grad_norm.item()
+            info['Training/qf2_grad_norm'] = qf2_grad_norm.item()
 
         info['log_std/mean'] = log_std.mean().item()
         info['log_std/std'] = log_std.std().item()
@@ -211,21 +222,23 @@ class SAC(OffRLAlgo):
     def networks(self):
         return [
             self.pf,
-            self.qf,
-            self.vf,
-            self.target_vf
+            self.qf1,
+            self.qf2,
+            self.target_qf1,
+            self.target_qf2
         ]
 
     @property
     def snapshot_networks(self):
         return [
             ["pf", self.pf],
-            ["qf", self.qf],
-            ["vf", self.vf]
+            ["qf1", self.qf1],
+            ["qf2", self.qf2],
         ]
 
     @property
     def target_networks(self):
         return [
-            (self.vf, self.target_vf)
+            (self.qf1, self.target_qf1),
+            (self.qf2, self.target_qf2)
         ]

@@ -2,23 +2,24 @@ import time
 import numpy as np
 import math
 import torch
-from torchrl.algo.rl_algo import RLAlgo
+from torchrl.trainer.rl_trainer import RLTrainer
 
 
-class OffRLAlgo(RLAlgo):
+class OffPolicyTrainer(RLTrainer):
     """
     Base RL Algorithm Framework
     """
     def __init__(
-            self,
-            pretrain_epochs=0,
-            min_pool=0,
-            target_hard_update_period=1000,
-            use_soft_update=True,
-            tau=0.001,
-            opt_times=1,
-            **kwargs):
-        super(OffRLAlgo, self).__init__(**kwargs)
+        self,
+        pretrain_epochs: int = 0,
+        # min_pool: int = 0,
+        target_hard_update_period: int = 1000,
+        use_soft_update: bool = True,
+        tau: float = 0.001,
+        opt_times: int = 1,
+        **kwargs
+    ) -> None:
+        super(OffPolicyTrainer, self).__init__(**kwargs)
 
         # environment relevant information
         self.pretrain_epochs = pretrain_epochs
@@ -30,33 +31,25 @@ class OffRLAlgo(RLAlgo):
 
         # training information
         self.opt_times = opt_times
-        self.min_pool = min_pool
+        # self.min_pool = min_pool
 
         self.sample_key = ["obs", "next_obs", "acts", "rewards", "terminals"]
 
-    def update_per_timestep(self):
-        if self.replay_buffer.num_steps_can_sample() > max(
-                self.min_pool, self.batch_size):
-            for _ in range(self.opt_times):
-                batch = self.replay_buffer.random_batch(
-                    self.batch_size, self.sample_key)
-                infos = self.update(batch)
-                self.logger.add_update_info(infos)
-
-    def update_per_epoch(self):
+    def update_per_epoch(self) -> None:
         for _ in range(self.opt_times):
             batch = self.replay_buffer.random_batch(
-                self.batch_size, self.sample_key)
+                self.batch_size,
+                self.sample_key,
+                device=self.device
+            )
             infos = self.update(batch)
             self.logger.add_update_info(infos)
 
-    def pretrain(self):
+    def pretrain(self) -> None:
         total_frames = 0
 
         self.pretrain_frames = self.pretrain_epochs * self.epoch_frames
-
         for pretrain_epoch in range(self.pretrain_epochs):
-
             start = time.time()
 
             self.start_epoch()
