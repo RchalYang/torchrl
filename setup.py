@@ -1,7 +1,23 @@
+"""Set Up Packages"""
 from setuptools import setup, find_packages
 
 with open("README.md", "r") as fh:
-    long_description = fh.read()
+  long_description = fh.read()
+
+# Minimum dependencies required prior to installation
+INSTALL_REQUIRES = [
+    # RL
+    "gym",
+    "torch",
+    "omegaconf",
+    "hydra-core>=1.1",
+    "opencv-python",
+    "toolz",
+    # logging
+    "tensorboardX",
+    "tabulate",
+    "gitpython",
+]
 
 setup(
     name="torchrl",
@@ -20,6 +36,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent"
     ],
+    install_requires=INSTALL_REQUIRES,
     packages=find_packages(),
-    python_requires='>=3.7'
+    python_requires=">= 3.7"
 )

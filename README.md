@@ -8,7 +8,7 @@ Environments with 1d & 3d observation space are supported.
 
 Multi-Process Env is supported
 
-Fully GPU training is supported
+Fully GPU training is supported (Like Isaac Gym)
 
 ## Requirements
 1. General Requirements

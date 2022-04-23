@@ -1,0 +1,41 @@
+project: torchrl
+exp_id: ""
+overwrite: False
+
+# experiment name. defaults to name of training config
+experiment: ''
+
+# if set to positive integer, overrides the default number of environments
+vec_env_nums: 16
+
+# seed - set to -1 to choose random seed
+seed: 42
+# set to True for deterministic performance
+torch_deterministic: False
+
+## Device config
+sim_device: 'cpu'
+# device to run RL
+rl_device: 'cuda:0'
+
+# test - if set, run policy in inference mode (requires setting checkpoint to load)
+test: False
+# used to set checkpoint path
+checkpoint: ''
+
+save_dir: './snapshots'
+log_dir: './log'
+# For View Policy
+snap_check: "finish"
+
+# set default task and default training config based on task
+defaults:
+  - train: ppo_mujoco
+  - env: halfcheetah
+  - hydra/job_logging: disabled
+
+# set the directory where the output files get saved
+hydra:
+  output_subdir: null
+  run:
+    dir: .

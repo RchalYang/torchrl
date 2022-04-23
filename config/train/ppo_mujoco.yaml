@@ -1,0 +1,41 @@
+# params:
+seed: ${..seed}
+
+policy:
+  log_init: 0.2
+  tanh_action: true
+
+net: 
+  hidden_dims: [256, 256]
+  append_hidden_dims: []
+
+load_checkpoint: ${if:${..checkpoint},True,False} # flag which sets whether to load the checkpoint
+load_path: ${..checkpoint} # path to the checkpoint to load
+
+general_setting:
+  num_epochs: 15000
+  save_interval: 100
+  eval_interval: 10
+
+  batch_size: 32768
+  gae: true
+
+collector:
+  discount: 0.99
+  epoch_frames: 131072
+
+replay_buffer:
+  size: ${..collector.epoch_frames}
+
+ppo:
+  plr: 3.e-5
+  vlr: 3.e-5
+
+  clip_para: 0.2
+  opt_epochs: 4
+
+  tau: 0.95
+  shuffle: True
+  entropy_coeff: 0
+
+  grad_clip: 1.

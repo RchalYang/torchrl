@@ -1,5 +1,6 @@
-from .reinforce import Reinforce
-from .a2c import A2C
-from .ppo import PPO
-from .trpo import TRPO
-from .v_mpo import VMPO
+"""On Policy Methods."""
+from .reinforce import ReinforceTrainer
+from .a2c import A2CTrainer
+from .ppo import PPOTrainer
+from .trpo import TRPOTrainer
+from .v_mpo import VMPOTrainer

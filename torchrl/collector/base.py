@@ -1,280 +1,198 @@
-from collections import deque
-import torch
-import torch.multiprocessing as mp
-import copy
-import numpy as np
+"""Base Collector: Implement Basic Operations."""
 import gym
+import torch
+import copy
+import sys
+import torch.multiprocessing as mp
+import numpy as np
+from collections import deque
+from torchrl.env.base_wrapper import BaseWrapper
 from torchrl.env.vecenv import VecEnv
+from torchrl.agent import RLAgent
+from torchrl.replay_buffers import BaseReplayBuffer
 
 
 class BaseCollector:
-    def __init__(
-            self,
-            env, eval_env, pf, replay_buffer,
-            epoch_frames,
-            train_render=False,
-            eval_episodes=1,
-            eval_render=False,
-            device='cpu',
-            max_episode_frames=999):
+  """Base Collector: Implement Basic Operations."""
 
-        self.pf = pf
-        self.replay_buffer = replay_buffer
+  def __init__(
+      self,
+      env: BaseWrapper,
+      eval_env: BaseWrapper,
+      agent: RLAgent,
+      replay_buffer: BaseReplayBuffer,
+      epoch_frames: int,
+      train_render=False,
+      eval_interval: int = 1,
+      eval_episodes: int = 1,
+      eval_render: bool = False,
+      device: str = "cpu",
+      max_episode_frames: int = 999,
+  ):
+    """
+    Base Collector.
 
-        self.env = env
-        self.env.train()
-        self.continuous = isinstance(self.env.action_space, gym.spaces.Box)
-        self.train_render = train_render
+    Env: Environment Wrapper.
 
-        if eval_env is not None:
-            self.eval_env = eval_env
-        else:
-            self.eval_env = copy.deepcopy(env)
-            if hasattr(env, "_obs_normalizer"):
-                self.eval_env._obs_normalizer = env._obs_normalizer
-        self.eval_env._reward_scale = 1
-        self.eval_episodes = eval_episodes
-        self.eval_render = eval_render
+    """
+    self.agent = agent
+    self.replay_buffer = replay_buffer
 
-        self.current_ob = self.env.reset()
+    self.env = env
+    self.env.train()
+    self.continuous = isinstance(self.env.action_space, gym.spaces.Box)
 
-        self.train_rew = 0
+    if eval_env is not None:
+      self.eval_env = eval_env
+    else:
+      self.eval_env = copy.deepcopy(env)
+      if hasattr(env, "_obs_normalizer"):
+        self.eval_env._obs_normalizer = env._obs_normalizer
+      self.eval_env._reward_scale = 1
 
-        # device specification
-        self.device = device
+    # device specification
+    self.device = device
 
-        self.to(self.device)
+    # Training
+    self.epoch_frames = epoch_frames
+    self.sample_epoch_frames = epoch_frames
+    self.sample_epoch_frames //= self.env.env_nums
+    self.max_episode_frames = max_episode_frames
+    self.train_render = train_render
 
-        self.epoch_frames = epoch_frames
-        self.sample_epoch_frames = epoch_frames
-        self.max_episode_frames = max_episode_frames
+    # Evaluation
+    self.eval_interval = eval_interval
+    self.enable_eval = (eval_interval > 0)
+    self.eval_episodes = eval_episodes
+    self.eval_render = eval_render
 
-        self.current_step = 0
+    # Initialization
+    self.current_ob = self.env.reset()
+    print(type(self.current_ob))
+    self.current_step = torch.zeros((self.env.env_nums, 1))
+    self.train_rew = torch.zeros_like(self.current_step)
 
-    def start_episode(self):
-        pass
+    self.agent.to(self.device)
 
-    def finish_episode(self):
-        pass
+  def start_episode(self, flag):
+    pass
 
-    def take_actions(self):
-        out = self.pf.explore(
-            torch.Tensor(self.current_ob).to(self.device).unsqueeze(0))
-        act = out["action"]
-        act = act.detach().cpu().numpy()
+  def finish_episode(self, flag):
+    pass
 
-        if not self.continuous:
-            act = act[0]
-        elif np.isnan(act).any():
-            print("NaN detected. BOOM")
-            exit()
+  def take_actions(self):
+    out = self.agent.explore(
+        self.current_ob
+        # torch.Tensor(self.current_ob).to(self.device).unsqueeze(0)
+    )
+    act = out["action"]
+    # act = act.detach().cpu().numpy()
 
-        next_ob, reward, done, info = self.env.step(act)
-        if self.train_render:
-            self.env.render()
-        self.current_step += 1
-        self.train_rew += reward
-        sample_dict = {
-            "obs": np.expand_dims(self.current_ob, 0),
-            "next_obs": np.expand_dims(next_ob, 0),
-            "acts": np.expand_dims(act, 0),
-            "rewards": [[reward]],
-            "terminals": [[done]],
-            "time_limits": [[
-                info["time_limit"] if "time_limit" in info else False]]
-        }
+    if not self.continuous:
+      act = act[..., 0]
+    elif torch.isnan(act).any():
+      print("NaN detected. BOOM")
+      sys.exit()
 
-        if done or self.current_step >= self.max_episode_frames:
-            next_ob = self.env.reset()
-            self.finish_episode()
-            self.start_episode()
-            # reset current_step
-            self.current_step = 0
+    next_ob, reward, done, info = self.env.step(act)
+    if self.train_render:
+      self.env.render()
+    self.current_step += 1
+    self.train_rew += reward
 
-            # self.training_episode_rewards.append(self.train_rew)
-            self.train_rews.append(self.train_rew)
-            self.train_rew = 0
+    sample_dict = {
+        "obs": self.current_ob,
+        "next_obs": next_ob,
+        "acts": act,
+        "rewards": reward,
+        "terminals": done,
+        "time_limits": info["time_limit"] if "time_limit" in info
+        else torch.zeros_like(reward),
+    }
 
-        self.replay_buffer.add_sample(sample_dict)
+    if torch.any(done) or \
+            torch.any(self.current_step >= self.max_episode_frames):
+      flag = (self.current_step >= self.max_episode_frames) | done
 
-        self.current_ob = next_ob
+      next_ob = self.env.partial_reset(flag.squeeze(-1))
 
-        return reward
+      self.current_step[flag] = 0
+      self.train_rews += list(self.train_rew[flag])
+      self.train_rew[flag] = 0
 
-    def terminate(self):
-        self.env.close()
-        self.eval_env.close()
+      self.finish_episode(flag)
+      self.start_episode(flag)
 
-    def train_one_epoch(self):
-        self.train_rews = []
-        self.train_epoch_reward = 0
-        self.env.train()
+    self.replay_buffer.add_sample(sample_dict)
 
-        for _ in range(self.sample_epoch_frames):
-            # Sample actions
-            reward = self.take_actions()
+    self.current_ob = next_ob
 
-            self.train_epoch_reward += reward
+    return reward
 
-        return {
-            'train_rewards': self.train_rews,
-            'train_epoch_reward': self.train_epoch_reward
-        }
+  def terminate(self):
+    self.env.close()
+    if self.eval_env is not self.env:
+      self.eval_env.close()
 
-    def eval_one_epoch(self):
-        eval_infos = {}
-        eval_rews = []
+  def train_one_epoch(self):
+    self.train_rews = []
+    self.train_epoch_reward = 0
+    self.env.train()
 
-        done = False
-        if hasattr(self.env, "_obs_normalizer"):
-            self.eval_env._obs_normalizer = copy.deepcopy(self.env._obs_normalizer)
-        self.eval_env.eval()
+    for _ in range(self.sample_epoch_frames):
+      # Sample actions
+      reward = self.take_actions()
+      self.train_epoch_reward += reward
 
-        traj_lens = []
-        for _ in range(self.eval_episodes):
+    return {
+        "train_rewards": self.train_rews,
+        "train_epoch_reward": self.train_epoch_reward,
+    }
 
-            eval_ob = self.eval_env.reset()
-            rew = 0
-            traj_len = 0
-            done = False
-            while not done:
-                act = self.pf.eval_act(torch.Tensor(eval_ob).to(
-                    self.device).unsqueeze(0))
+  def eval_one_epoch(self):
+    eval_infos = {}
+    eval_rews = []
 
-                if self.continuous and np.isnan(act).any():
-                    print("NaN detected. BOOM")
-                    exit()
-                try:
-                    eval_ob, r, done, _ = self.eval_env.step(act)
-                    rew += r
-                    traj_len += 1
-                    if self.eval_render:
-                        self.eval_env.render()
-                except Exception:
-                    print(act)
+    done = False
+    if hasattr(self.env, "_obs_normalizer"):
+      self.eval_env._obs_normalizer = copy.deepcopy(self.env._obs_normalizer)
+    self.eval_env.eval()
 
-            eval_rews.append(rew)
-            traj_lens.append(traj_len)
+    traj_lens = []
+    for _ in range(self.eval_episodes):
+      done = torch.zeros((self.eval_env.env_nums, 1)).bool()
+      epi_done = torch.zeros((self.eval_env.env_nums, 1)).bool()
 
-            done = False
+      eval_obs = self.eval_env.reset()
+      rews = torch.zeros_like(done)
+      traj_len = torch.zeros_like(rews)
 
-        eval_infos["eval_rewards"] = eval_rews
-        eval_infos["eval_traj_length"] = np.mean(traj_lens)
-        return eval_infos
+      while not torch.all(epi_done):
+        act = self.agent.eval_act(eval_obs.to(self.device))
+        if self.continuous and torch.isnan(act).any():
+          print("NaN detected. BOOM")
+          print(self.agent.pf.forward(eval_obs.to(self.device)))
+          sys.exit()
+        try:
+          eval_obs, r, done, _ = self.eval_env.step(act)
+          rews = rews + (~epi_done) * r
+          traj_len = traj_len + (~epi_done)
 
-    def to(self, device):
-        for func in self.funcs:
-            self.funcs[func].to(device)
+          epi_done = epi_done | done
+          if torch.any(done):
+            eval_obs = self.eval_env.partial_reset(
+                done.squeeze(-1)
+            )
 
-    @property
-    def funcs(self):
-        return {
-            "pf": self.pf
-        }
+          if self.eval_render:
+            self.eval_env.render()
+        except Exception as e:
+          print(e)
+          print(act)
+          sys.exit()
+      eval_rews += list(rews.cpu().numpy())
+      traj_lens += list(traj_len.cpu().numpy())
 
-
-class VecCollector(BaseCollector):
-    def __init__(self, **kwargs):
-        super(VecCollector, self).__init__(**kwargs)
-        self.sample_epoch_frames //= self.env.env_nums
-        # assert isinstance(self.env, VecEnv)
-        self.current_step = np.zeros((self.env.env_nums, 1))
-        self.train_rew = np.zeros_like(self.current_step)
-
-    def take_actions(self):
-        out = self.pf.explore(
-            torch.Tensor(self.current_ob).to(self.device).unsqueeze(0))
-        act = out["action"]
-        act = act.detach().cpu().numpy()
-
-        if not self.continuous:
-            act = act[..., 0]
-        elif np.isnan(act).any():
-            print("NaN detected. BOOM")
-            print(self.pf.forward(
-                torch.Tensor(self.current_ob).to(self.device)
-            ))
-            exit()
-
-        next_ob, reward, done, infos = self.env.step(act)
-        if self.train_render:
-            self.env.render()
-        self.current_step += 1
-
-        sample_dict = {
-            "obs": self.current_ob,
-            "next_obs": next_ob,
-            "acts": act,
-            "rewards": reward,
-            "terminals": done,
-            "time_limits":
-                infos["time_limit"][:, np.newaxis] \
-                if "time_limit" in infos else [False]
-        }
-
-        self.train_rew += reward
-        if np.any(done):
-            self.train_rews += list(self.train_rew[done])
-            self.train_rew[done] = 0
-
-        if np.any(done) or \
-           np.any(self.current_step >= self.max_episode_frames):
-            flag = (self.current_step >= self.max_episode_frames) | done
-            next_ob = self.env.partial_reset(np.squeeze(flag, axis=-1))
-            self.current_step[flag] = 0
-
-        self.replay_buffer.add_sample(sample_dict)
-
-        self.current_ob = next_ob
-
-        return np.sum(reward)
-
-    def eval_one_epoch(self):
-        eval_infos = {}
-        eval_rews = []
-
-        if hasattr(self.env, "_obs_normalizer"):
-            self.eval_env._obs_normalizer = copy.deepcopy(self.env._obs_normalizer)
-        self.eval_env.eval()
-
-        traj_lens = []
-        for _ in range(self.eval_episodes):
-            done = np.zeros((self.eval_env.env_nums, 1)).astype(np.bool)
-            epi_done = np.zeros((self.eval_env.env_nums, 1)).astype(np.bool)
-
-            eval_obs = self.eval_env.reset()
-
-            rews = np.zeros_like(done)
-            traj_len = np.zeros_like(rews)
-
-            while not np.all(epi_done):
-                act = self.pf.eval_act(
-                    torch.Tensor(eval_obs).to(self.device)
-                )
-                if self.continuous and np.isnan(act).any():
-                    print("NaN detected. BOOM")
-                    print(self.pf.forward(torch.Tensor(eval_obs).to(self.device)))
-                    exit()
-                try:
-                    eval_obs, r, done, _ = self.eval_env.step(act)
-                    rews = rews + ((1-epi_done) * r)
-                    traj_len = traj_len + (1 - epi_done)
-
-                    epi_done = epi_done | done
-                    if np.any(done):
-                        eval_obs = self.eval_env.partial_reset(
-                            np.squeeze(done, axis=-1)
-                        )
-
-                    if self.eval_render:
-                        self.eval_env.render()
-                except Exception as e:
-                    print(e)
-                    print(act)
-                    exit()
-            eval_rews += list(rews)
-            traj_lens += list(traj_len)
-
-        eval_infos["eval_rewards"] = eval_rews
-        eval_infos["eval_traj_length"] = np.mean(traj_lens)
-        return eval_infos
+    eval_infos["eval_rewards"] = eval_rews
+    eval_infos["eval_traj_length"] = np.mean(traj_lens)
+    return eval_infos
