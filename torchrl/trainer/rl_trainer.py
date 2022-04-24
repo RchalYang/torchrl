@@ -31,7 +31,7 @@ class RLTrainer():
       discount: float = 0.99,
       num_epochs: int = 3000,
       batch_size: int = 128,
-      device: str = 'cpu',
+      device: str = "cpu",
       save_interval: int = 100,
       eval_interval: int = 1,
       save_dir: str = None,
@@ -139,7 +139,7 @@ class RLTrainer():
         if self.best_eval is None or \
            (np.mean(eval_infos["eval_rewards"]) > self.best_eval):
           self.best_eval = np.mean(eval_infos["eval_rewards"])
-          self.snapshot(self.save_dir, 'best')
+          self.snapshot(self.save_dir, "best")
         del eval_infos["eval_rewards"]
 
         infos["Running_Average_Rewards"] = np.mean(

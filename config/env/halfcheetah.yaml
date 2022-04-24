@@ -1,4 +1,4 @@
-env_name : "HalfCheetah-v3"
+env_name : "HalfCheetah-v2"
 wrap:
   reward_scale: 1
   obs_norm: true

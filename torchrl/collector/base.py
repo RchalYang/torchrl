@@ -3,7 +3,6 @@ import gym
 import torch
 import copy
 import sys
-import torch.multiprocessing as mp
 import numpy as np
 from collections import deque
 from torchrl.env.base_wrapper import BaseWrapper
@@ -26,7 +25,8 @@ class BaseCollector:
       eval_interval: int = 1,
       eval_episodes: int = 1,
       eval_render: bool = False,
-      device: str = "cpu",
+      rl_device: str = "cpu",
+      sim_device: str = "cpu",
       max_episode_frames: int = 999,
   ):
     """
@@ -46,12 +46,14 @@ class BaseCollector:
       self.eval_env = eval_env
     else:
       self.eval_env = copy.deepcopy(env)
-      if hasattr(env, "_obs_normalizer"):
-        self.eval_env._obs_normalizer = env._obs_normalizer
-      self.eval_env._reward_scale = 1
+
+    if hasattr(env, "_obs_normalizer"):
+      self.eval_env._obs_normalizer = env._obs_normalizer
+    self.eval_env._reward_scale = 1
 
     # device specification
-    self.device = device
+    self.rl_device = rl_device
+    self.sim_device = sim_device
 
     # Training
     self.epoch_frames = epoch_frames
@@ -68,11 +70,10 @@ class BaseCollector:
 
     # Initialization
     self.current_ob = self.env.reset()
-    print(type(self.current_ob))
-    self.current_step = torch.zeros((self.env.env_nums, 1))
-    self.train_rew = torch.zeros_like(self.current_step)
+    self.current_step = torch.zeros((self.env.env_nums, 1), device=sim_device)
+    self.train_rew = torch.zeros_like(self.current_step, device=sim_device)
 
-    self.agent.to(self.device)
+    self.agent.to(self.rl_device)
 
   def start_episode(self, flag):
     pass
@@ -82,11 +83,9 @@ class BaseCollector:
 
   def take_actions(self):
     out = self.agent.explore(
-        self.current_ob
-        # torch.Tensor(self.current_ob).to(self.device).unsqueeze(0)
+        self.current_ob.to(self.rl_device)
     )
     act = out["action"]
-    # act = act.detach().cpu().numpy()
 
     if not self.continuous:
       act = act[..., 0]
@@ -107,7 +106,7 @@ class BaseCollector:
         "rewards": reward,
         "terminals": done,
         "time_limits": info["time_limit"] if "time_limit" in info
-        else torch.zeros_like(reward),
+          else torch.zeros_like(reward, device=self.sim_device),
     }
 
     if torch.any(done) or \
@@ -154,29 +153,40 @@ class BaseCollector:
     eval_rews = []
 
     done = False
-    if hasattr(self.env, "_obs_normalizer"):
-      self.eval_env._obs_normalizer = copy.deepcopy(self.env._obs_normalizer)
+    # if hasattr(self.env, "_obs_normalizer"):
+    #   self.eval_env._obs_normalizer = copy.deepcopy(self.env._obs_normalizer)
+    print(self.eval_env._obs_normalizer._mean)
+    print(self.eval_env._obs_normalizer._var)
+    print(self.eval_env._obs_normalizer._count)
     self.eval_env.eval()
 
     traj_lens = []
     for _ in range(self.eval_episodes):
-      done = torch.zeros((self.eval_env.env_nums, 1)).bool()
-      epi_done = torch.zeros((self.eval_env.env_nums, 1)).bool()
+      done = torch.zeros(
+          (self.eval_env.env_nums, 1),
+          device=self.sim_device, dtype=torch.bool
+      )
+      epi_done = torch.zeros(
+          (self.eval_env.env_nums, 1),
+          device=self.sim_device, dtype=torch.bool
+      )
 
       eval_obs = self.eval_env.reset()
-      rews = torch.zeros_like(done)
-      traj_len = torch.zeros_like(rews)
+      rews = torch.zeros_like(done, device=self.sim_device)
+      traj_len = torch.zeros_like(rews, device=self.sim_device)
 
       while not torch.all(epi_done):
-        act = self.agent.eval_act(eval_obs.to(self.device))
+        act = self.agent.eval_act(
+            eval_obs.to(self.rl_device)
+        ).to(self.sim_device)
         if self.continuous and torch.isnan(act).any():
           print("NaN detected. BOOM")
-          print(self.agent.pf.forward(eval_obs.to(self.device)))
+          print(self.agent.pf.forward(eval_obs.to(self.rl_device)))
           sys.exit()
         try:
           eval_obs, r, done, _ = self.eval_env.step(act)
-          rews = rews + (~epi_done) * r
-          traj_len = traj_len + (~epi_done)
+          rews = rews + (~epi_done).float() * r
+          traj_len = traj_len + (~epi_done).float()
 
           epi_done = epi_done | done
           if torch.any(done):
@@ -192,7 +202,6 @@ class BaseCollector:
           sys.exit()
       eval_rews += list(rews.cpu().numpy())
       traj_lens += list(traj_len.cpu().numpy())
-
     eval_infos["eval_rewards"] = eval_rews
     eval_infos["eval_traj_length"] = np.mean(traj_lens)
     return eval_infos

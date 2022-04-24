@@ -99,7 +99,8 @@ def launch_rlg_hydra(cfg: DictConfig):
   print(vf)
   cfg_dict["train"]["general_setting"]["collector"] = OnPolicyCollector(
       env=env, eval_env=eval_env, agent=agent,
-      replay_buffer=replay_buffer, device=cfg.rl_device,
+      replay_buffer=replay_buffer,
+      rl_device=cfg.rl_device, sim_device=cfg.sim_device,
       train_render=False,
       **cfg_dict["train"]["collector"]
   )

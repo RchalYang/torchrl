@@ -86,6 +86,9 @@ class TorchNormalizer(Normalizer):
     self.clip = clip
     self.should_estimate = True
 
+  def stop_update_estimate(self):
+    self.should_estimate = False
+
   def update_estimate(self, data):
     if not self.should_estimate:
       return
@@ -93,14 +96,14 @@ class TorchNormalizer(Normalizer):
       data = data.unsqueeze(0)
     self._mean, self._var, self._count = update_mean_var_count_torch(
         self._mean, self._var, self._count,
-        torch.mean(data, dim=0), torch.var(data, dim=0), data.shape[0])
+        torch.mean(data, dim=0), torch.var(data, dim=0), data.shape[0]
+    )
 
   def inverse(self, raw):
     return raw * torch.sqrt(self._var) + self._mean
 
   def filt(self, raw):
     return torch.clamp(
-        (raw - self._mean) /
-        (torch.sqrt(self._var) + 1e-4),
+        (raw - self._mean) / (torch.sqrt(self._var) + 1e-4),
         -self.clip, self.clip
     )

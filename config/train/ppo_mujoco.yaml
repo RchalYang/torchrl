@@ -3,7 +3,7 @@ seed: ${..seed}
 
 policy:
   log_init: 0.2
-  tanh_action: true
+  tanh_action: false
 
 net: 
   hidden_dims: [256, 256]
@@ -17,12 +17,12 @@ general_setting:
   save_interval: 100
   eval_interval: 10
 
-  batch_size: 32768
+  batch_size: 256
   gae: true
 
 collector:
   discount: 0.99
-  epoch_frames: 131072
+  epoch_frames: 2048
 
 replay_buffer:
   size: ${..collector.epoch_frames}

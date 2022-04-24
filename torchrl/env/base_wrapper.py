@@ -99,8 +99,8 @@ class NormRet(BaseWrapper):
         (1,), self.env.device
     )
 
-  def step(self, act):
-    obs, rews, done, infos = self.env.step(act)
+  def step(self, action):
+    obs, rews, done, infos = self.env.step(action)
     if self.training:
       self.ret = self.ret * self.discount + rews
       # if self.ret_rms:
@@ -134,9 +134,9 @@ class TorchEnv(gym.ObservationWrapper, BaseWrapper):
     self.device = device
     self.dtype = dtype
 
-  def observation(self, obs):
+  def observation(self, observation):
     return torch.tensor(
-        obs, device=self.device, dtype=self.dtype
+        observation, device=self.device, dtype=self.dtype
     )
 
   def step(self, action):

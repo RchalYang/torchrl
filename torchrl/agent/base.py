@@ -18,13 +18,13 @@ class RLAgent(nn.Module):
     self.agent_device = agent_device
 
   def snapshot(self, prefix, epoch):
-    agent_file_name = "agent_{}.pth".format(epoch)
+    agent_file_name = f"agent_{epoch}.pth"
     model_path = osp.join(prefix, agent_file_name)
     torch.save(self.state_dict(), model_path)
 
   def resume(self, prefix, epoch):
     self.to(self.agent_device)
-    agent_file_name = "agent_{}.pth".format(epoch)
+    agent_file_name = f"agent_{epoch}.pth"
     agent_path = osp.join(prefix, agent_file_name)
     self.load_state_dict(
         torch.load(
@@ -33,10 +33,13 @@ class RLAgent(nn.Module):
         )
     )
 
+  def forward(self, _):
+    pass
+
   def explore(
       self,
       x: Tensor,
-      return_numpy: bool = True
+      detach: bool = True
   ) -> dict:
     pass
 
@@ -51,7 +54,6 @@ class RLAgent(nn.Module):
   def eval_act(
       self,
       x: Tensor,
-      return_numpy: bool = True
   ) -> Tensor:
     pass
 

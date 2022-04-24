@@ -17,18 +17,10 @@ class OnPolicyCollector(BaseCollector):
     self.discount = discount
 
   def take_actions(self):
-    # ob_tensor = torch.Tensor(
-    #     self.current_ob
-    # ).to(self.device)
-
-    ob_tensor = self.current_ob
-
+    ob_tensor = self.current_ob.clone().to(self.rl_device)
     out = self.agent.explore(ob_tensor)
-    acts = out["action"]
-    # acts = acts.detach().cpu().numpy()
-
+    acts = out["action"].to(self.sim_device)
     values = self.agent.predict_v(ob_tensor)
-    # values = values.detach().cpu().numpy()
 
     if self.continuous:
       if torch.isnan(acts).any():
@@ -38,7 +30,6 @@ class OnPolicyCollector(BaseCollector):
         sys.exit()
 
     next_obs, rewards, dones, infos = self.env.step(acts)
-
     if self.train_render:
       self.env.render()
     self.current_step += 1
@@ -52,7 +43,7 @@ class OnPolicyCollector(BaseCollector):
         "terminals": dones,
         "time_limits":
             infos["time_limit"] if "time_limit" in infos else
-            torch.zeros_like(dones)
+            torch.zeros_like(dones, device=self.sim_device)
     }
     self.train_rew += rewards
 
@@ -60,12 +51,9 @@ class OnPolicyCollector(BaseCollector):
        torch.any(self.current_step >= self.max_episode_frames):
       surpass_flag = self.current_step >= self.max_episode_frames
       flag = (self.current_step >= self.max_episode_frames) | dones
-      # last_ob = torch.Tensor(
-      #     next_obs
-      # ).to(self.device)
-      last_ob = next_obs
 
-      last_value = self.agent.predict_v(last_ob).detach()  # .cpu().numpy()
+      last_ob = next_obs.to(self.rl_device)
+      last_value = self.agent.predict_v(last_ob).detach().to(self.sim_device)
       sample_dict["terminals"] = flag
       sample_dict["rewards"] = rewards + \
           self.discount * last_value * surpass_flag
