@@ -55,6 +55,10 @@ def launch_rlg_hydra(cfg: DictConfig):
       env, cfg.seed, sim_device, rl_device,
       torch_deterministic=cfg.torch_deterministic
   )
+  set_seed(
+      eval_env, cfg.seed, sim_device, rl_device,
+      torch_deterministic=cfg.torch_deterministic
+  )
 
   buffer_param = cfg_dict["train"]["replay_buffer"]
 

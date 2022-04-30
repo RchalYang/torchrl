@@ -45,17 +45,17 @@ class Logger():
       shutil.rmtree(work_dir)
 
     self.tf_writer = tensorboardX.SummaryWriter(work_dir)
-    self.csv_file_path = os.path.join(work_dir, 'log.csv')
-    self.git_file_path = os.path.join(work_dir, 'git_hash.txt')
+    self.csv_file_path = os.path.join(work_dir, "log.csv")
+    self.git_file_path = os.path.join(work_dir, "git_hash.txt")
     repo = git.Repo(search_parent_directories=True)
     sha = repo.head.object.hexsha
-    with open(self.git_file_path, 'w') as git_output_file:
+    with open(self.git_file_path, "w") as git_output_file:
       git_output_file.write(sha)
 
     self.update_count = 0
     self.stored_infos = {}
 
-    with open(os.path.join(work_dir, 'params.json'), 'w') as output_param:
+    with open(os.path.join(work_dir, "params.json"), "w") as output_param:
       json.dump(params, output_param, indent=2)
 
     self.logger.info("Experiment Name:{}".format(experiment_id))
@@ -66,7 +66,7 @@ class Logger():
     params["name_combine"] = "{}_{}".format(experiment_id, env_name)
     if USE_WB:
       wandb.init(
-          project=params['project'],
+          project=params["project"],
           name="{}_{}_{}".format(experiment_id, env_name, str(seed)),
           group="{}_{}".format(experiment_id, env_name),
           # job_type=env_name,
@@ -149,7 +149,7 @@ class Logger():
     # clear
     self.stored_infos = {}
     if csv_write:
-      with open(self.csv_file_path, 'a') as f:
+      with open(self.csv_file_path, "a") as f:
         self.csv_writer = csv.writer(f)
         if epoch_num == 0:
           self.csv_writer.writerow(csv_titles)

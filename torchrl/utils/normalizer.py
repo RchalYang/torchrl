@@ -27,11 +27,14 @@ class Normalizer():
 
   def __init__(self, shape, clip=10.):
     self.shape = shape
-    self._mean = np.zeros(shape)
-    self._var = np.ones(shape)
+    self.should_estimate = True
     self._count = 1e-4
     self.clip = clip
-    self.should_estimate = True
+    self.init_params()
+
+  def init_params(self):
+    self._mean = np.zeros(self.shape)
+    self._var = np.ones(self.shape)
 
   def stop_update_estimate(self):
     self.should_estimate = False
@@ -55,8 +58,9 @@ class Normalizer():
 
 
 def update_mean_var_count_torch(
-        mean, var, count,
-        batch_mean, batch_var, batch_count):
+    mean, var, count,
+    batch_mean, batch_var, batch_count
+):
   """
   Imported From OpenAI Baseline
   """
@@ -77,17 +81,12 @@ class TorchNormalizer(Normalizer):
   """Torch Version Normalizer."""
 
   def __init__(self, shape, device, clip=10.):
-    super().__init__(shape, clip=10.)
-    self.shape = shape
     self.device = device
-    self._mean = torch.zeros(shape).to(self.device)
-    self._var = torch.ones(shape).to(self.device)
-    self._count = 1e-4
-    self.clip = clip
-    self.should_estimate = True
+    super().__init__(shape, clip=clip)
 
-  def stop_update_estimate(self):
-    self.should_estimate = False
+  def init_params(self):
+    self._mean = torch.zeros(self.shape).to(self.device)
+    self._var = torch.ones(self.shape).to(self.device)
 
   def update_estimate(self, data):
     if not self.should_estimate:
@@ -104,6 +103,6 @@ class TorchNormalizer(Normalizer):
 
   def filt(self, raw):
     return torch.clamp(
-        (raw - self._mean) / (torch.sqrt(self._var) + 1e-4),
+        (raw - self._mean.detach()) / (torch.sqrt(self._var.detach() + 1e-4)),
         -self.clip, self.clip
     )

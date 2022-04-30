@@ -12,10 +12,14 @@ class NormAct(gym.ActionWrapper, BaseWrapper):
 
   def __init__(self, env):
     super().__init__(env)
-    ub = np.ones(self.env.action_space.shape)
+    ub = np.ones(self._wrapped_env.action_space.shape)
     self.action_space = gym.spaces.Box(-1 * ub, ub)
-    self.lb = torch.Tensor(self.env.action_space.low, device=self.env.device)
-    self.ub = torch.Tensor(self.env.action_space.high, device=self.env.device)
+    self.lb = torch.Tensor(
+        self._wrapped_env.action_space.low, device=self._wrapped_env.device
+    )
+    self.ub = torch.Tensor(
+        self._wrapped_env.action_space.high, device=self._wrapped_env.device
+    )
     self.range = 0.5 * (self.ub - self.lb)
 
   def action(self, action):

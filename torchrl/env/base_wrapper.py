@@ -24,8 +24,8 @@ class BaseWrapper(gym.Wrapper):
       self._wrapped_env.eval()
     self.training = False
 
-  def reset(self, _):
-    return self.env.reset()
+  def reset(self, **kwargs):
+    return self._wrapped_env.reset()
 
   def __getattr__(self, attr):
     if attr == '_wrapped_env':
@@ -50,38 +50,37 @@ class RewardShift(gym.RewardWrapper, BaseWrapper):
 
 class NormObs(gym.ObservationWrapper, BaseWrapper):
   """
-  Normalized Observation => Optional, Use Momentum
+  Normalized Observation with Pytorch
   """
 
   def __init__(self, env, epsilon=1e-4, clipob=10.):
     super().__init__(env)
     self.count = epsilon
     self.clipob = clipob
-    self._obs_normalizer = Normalizer(env.observation_space.shape)
-
-  def copy_state(self, source_env):
-    self._obs_var = copy.deepcopy(source_env._obs_var)
-    self._obs_mean = copy.deepcopy(source_env._obs_mean)
+    self._obs_normalizer = Normalizer(
+        env.observation_space.shape, clip=clipob
+    )
 
   def observation(self, observation):
     if self.training:
       self._obs_normalizer.update_estimate(observation)
     return self._obs_normalizer.filt(observation)
 
+  def partial_reset(self, *args, **kwargs):
+    return self.observation(self._wrapped_env.partial_reset(*args, **kwargs))
+
 
 class TorchNormObs(NormObs):
   """
-  Normalized Observation => Optional, Use Momentum
+  Normalized Observation with Pytorch
   """
 
   def __init__(self, env, device, epsilon=1e-4, clipob=10.):
     super().__init__(
         env, epsilon=epsilon, clipob=clipob
     )
-    self.count = epsilon
-    self.clipob = clipob
     self._obs_normalizer = TorchNormalizer(
-        env.observation_space.shape, device
+        env.observation_space.shape, device, clip=clipob
     )
 
 
@@ -96,11 +95,11 @@ class NormRet(BaseWrapper):
     self.discount = discount
     self.epsilon = 1e-4
     self.ret_normalizer = TorchNormalizer(
-        (1,), self.env.device
+        (1,), self._wrapped_env.device
     )
 
   def step(self, action):
-    obs, rews, done, infos = self.env.step(action)
+    obs, rews, done, infos = self._wrapped_env.step(action)
     if self.training:
       self.ret = self.ret * self.discount + rews
       # if self.ret_rms:
@@ -111,19 +110,19 @@ class NormRet(BaseWrapper):
 
   def reset(self, **kwargs):
     self.ret = 0
-    return self.env.reset(**kwargs)
+    return self._wrapped_env.reset(**kwargs)
 
 
 class TimeLimitAugment(BaseWrapper):
   """Check Trajectory is ended by time limit or not"""
 
   def step(self, action):
-    obs, rew, done, info = self.env.step(action)
-    info['time_limit'] = self.env._max_episode_steps == self.env._elapsed_steps
+    obs, rew, done, info = self._wrapped_env.step(action)
+    info['time_limit'] = self._wrapped_env._max_episode_steps == self._wrapped_env._elapsed_steps
     return obs, rew, done, info
 
   def reset(self, **kwargs):
-    return self.env.reset(**kwargs)
+    return self._wrapped_env.reset(**kwargs)
 
 
 class TorchEnv(gym.ObservationWrapper, BaseWrapper):
@@ -140,14 +139,16 @@ class TorchEnv(gym.ObservationWrapper, BaseWrapper):
     )
 
   def step(self, action):
-    obs, rew, done, info = self.env.step(action.detach().cpu().numpy())
+    obs, rew, done, info = self._wrapped_env.step(
+        action.detach().cpu().numpy())
+    obs = self.observation(obs)
     done = torch.tensor(done, device=self.device, dtype=torch.bool)
     rew = torch.tensor(rew, device=self.device, dtype=self.dtype)
     for key in info.keys():
       info[key] = torch.tensor(
           info[key], device=self.device
       )
-    return self.observation(obs), rew, done, info
+    return obs, rew, done, info
 
   def partial_reset(self, *args, **kwargs):
-    return self.observation(self.env.partial_reset(*args, **kwargs))
+    return self.observation(self._wrapped_env.partial_reset(*args, **kwargs))

@@ -44,14 +44,13 @@ class VecEnv(BaseWrapper):
       env.close()
 
   def reset(self, **kwargs):
-    print(self.envs[0])
-    obs = [env.reset(kwargs) for env in self.envs]
+    obs = [env.reset(**kwargs) for env in self.envs]
     self._obs = np.stack(obs)
     return self._obs
 
   def partial_reset(self, index_mask, **kwargs):
     indexs = np.argwhere(index_mask == 1).reshape((-1))
-    reset_obs = [self.envs[index].reset(kwargs) for index in indexs]
+    reset_obs = [self.envs[index].reset(**kwargs) for index in indexs]
     self._obs[index_mask] = reset_obs
     return self._obs
 

@@ -4,9 +4,7 @@ import torch
 import copy
 import sys
 import numpy as np
-from collections import deque
 from torchrl.env.base_wrapper import BaseWrapper
-from torchrl.env.vecenv import VecEnv
 from torchrl.agent import RLAgent
 from torchrl.replay_buffers import BaseReplayBuffer
 
@@ -47,8 +45,6 @@ class BaseCollector:
     else:
       self.eval_env = copy.deepcopy(env)
 
-    if hasattr(env, "_obs_normalizer"):
-      self.eval_env._obs_normalizer = env._obs_normalizer
     self.eval_env._reward_scale = 1
 
     # device specification
@@ -106,7 +102,7 @@ class BaseCollector:
         "rewards": reward,
         "terminals": done,
         "time_limits": info["time_limit"] if "time_limit" in info
-          else torch.zeros_like(reward, device=self.sim_device),
+        else torch.zeros_like(reward, device=self.sim_device),
     }
 
     if torch.any(done) or \
@@ -152,13 +148,16 @@ class BaseCollector:
     eval_infos = {}
     eval_rews = []
 
-    done = False
-    # if hasattr(self.env, "_obs_normalizer"):
-    #   self.eval_env._obs_normalizer = copy.deepcopy(self.env._obs_normalizer)
-    print(self.eval_env._obs_normalizer._mean)
-    print(self.eval_env._obs_normalizer._var)
-    print(self.eval_env._obs_normalizer._count)
+    if hasattr(self.env, "_obs_normalizer"):
+      # Cant Directly Copy _obs_normalizer
+      # Since it wont modify the _obs_normalizer in the correct place
+      # self.eval_env._obs_normalizer._mean = self.env._obs_normalizer
+      self.eval_env._obs_normalizer._mean = self.env._obs_normalizer._mean
+      self.eval_env._obs_normalizer._var = self.env._obs_normalizer._var
+      self.eval_env._obs_normalizer._count = self.env._obs_normalizer._count
+
     self.eval_env.eval()
+    self.agent.eval()
 
     traj_lens = []
     for _ in range(self.eval_episodes):
