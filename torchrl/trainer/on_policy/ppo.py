@@ -25,6 +25,9 @@ class PPOTrainer(A2CTrainer):
     self.opt_epochs = opt_epochs
     self.clipped_value_loss = clipped_value_loss
     self.sample_key = ["obs", "acts", "advs", "estimate_returns", "values"]
+    self.use_lstm = self.agent.pf.use_lstm or self.agent.pf.use_lstm
+    if self.use_lstm:
+      self.sample_key.append("hidden_states")
 
   def pre_update_process(self) -> None:
     super().pre_update_process()
@@ -53,11 +56,16 @@ class PPOTrainer(A2CTrainer):
       self,
       info: dict,
       obs: Tensor,
+      hidden_states: Tensor or None,
       actions: Tensor,
       advs: Tensor
   ):
 
-    out = self.agent.update(obs, actions)
+    out = self.agent.update(
+        obs=obs,
+        actions=actions,
+        h=hidden_states
+    )
     log_probs = out["log_prob"]
     ent = out["ent"]
     log_std = out["log_std"]
@@ -94,7 +102,7 @@ class PPOTrainer(A2CTrainer):
     info["logprob/std"] = log_probs.std().item()
     info["logprob/max"] = log_probs.max().item()
     info["logprob/min"] = log_probs.min().item()
-
+    info["ent/mean"] = ent.mean().item()
     if "std" in out:
       # Log for continuous
       std = out["std"]
@@ -111,10 +119,15 @@ class PPOTrainer(A2CTrainer):
       self,
       info: dict,
       obs: Tensor,
+      hidden_states: Tensor or None,
       old_values: Tensor,
       est_rets: Tensor
   ):
-    values = self.agent.predict_v(obs)
+    values, _ = self.agent.predict_v(
+        x=obs,
+        h=hidden_states
+    )
+
     assert values.shape == est_rets.shape, \
         print(values.shape, est_rets.shape)
 
@@ -153,13 +166,15 @@ class PPOTrainer(A2CTrainer):
     advs = batch["advs"]
     old_values = batch["values"]
     est_rets = batch["estimate_returns"]
+    hidden_states = batch["hidden_states"].transpose(
+        0, 1) if self.use_lstm else None
 
     info["advs/mean"] = advs.mean().item()
     info["advs/std"] = advs.std().item()
     info["advs/max"] = advs.max().item()
     info["advs/min"] = advs.min().item()
 
-    self.update_critic(info, obs, old_values, est_rets)
-    self.update_actor(info, obs, actions, advs)
+    self.update_critic(info, obs, hidden_states, old_values, est_rets)
+    self.update_actor(info, obs, hidden_states, actions, advs)
 
     return info

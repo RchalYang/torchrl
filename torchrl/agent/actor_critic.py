@@ -18,6 +18,7 @@ class ActorCriticAgent(RLAgent):
   ) -> None:
     super().__init__(**kwargs)
     self.pf = pf
+    self.pf_use_lstm = self.pf.use_lstm
     self.with_target_pf = with_target_pf
     if self.with_target_pf:
       self.target_pf = copy.deepcopy(self.pf)
@@ -26,30 +27,34 @@ class ActorCriticAgent(RLAgent):
   def explore(
       self,
       x: Tensor,
+      h: Tensor = None,
       detach: bool = True
   ) -> dict:
     out_dict = self.pf.explore(x)
     if detach:
       for key in out_dict.keys():
-        out_dict[key] = out_dict[key].detach()
+        if out_dict[key] is not None:
+          out_dict[key] = out_dict[key].detach()
     return out_dict
 
   def update(
       self,
       obs: Tensor,
       actions: Tensor,
+      h: Tensor = None,
       use_target: bool = False
   ) -> dict:
     if use_target:
       assert self.with_target_pf
-      return self.target_pf.update(obs, actions)
-    return self.pf.update(obs, actions)
+      return self.target_pf.update(obs, actions, h=h)
+    return self.pf.update(obs, actions, h=h)
 
   def eval_act(
       self,
       x: Tensor,
+      h: Tensor = None,
   ) -> Tensor:
-    action = self.pf.eval_act(x)
+    action = self.pf.eval_act(x, h=h)
     return action
 
   @property
@@ -73,6 +78,7 @@ class ActorCriticVAgent(ActorCriticAgent):
   ) -> None:
     super().__init__(**kwargs)
     self.vf = vf
+    self.vf_use_lstm = self.vf.use_lstm
     self.with_target_vf = with_target_vf
     if self.with_target_vf:
       self.target_vf = copy.deepcopy(self.vf)
@@ -81,8 +87,12 @@ class ActorCriticVAgent(ActorCriticAgent):
   def predict_v(
       self,
       x: Tensor,
+      h: Tensor = None,
+      use_target: bool = False
   ) -> Tensor:
-    return self.vf(x)
+    if use_target:
+      return self.target_vf(x, h=h)
+    return self.vf(x, h=h)
 
   @property
   def target_networks(self) -> list:
@@ -107,6 +117,7 @@ class ActorCriticQAgent(ActorCriticAgent):
   ) -> None:
     super().__init__(**kwargs)
     self.qf = qf
+    self.qf_use_lstm = self.qf.use_lstm
     self.with_target_qf = with_target_qf
     if self.with_target_qf:
       self.target_qf = copy.deepcopy(self.qf)
@@ -116,12 +127,13 @@ class ActorCriticQAgent(ActorCriticAgent):
       self,
       obs: Tensor,
       act: Tensor,
+      h: Tensor = None,
       use_target: bool = False
   ) -> Tensor:
     if use_target:
       assert self.with_target_qf
-      return self.target_qf([obs, act])
-    return self.qf([obs, act])
+      return self.target_qf([obs, act], h=h)
+    return self.qf([obs, act], h=h)
 
   @property
   def target_networks(self) -> list:
@@ -148,6 +160,7 @@ class TwinActorCriticQAgent(ActorCriticAgent):
     super().__init__(**kwargs)
     self.qf1 = qf1
     self.qf2 = qf2
+    self.qf_use_lstm = self.qf1.use_lstm
     self.with_target_qf = with_target_qf
     if self.with_target_qf:
       self.target_qf1 = copy.deepcopy(self.qf1)
@@ -157,20 +170,22 @@ class TwinActorCriticQAgent(ActorCriticAgent):
   def predict_q1(
       self,
       x: Tensor,
+      h: Tensor = None,
       use_target: bool = False
   ) -> Tensor:
     if use_target:
-      return self.target_qf1(x)
-    return self.qf1(x)
+      return self.target_qf1(x, h=h)
+    return self.qf1(x, h=h)
 
   def predict_q2(
       self,
       x: Tensor,
+      h: Tensor = None,
       use_target: bool = False
   ) -> Tensor:
     if use_target:
-      return self.target_qf2(x)
-    return self.qf2(x)
+      return self.target_qf2(x, h=h)
+    return self.qf2(x, h=h)
 
   @property
   def target_networks(self) -> list:

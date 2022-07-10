@@ -39,6 +39,7 @@ class RLAgent(nn.Module):
   def explore(
       self,
       x: Tensor,
+      h: Tensor = None,
       detach: bool = True
   ) -> dict:
     pass
@@ -47,6 +48,7 @@ class RLAgent(nn.Module):
       self,
       obs: Tensor,
       actions: Tensor,
+      h: Tensor = None,
       use_target: bool = False
   ) -> dict:
     pass
@@ -54,18 +56,22 @@ class RLAgent(nn.Module):
   def eval_act(
       self,
       x: Tensor,
+      h: Tensor = None,
   ) -> Tensor:
     pass
 
   def predict_v(
       self,
       x: Tensor,
+      h: Tensor = None,
+      use_target: bool = False
   ) -> Tensor:
     pass
 
   def predict_q(
       self,
       x: Tensor,
+      h: Tensor = None,
       use_target: bool = False
   ) -> Tensor:
     pass

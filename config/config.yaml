@@ -32,7 +32,7 @@ snap_check: "finish"
 defaults:
   - train: ppo_mujoco
   - env: halfcheetah
-  - hydra/job_logging: disabled
+  - override hydra/job_logging: disabled
 
 # set the directory where the output files get saved
 hydra:

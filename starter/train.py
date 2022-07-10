@@ -81,6 +81,9 @@ def launch_rlg_hydra(cfg: DictConfig):
 
   cfg_dict["train"]["net"]["base_type"] = networks.MLPBase
   cfg_dict["train"]["net"]["activation_func"] = torch.nn.ReLU
+
+  cfg_dict["train"]["vf_net"]["base_type"] = networks.MLPBase
+  cfg_dict["train"]["vf_net"]["activation_func"] = torch.nn.ReLU
   pf = policies.GuassianContPolicyBasicBias(
       input_dim=env.observation_space.shape[0],
       action_dim=env.action_space.shape[0],
@@ -91,7 +94,7 @@ def launch_rlg_hydra(cfg: DictConfig):
   vf = networks.Net(
       input_dim=env.observation_space.shape[0],
       output_dim=1,
-      **cfg_dict["train"]["net"]
+      **cfg_dict["train"]["vf_net"]
   )
   agent = ActorCriticVAgent(
       pf=pf,

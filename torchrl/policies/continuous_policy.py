@@ -36,35 +36,35 @@ class DetContPolicy(networks.Net):
     self.continuous = True
     self.tanh_action = tanh_action
 
-  def forward(self, x):
+  def forward(self, x, h=None):
+    mean, h = super().forward(x, h=h)
     if self.tanh_action:
-      return torch.tanh(super().forward(x))
-    else:
-      return super().forward(x)
+      mean = torch.tanh(mean)
+    return mean, h
 
-  def eval_act(self, x):
+  def eval_act(self, x, h=None):
     with torch.no_grad():
-      act = self.forward(x).squeeze(0).detach()
+      act = self.forward(x, h=h).squeeze(0).detach()
     return act
 
-  def explore(self, x):
+  def explore(self, x, h=None):
     return {
-        "action": self.forward(x).squeeze(0)
+        "action": self.forward(x, h=h).squeeze(0)
     }
 
 
 class GuassianContPolicyBase():
   """Base Interface for Gaussian Policies"""
 
-  def eval_act(self, x):
+  def eval_act(self, x, h=None):
     with torch.no_grad():
-      mean, _, _ = self.forward(x)
+      mean, _, _, h = self.forward(x, h=h)
     if self.tanh_action:
       mean = torch.tanh(mean)
-    return mean.squeeze(0).detach()
+    return mean.squeeze(0).detach(), h
 
-  def explore(self, x, return_log_probs=False, return_pre_tanh=False):
-    mean, std, log_std = self.forward(x)
+  def explore(self, x, h=None, return_log_probs=False, return_pre_tanh=False):
+    mean, std, log_std, h = self.forward(x, h=h)
 
     if self.tanh_action:
       dis = TanhNormal(mean, std)
@@ -77,7 +77,8 @@ class GuassianContPolicyBase():
         "mean": mean,
         "log_std": log_std,
         "std": std,
-        "ent": ent
+        "ent": ent,
+        "hidden_state": h
     }
 
     if return_log_probs:
@@ -105,8 +106,8 @@ class GuassianContPolicyBase():
     dic["action"] = action.squeeze(0)
     return dic
 
-  def update(self, obs, actions):
-    mean, std, log_std = self.forward(obs)
+  def update(self, obs, actions, h=None):
+    mean, std, log_std, h = self.forward(obs, h=h)
 
     if self.tanh_action:
       dis = TanhNormal(mean, std)
@@ -142,11 +143,11 @@ class FixGuassianContPolicy(networks.Net, GuassianContPolicyBase):
     self.norm_std_explore = norm_std_explore
     self.norm_std_log = np.log(norm_std_explore)
 
-  def forward(self, x):
-    mean = super().forward(x)
+  def forward(self, x, h=None):
+    mean, h = super().forward(x, h=h)
     std = torch.ones_like(mean) * self.norm_std_explore
     log_std = torch.ones_like(mean) * self.norm_std_log
-    return mean, std, log_std
+    return mean, std, log_std, h
 
 
 class GuassianContPolicy(networks.Net, GuassianContPolicyBase):
@@ -157,12 +158,12 @@ class GuassianContPolicy(networks.Net, GuassianContPolicyBase):
     self.continuous = True
     self.tanh_action = tanh_action
 
-  def forward(self, x):
-    x = super().forward(x)
+  def forward(self, x, h=None):
+    x, h = super().forward(x, h=h)
     mean, log_std = x.chunk(2, dim=-1)
     log_std = torch.clamp(log_std, LOG_SIG_MIN, LOG_SIG_MAX)
     std = torch.exp(log_std)
-    return mean, std, log_std
+    return mean, std, log_std, h
 
 
 class GuassianContPolicyBasicBias(networks.Net, GuassianContPolicyBase):
@@ -180,10 +181,10 @@ class GuassianContPolicyBasicBias(networks.Net, GuassianContPolicyBase):
     self.logstd = nn.Parameter(torch.ones(action_dim) * np.log(log_init))
     self.tanh_action = tanh_action
 
-  def forward(self, x):
-    mean = super().forward(x)
+  def forward(self, x, h=None):
+    mean, h = super().forward(x, h=h)
     logstd = self.logstd
     logstd = torch.clamp(logstd, LOG_SIG_MIN, LOG_SIG_MAX)
     std = torch.exp(logstd)
     std = std.unsqueeze(0).expand_as(mean)
-    return mean, std, logstd
+    return mean, std, logstd, h

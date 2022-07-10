@@ -7,6 +7,8 @@ import numpy as np
 from torchrl.env.base_wrapper import BaseWrapper
 from torchrl.agent import RLAgent
 from torchrl.replay_buffers import BaseReplayBuffer
+from torch import Tensor
+from typing import List, Tuple
 
 
 class BaseCollector:
@@ -68,7 +70,16 @@ class BaseCollector:
     self.current_ob = self.env.reset()
     self.current_step = torch.zeros((self.env.env_nums, 1), device=sim_device)
     self.train_rew = torch.zeros_like(self.current_step, device=sim_device)
-
+    self.pf_use_lstm = self.agent.pf_use_lstm
+    if self.pf_use_lstm:
+      self.hidden_states = torch.zeros(
+          self.agent.pf.lstm_layers,
+          self.env.env_nums,
+          self.agent.pf.hidden_state_size,
+          dtype=torch.float, device=self.rl_device
+      )
+    else:
+      self.hidden_state = None
     self.agent.to(self.rl_device)
 
   def start_episode(self, flag):
@@ -79,9 +90,11 @@ class BaseCollector:
 
   def take_actions(self):
     out = self.agent.explore(
-        self.current_ob.to(self.rl_device)
+        self.current_ob.to(self.rl_device),
+        h=self.hidden_state
     )
     act = out["action"]
+    next_hidden_states = out["hidden_state"]
 
     if not self.continuous:
       act = act[..., 0]
@@ -104,6 +117,9 @@ class BaseCollector:
         "time_limits": info["time_limit"] if "time_limit" in info
         else torch.zeros_like(reward, device=self.sim_device),
     }
+    if self.pf_use_lstm:
+      # hidden state shape (# num layers, # batch size, # hidden dims)
+      sample_dict["hidden_states"] = self.hidden_states.transpose(0, 1)
 
     if torch.any(done) or \
             torch.any(self.current_step >= self.max_episode_frames):
@@ -118,9 +134,13 @@ class BaseCollector:
       self.finish_episode(flag)
       self.start_episode(flag)
 
+      if self.pf_use_lstm:
+        next_hidden_states[:, flag, :] = 0
+
     self.replay_buffer.add_sample(sample_dict)
 
     self.current_ob = next_ob
+    self.hidden_states = next_hidden_states
 
     return reward
 
@@ -133,6 +153,7 @@ class BaseCollector:
     self.train_rews = []
     self.train_epoch_reward = 0
     self.env.train()
+    self.agent.train()
 
     for _ in range(self.sample_epoch_frames):
       # Sample actions
@@ -169,15 +190,22 @@ class BaseCollector:
           (self.eval_env.env_nums, 1),
           device=self.sim_device, dtype=torch.bool
       )
+      hidden_state = None
 
       eval_obs = self.eval_env.reset()
       rews = torch.zeros_like(done, device=self.sim_device)
       traj_len = torch.zeros_like(rews, device=self.sim_device)
 
       while not torch.all(epi_done):
-        act = self.agent.eval_act(
-            eval_obs.to(self.rl_device)
-        ).to(self.sim_device)
+        # if self.pf_use_lstm:
+        act, hidden_state = self.agent.eval_act(
+            eval_obs.to(self.rl_device), h=hidden_state
+        )
+        act = act.to(self.sim_device)
+        # else:
+        #   act = self.agent.eval_act(
+        #       eval_obs.to(self.rl_device)
+        #   ).to(self.sim_device)
         if self.continuous and torch.isnan(act).any():
           print("NaN detected. BOOM")
           print(self.agent.pf.forward(eval_obs.to(self.rl_device)))

@@ -19,7 +19,7 @@ class Net(nn.Module):
       self,
       output_dim: int,
       base_type: Callable,
-      append_hidden_dims: list = [],
+      append_hidden_dims: list = None,
       append_hidden_init_func=init.basic_init,
       net_last_init_func=init.uniform_init,
       activation_func=nn.ReLU,
@@ -37,7 +37,20 @@ class Net(nn.Module):
     self.add_ln = add_ln
     self.activation_func = activation_func
     append_input_dim = self.base.output_dim
+
+    self.use_lstm = lstm_layers > 0
+    if self.use_lstm:
+      self.lstm_layers = lstm_layers
+      self.hidden_state_size = append_input_dim
+      self.gru = nn.GRU(
+          input_size=append_input_dim,
+          hidden_size=append_input_dim,
+          num_layers=lstm_layers
+      )
+
     self.append_fcs = []
+    if append_hidden_dims is None:
+      append_hidden_dims = []
     for next_dim in append_hidden_dims:
       fc = nn.Linear(append_input_dim, next_dim)
       append_hidden_init_func(fc)
@@ -48,14 +61,6 @@ class Net(nn.Module):
       append_input_dim = next_dim
     self.seq_append_fcs = nn.Sequential(*self.append_fcs)
 
-    self.use_lstm = lstm_layers > 0
-    if self.use_lstm:
-      self.gru = nn.GRU(
-          input_size=append_input_dim,
-          hidden_size=append_input_dim,
-          layers=lstm_layers
-      )
-
     last = nn.Linear(append_input_dim, output_dim)
     net_last_init_func(last)
     self.last_linear = last
@@ -63,20 +68,19 @@ class Net(nn.Module):
 
   def forward(self, x, h=None):
     out = self.base(x)
-    out = self.seq_append_fcs(out)
     if self.use_lstm:
+      out = out.unsqueeze(0)
       out, h = self.gru(out, h)
-      out = self.last_linear(out)
-      return out, h
-    else:
-      out = self.last_linear(out)
-      return out
+      out = out.squeeze(0)
+    out = self.seq_append_fcs(out)
+    out = self.last_linear(out)
+    return out, h
 
 
 class FlattenNet(Net):
   def forward(self, x, h=None):
     out = torch.cat(x, dim=-1)
-    return super().forward(out)
+    return super().forward(out, h)
 
 
 class QNet(Net):
@@ -86,15 +90,7 @@ class QNet(Net):
     assert len(x) == 2, "Q Net only get observation and action"
     state, action = x
     x = torch.cat([state, action], dim=-1)
-    out = self.base(x)
-    out = self.seq_append_fcs(out)
-    if self.use_lstm:
-      out, h = self.gru(out, h)
-      out = self.last_linear(out)
-      return out, h
-    else:
-      out = self.last_linear(out)
-      return out
+    return super().forward(x, h)
 
 
 class BootstrappedNet(nn.Module):
@@ -105,7 +101,7 @@ class BootstrappedNet(nn.Module):
       output_dim,
       base_type: nn.Module,
       num_heads: int = 10,
-      append_hidden_dims: list = [],
+      append_hidden_dims: list = None,
       append_hidden_init_func=init.basic_init,
       net_last_init_func=init.uniform_init,
       activation_func=nn.ReLU,
@@ -116,7 +112,7 @@ class BootstrappedNet(nn.Module):
     super().__init__()
     self.base = base_type(
         activation_func=activation_func,
-        add_ln=add_ln
+        add_ln=add_ln,
         ** kwargs)
     self.add_ln = add_ln
     self.activation_func = activation_func
@@ -131,6 +127,8 @@ class BootstrappedNet(nn.Module):
     for _ in range(num_heads):
       append_input_dim = self.base.output_dim
       append_fcs = []
+      if append_hidden_dims is None:
+        append_hidden_dims = []
       for next_dim in append_hidden_dims:
         fc = nn.Linear(append_input_dim, next_dim)
         append_hidden_init_func(fc)
@@ -139,7 +137,7 @@ class BootstrappedNet(nn.Module):
         if self.add_ln:
           append_fcs.append(nn.LayerNorm(next_dim))
         # set attr for pytorch to track parameters( device )
-        append_input_shape = next_dim
+        append_input_dim = next_dim
       seq_append_fcs = nn.Sequential(*append_fcs)
       self.bootstrapped_head_fcs.append(seq_append_fcs)
 
@@ -185,6 +183,6 @@ class BootstrappedNet(nn.Module):
 
 
 class FlattenBootstrappedNet(BootstrappedNet):
-  def forward(self, x, head_idxs):
+  def forward(self, x, head_idxs, h=None):
     out = torch.cat(x, dim=-1)
-    return super().forward(out, head_idxs)
+    return super().forward(out, head_idxs, h=h)

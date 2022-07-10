@@ -27,17 +27,22 @@ class OnPolicyTrainer(RLTrainer):
     # )
 
   def process_epoch_samples(self) -> None:
+    last_sample_key = ["next_obs", "terminals", "time_limits"]
+    if self.agent.vf.use_lstm:
+      last_sample_key.append("hidden_states")
     sample = self.replay_buffer.last_sample(
-        ["next_obs", "terminals", "time_limits"]
+        last_sample_key
     )
 
     last_ob = sample["next_obs"].to(self.device)
-    # if not self.replay_buffer.on_gpu:
-      # last_ob = torch.tensor(last_ob).to(self.device)
-    last_value = self.agent.predict_v(last_ob).to(
-        self.replay_buffer.device).detach()
-    # if not self.replay_buffer.on_gpu:
-      # last_value = last_value.detach().cpu().numpy()
+    h = None
+    if self.agent.vf.use_lstm:
+      h = sample["hidden_states"].transpose(0, 1).to(self.device)
+    last_value, _ = self.agent.predict_v(
+        last_ob,
+        h=h
+    )
+    last_value = last_value.to(self.replay_buffer.device).detach()
     last_value = last_value * (1 - sample["terminals"])
 
     if self.gae:

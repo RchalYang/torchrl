@@ -6,8 +6,9 @@ policy:
   tanh_action: false
 
 net: 
-  hidden_dims: [256, 256]
+  hidden_dims: [256,]
   append_hidden_dims: []
+  lstm_layers: 1
 
 vf_net: 
   hidden_dims: [256, 256]
